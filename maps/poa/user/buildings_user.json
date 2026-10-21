@@ -1,0 +1,122 @@
+{
+ "way/414428658": {
+  "height": 24.0,
+  "model": "res://assets/rio_grande_do_sul/landmarks/sulacap.glb"
+ },
+ "relation/5175943": {
+  "model": "res://assets/rio_grande_do_sul/landmarks/mercado_publico/layout.json",
+  "scale": 0.8
+ },
+ "way/129176995": {
+  "model": "res://assets/rio_grande_do_sul/landmarks/centro_historico/paco_municipal/site.json",
+  "at": [
+   33.0,
+   -221.1
+  ],
+  "yaw": 198.9,
+  "note": "centro_historico landmark pack (CC0): on the OSM footprint, front to its square or street"
+ },
+ "way/417955764": {
+  "model": "res://assets/rio_grande_do_sul/landmarks/farmacia_missoes.glb"
+ },
+ "way/414742945": {
+  "height": 10.0,
+  "model": "res://assets/rio_grande_do_sul/landmarks/cine_imperial.glb"
+ },
+ "_remove": [
+  [
+   -127.6,
+   -40.1
+  ]
+ ],
+ "way/205416275": {
+  "model": "res://assets/rio_grande_do_sul/landmarks/centro_historico/theatro_sao_pedro/site.json",
+  "at": [
+   -132.6,
+   215.9
+  ],
+  "yaw": 174.9,
+  "note": "centro_historico landmark pack (CC0): on the OSM footprint, front to its square or street"
+ },
+ "way/129176990": {
+  "model": "res://assets/rio_grande_do_sul/landmarks/centro_historico/memorial_rs/site.json",
+  "at": [
+   -192.7,
+   -135.9
+  ],
+  "yaw": 201.7,
+  "note": "centro_historico landmark pack (CC0): on the OSM footprint, front to its square or street"
+ },
+ "way/129176991": {
+  "model": "res://assets/rio_grande_do_sul/landmarks/centro_historico/margs/site.json",
+  "at": [
+   -261.8,
+   -106.9
+  ],
+  "yaw": 202.0,
+  "note": "centro_historico landmark pack (CC0): on the OSM footprint, front to its square or street"
+ },
+ "relation/2895718": {
+  "model": "res://assets/rio_grande_do_sul/landmarks/centro_historico/casa_cultura_mario_quintana/site.json",
+  "at": [
+   -527.4,
+   122.3
+  ],
+  "yaw": 202.4,
+  "note": "centro_historico landmark pack (CC0): on the OSM footprint, front to its square or street"
+ },
+ "_props": [
+  {
+   "model": "res://assets/rio_grande_do_sul/landmarks/centro_historico/chale_praca_xv/site.json",
+   "x": 164.88,
+   "z": -186.52,
+   "yaw": -73.7,
+   "solid": true
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/landmarks/centro_historico/fonte_talavera/site.json",
+   "x": 45.0,
+   "z": -183.0,
+   "yaw": 198.9,
+   "solid": true
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/landmarks/centro_historico/praca_alfandega/site.json",
+   "x": -193.63,
+   "z": -45.25,
+   "yaw": 22.1,
+   "solid": true,
+   "parts": [
+    "monument"
+   ]
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/landmarks/centro_historico/praca_matriz/site.json",
+   "x": -108.25,
+   "z": 315.39,
+   "yaw": 175.1,
+   "solid": true,
+   "parts": [
+    "monument"
+   ]
+  }
+ ],
+ "way/419053911": {
+  "model": "res://assets/rio_grande_do_sul/landmarks/centro_historico/catedral_metropolitana/site.json",
+  "at": [
+   -99.23,
+   428.64
+  ],
+  "yaw": 354.4,
+  "note": "centro_historico landmark pack (CC0): on the OSM footprint, front to Praça da Matriz"
+ },
+ "relation/2798271": {
+  "model": "res://assets/rio_grande_do_sul/landmarks/centro_historico/palacio_piratini/site.json",
+  "at": [
+   -163.33,
+   406.52
+  ],
+  "yaw": 354.4,
+  "note": "centro_historico landmark pack (CC0): on the OSM footprint, front to Praça da Matriz; the OSM outline holds annexes too: the palace stands at its front edge"
+ }
+}

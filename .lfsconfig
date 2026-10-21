@@ -1,0 +1,4 @@
+# Git LFS files (models, textures, sounds, videos) are not on GitHub: they are
+# downloaded from the project's own server. Reading needs no account.
+[lfs]
+	url = https://lfs.cityinvaders.vgdata.net/vilson/city-invaders.git/info/lfs

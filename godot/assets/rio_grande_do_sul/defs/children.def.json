@@ -1,0 +1,9 @@
+{
+ "id": "children",
+ "type": "Child",
+ "name": "Children at play",
+ "models": [
+  "res://assets/rio_grande_do_sul/park/criancas"
+ ],
+ "per_place": 4
+}

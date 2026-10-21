@@ -1,0 +1,40 @@
+FARROUPILHA
+
+Galpão crioulo 8 × 5 m aberto de um lado; fogo de chão com espetos e brasa emissiva; mesa com bancos; mastro com flag separada; cerca modular de 2,5 m; carroça com rodas no X local. As peças são estáticas. fire é um marcador para partículas; não contém chama simulada. flag é uma malha própria para o jogo animar o vento.
+
+A textura da bandeira usa a arte Srfortes / Wikimedia Commons, CC BY 2.5. Preserve o crédito em LICENSES.txt ao redistribuir. SVG de origem em references/. O restante da geometria é original CC0.
+
+ARQUIVOS
+
+carroca_madeira.glb: 10.500 triângulos; 0 ossos; 1 materiais.
+
+cerca_madeira_2_5m.glb: 2.128 triângulos; 0 ossos; 1 materiais.
+
+fogo_chao_espetos.glb: 7.728 triângulos; 0 ossos; 2 materiais.
+
+galpao_crioulo_8x5.glb: 13.932 triângulos; 0 ossos; 1 materiais.
+
+mastro_bandeira_rs.glb: 2.868 triângulos; 0 ossos; 1 materiais.
+
+mesa_comprida_bancos.glb: 2.244 triângulos; 0 ossos; 1 materiais.
+
+CITY INVADERS — ADIÇÕES REGIONAIS / 2026-10-17
+
+CONTEÚDO E USO
+GLB 2.0, metros, +Y para cima e frente −Z. Fontes .blend em coordenadas nativas do Blender (+Z para cima), com imagens incorporadas. GLBs têm mapas PBR incorporados 2048 × 2048: basecolor, normal tangente OpenGL +Y e metallic_roughness (G=roughness; B=metallic). Alguns objetos usam mais de um conjunto/material, conforme os componentes. Sem luzes/câmeras/planos de apresentação nos modelos; o piso dos módulos de deck é parte do próprio objeto.
+
+Animações amostradas a 30 fps; loops identificados em animation.extras.loop. No Godot, confira a opção de loop após importar, pois extras não são garantidos como configuração do AnimationPlayer. Sem deslocamento horizontal acumulado do nó raiz: o jogo controla movimento. Clips de decolagem/pouso e movimentos de reação incluem deslocamentos locais dos componentes.
+
+VALIDAÇÃO
+35 GLBs conferidos: Khronos Validator com zero erros e zero avisos. Auditoria de geometria/texturas/pesos/normais/orçamentos/tempos e fechamento dos loops em GEOMETRY_ANIMATION_AUDIT.json; fontes em BLENDER_SOURCE_AUDIT.json. Relatórios individuais nas pastas validation/. Texturas realmente embutidas, pesos normalizados e sem triângulos degenerados detectados.
+
+Contato dos pés: verificações numéricas nos quadros de 30 fps e velocidades nominais em solo plano. Entre quadros, a interpolação introduz desvios de até aproximadamente 5,9 mm nos casos medidos. Consulte CONTACT_VALIDATION.json e SUBFRAME_CONTACT_CHECK.json. Inclinações, mudanças de velocidade e misturas de clipes precisam de ajuste/IK no jogo.
+
+LIMITES VISUAIS E DE INTEGRAÇÃO
+As prévias são renders dos arquivos entregues. Há simplificações visíveis em anatomia, mãos, penas/pelagem e acabamento; este lote não é fotorrealista e não deve ser interpretado como equivalente a escaneamento ou escultura manual de alta resolução. O fole, as juntas e os clipes existem, mas a qualidade artística de poses e deformações exige avaliação no enquadramento final. Godot não estava instalado para teste de importação/execução; a validação feita é dos arquivos, não um teste dentro do motor. Colisão, física, gameplay, navegação e efeitos são configurados no projeto.
+
+LICENÇAS
+Geometria/animações originais CC0; bases MakeHuman CC0. A imagem da bandeira é CC BY 2.5 e exige crédito. Leia LICENSES.txt e LICENSE-MakeHuman-Assets.txt.
+
+ORGANIZAÇÃO
+Cada pasta traz glb/, blend/, textures/, previews/, validation/, LEIA-ME.txt e CONTACT_SHEET.jpg. CATALOGO.html reúne os arquivos; os GIFs solicitados estão em corn/previews/ e musician/previews/. Todos os GLBs possuem .blend correspondente. Não é necessária conexão de conta para abrir estes arquivos.

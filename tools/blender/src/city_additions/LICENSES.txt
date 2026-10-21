@@ -1,0 +1,17 @@
+CITY INVADERS — LICENÇAS E PROVENIÊNCIA
+
+Geometria, animações e texturas originais deste lote: disponibilizadas sob CC0 1.0 Universal, até onde seja juridicamente possível. Pode usar, modificar e redistribuir, inclusive em jogo comercial ou de código aberto. Sem garantia. Texto legal: https://creativecommons.org/publicdomain/zero/1.0/legalcode
+
+Bases anatômicas/vestuário/pele MakeHuman usadas nos braços e no gaiteiro: ativos MakeHuman CC0. Nenhum modelo humano escaneado da UFRGS ou do Sketchfab foi incorporado neste lote. Consulte LICENSE-MakeHuman-Assets.txt. Fonte: https://github.com/makehumancommunity/makehuman/blob/master/LICENSE.ASSETS.md
+
+Veículos reaproveitam e revisam geometria original dos pacotes locais anteriores deste projeto. Demais peças, animais, robôs, acordeom e animações foram construídos proceduralmente e editados no Blender. Sem modelos de fabricantes ou logotipos comerciais incorporados.
+
+EXCEÇÃO — IMAGEM DA BANDEIRA DO RIO GRANDE DO SUL:
+Crédito: Srfortes e colaboradores / Wikimedia Commons.
+Arquivo: Bandeira_do_Rio_Grande_do_Sul.svg
+Fonte: https://commons.wikimedia.org/wiki/File:Bandeira_do_Rio_Grande_do_Sul.svg
+Licença utilizada: Creative Commons Attribution 2.5 Generic (CC BY 2.5).
+https://creativecommons.org/licenses/by/2.5/
+Alterações: rasterização, redimensionamento, inserção em atlas e aplicação à malha de tecido. A atribuição acompanha o pacote e deve ser preservada nos créditos quando essa imagem for usada. A imagem não é abrangida pela dedicação CC0 da geometria original.
+
+As referências de anatomia não foram usadas como texturas: Great Egret, Cornell Lab / All About Birds e Heron Conservation. A identificação regional é uma referência temática, não um endosso de órgãos públicos.

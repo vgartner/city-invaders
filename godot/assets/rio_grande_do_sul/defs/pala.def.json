@@ -1,0 +1,9 @@
+{
+ "id": "pala",
+ "type": "Armour",
+ "name": "Pala",
+ "model": "res://assets/rio_grande_do_sul/pickups/pala/pala.glb",
+ "tags": [
+  "gaucho"
+ ]
+}

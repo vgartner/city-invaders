@@ -1,0 +1,7 @@
+{
+ "id": "shotgun",
+ "type": "Weapon",
+ "name": "12-gauge",
+ "model": "res://assets/common/weapons/shotgun/shotgun_12g_pickup.glb",
+ "stand": true
+}

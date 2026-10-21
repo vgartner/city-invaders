@@ -1,0 +1,16 @@
+USINA DO GASÔMETRO — ORIGINAL ASSET LICENSE
+
+Original modelling, generated textures, preview renders and authored metadata
+in this package are dedicated to the public domain under CC0 1.0 Universal.
+https://creativecommons.org/publicdomain/zero/1.0/
+https://creativecommons.org/publicdomain/zero/1.0/legalcode
+
+You may use, modify and redistribute the original asset in open-source or
+commercial games. Provided without warranty, to the extent permitted by law.
+
+Reference photographs remain the works of their respective authors. They were
+used for visual observation only and are not included in the texture maps.
+The footprint coordinates were supplied by the user as OpenStreetMap references;
+retain the source attribution: © OpenStreetMap contributors.
+https://www.openstreetmap.org/copyright
+No affiliation with the municipality, cultural centre or photographers is implied.

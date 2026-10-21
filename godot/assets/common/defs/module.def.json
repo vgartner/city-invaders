@@ -1,0 +1,12 @@
+{
+ "id": "module",
+ "type": "Part",
+ "name": "Capsule module",
+ "glow": [
+  1.0,
+  0.6,
+  0.15
+ ],
+ "model": "res://assets/common/salvage/module.gltf",
+ "scale": 2.0
+}

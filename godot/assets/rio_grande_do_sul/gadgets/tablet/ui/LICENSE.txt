@@ -1,0 +1,6 @@
+Gráficos vetoriais, pictogramas, molduras, composições e adaptações originais deste pacote: CC0 1.0 Universal, até onde os direitos do autor permitam. Pode usar, alterar e redistribuir em jogo de código aberto ou comercial, sem garantia.
+https://creativecommons.org/publicdomain/zero/1.0/legalcode
+
+O papel de parede foi gerado pela ferramenta integrada imagegen. Fonte e prompt em references/. A dedicação CC0 cobre os direitos que o autor possa conceder; não há garantia de exclusividade sobre imagens geradas.
+
+Fontes do sistema foram usadas apenas para rasterizar os textos das telas e não foram redistribuídas. SVGs dos ícones são somente formas vetoriais, sem dependência de fontes. O tablet e as mãos na prévia 3D pertencem ao pacote anterior e não são ativos deste pacote de interface.

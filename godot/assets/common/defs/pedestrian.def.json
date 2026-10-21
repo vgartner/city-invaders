@@ -1,0 +1,10 @@
+{
+ "id": "pedestrian",
+ "type": "Pedestrian",
+ "name": "Passer-by",
+ "models": [
+  "res://assets/common/people"
+ ],
+ "fallback": "res://assets/kenney/people",
+ "drives": true
+}

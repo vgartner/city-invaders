@@ -1,0 +1,15 @@
+{
+ "id": "laco",
+ "type": "Weapon",
+ "name": "Laço",
+ "model": "res://assets/rio_grande_do_sul/pickups/laco/laco.glb",
+ "scale": 1.5,
+ "glow": [
+  0.95,
+  0.7,
+  0.35
+ ],
+ "tags": [
+  "gaucho"
+ ]
+}

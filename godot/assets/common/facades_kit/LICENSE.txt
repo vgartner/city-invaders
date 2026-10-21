@@ -1,0 +1,6 @@
+CC0 1.0 Universal
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Geometria, texturas procedurais, receitas e scripts originais deste pacote: dedicados ao domínio público sob CC0 1.0, na medida permitida por lei.
+Fotografias consultadas apenas para observação: não incluídas nem usadas nas texturas. A licença não abrange direitos de terceiros sobre edifícios, esculturas, murais ou marcas. Obras figurativas existentes não foram copiadas para os mapas; os campos decorativos são aproximações originais.
+Godot e Blender são ferramentas externas, distribuídas sob suas próprias licenças.

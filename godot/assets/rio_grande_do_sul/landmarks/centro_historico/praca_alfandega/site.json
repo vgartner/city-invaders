@@ -1,0 +1,289 @@
+{
+  "title": "Pra\u00e7a da Alf\u00e2ndega \u2014 m\u00f3dulo paisag\u00edstico",
+  "size_m": [
+    100,
+    4,
+    120
+  ],
+  "entry": [
+    0,
+    0,
+    -60.0
+  ],
+  "interior_scope": "landscape kit with optional independent vegetation and tree sockets; approximate paths, no scanned vegetation. Figurative monuments are original sculptural approximations, not faithful reproductions",
+  "references": [
+    "https://prefeitura.poa.br/smsurb/noticias/comeca-revitalizacao-da-praca-da-alfandega-no-centro-historico"
+  ],
+  "parts": {
+    "ground": {
+      "file": "glb/praca_alfandega_ground.glb",
+      "triangles": 132,
+      "bounds": {
+        "min": [
+          -50.0,
+          -0.1599999964237213,
+          -60.0
+        ],
+        "max": [
+          50.0,
+          0.04100000113248825,
+          60.0
+        ]
+      },
+      "collisions": [
+        {
+          "centre": [
+            0.0,
+            -0.07999999821186066,
+            0.0
+          ],
+          "size": [
+            100,
+            0.16,
+            120
+          ],
+          "rotation_y": 0.0,
+          "occluder": false
+        }
+      ],
+      "markers": {
+        "tree_socket_0": [
+          -10.0,
+          0.0,
+          -32.400001525878906
+        ],
+        "tree_socket_1": [
+          -44.0,
+          0.0,
+          -32.400001525878906
+        ],
+        "tree_socket_2": [
+          -27.0,
+          0.0,
+          -13.199999809265137
+        ],
+        "tree_socket_3": [
+          -27.0,
+          0.0,
+          -51.599998474121094
+        ],
+        "tree_socket_4": [
+          -10.0,
+          0.0,
+          32.400001525878906
+        ],
+        "tree_socket_5": [
+          -44.0,
+          0.0,
+          32.400001525878906
+        ],
+        "tree_socket_6": [
+          -27.0,
+          0.0,
+          13.199999809265137
+        ],
+        "tree_socket_7": [
+          -27.0,
+          0.0,
+          51.599998474121094
+        ],
+        "tree_socket_8": [
+          10.0,
+          0.0,
+          -32.400001525878906
+        ],
+        "tree_socket_9": [
+          44.0,
+          0.0,
+          -32.400001525878906
+        ],
+        "tree_socket_10": [
+          27.0,
+          0.0,
+          -13.199999809265137
+        ],
+        "tree_socket_11": [
+          27.0,
+          0.0,
+          -51.599998474121094
+        ],
+        "tree_socket_12": [
+          10.0,
+          0.0,
+          32.400001525878906
+        ],
+        "tree_socket_13": [
+          44.0,
+          0.0,
+          32.400001525878906
+        ],
+        "tree_socket_14": [
+          27.0,
+          0.0,
+          13.199999809265137
+        ],
+        "tree_socket_15": [
+          27.0,
+          0.0,
+          51.599998474121094
+        ]
+      }
+    },
+    "vegetation": {
+      "file": "glb/praca_alfandega_vegetation.glb",
+      "triangles": 11808,
+      "bounds": {
+        "min": [
+          -46.114559173583984,
+          -0.0066785188391804695,
+          -38.15744400024414
+        ],
+        "max": [
+          46.081050872802734,
+          10.276763916015625,
+          38.613922119140625
+        ]
+      },
+      "collisions": [],
+      "markers": {}
+    },
+    "furniture": {
+      "file": "glb/praca_alfandega_furniture.glb",
+      "triangles": 2112,
+      "bounds": {
+        "min": [
+          -43.25,
+          -0.0021388523746281862,
+          -50.650001525878906
+        ],
+        "max": [
+          43.25,
+          4.980000019073486,
+          50.650001525878906
+        ]
+      },
+      "collisions": [],
+      "markers": {
+        "lamp_1": [
+          -43.0,
+          4.699999809265137,
+          -50.400001525878906
+        ],
+        "lamp_2": [
+          -43.0,
+          4.699999809265137,
+          50.400001525878906
+        ],
+        "lamp_3": [
+          43.0,
+          4.699999809265137,
+          -50.400001525878906
+        ],
+        "lamp_4": [
+          43.0,
+          4.699999809265137,
+          50.400001525878906
+        ]
+      }
+    },
+    "monument": {
+      "file": "glb/praca_alfandega_monument.glb",
+      "triangles": 2864,
+      "bounds": {
+        "min": [
+          -26.100000381469727,
+          0.0,
+          -1.100000023841858
+        ],
+        "max": [
+          26.100000381469727,
+          3.496000051498413,
+          1.100000023841858
+        ]
+      },
+      "collisions": [
+        {
+          "centre": [
+            -25.0,
+            0.5,
+            0.0
+          ],
+          "size": [
+            2.2,
+            1,
+            2.2
+          ],
+          "rotation_y": 0.0,
+          "occluder": false
+        },
+        {
+          "centre": [
+            25.0,
+            0.5,
+            0.0
+          ],
+          "size": [
+            2.2,
+            1,
+            2.2
+          ],
+          "rotation_y": 0.0,
+          "occluder": false
+        }
+      ],
+      "markers": {
+        "meeting_point": [
+          0.0,
+          0.0,
+          -6.0
+        ],
+        "rescue_spot": [
+          22.0,
+          0.0,
+          26.399999618530273
+        ]
+      }
+    },
+    "lod1": {
+      "file": "glb/praca_alfandega_lod1.glb",
+      "triangles": 460,
+      "bounds": {
+        "min": [
+          -50.0,
+          -0.1599999964237213,
+          -60.0
+        ],
+        "max": [
+          50.0,
+          9.399999618530273,
+          60.0
+        ]
+      },
+      "collisions": [],
+      "markers": {}
+    },
+    "lod2": {
+      "file": "glb/praca_alfandega_lod2.glb",
+      "triangles": 12,
+      "bounds": {
+        "min": [
+          -50.0,
+          -0.1599999964237213,
+          -60.0
+        ],
+        "max": [
+          50.0,
+          0.0,
+          60.0
+        ]
+      },
+      "collisions": [],
+      "markers": {}
+    }
+  },
+  "license": "CC0-1.0",
+  "dimensions_are": "photographic approximations; not survey or OSM registered",
+  "front": "-Z",
+  "up": "+Y",
+  "metres": true
+}

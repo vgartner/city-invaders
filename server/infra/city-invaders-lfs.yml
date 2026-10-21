@@ -1,0 +1,71 @@
+# City Invaders LFS - compose extension for the VGData server (vmd171796).
+#
+# A small Forgejo (https://forgejo.org) that holds the game's Git LFS files (models,
+# textures, sounds): the code lives on GitHub, and the repository's .lfsconfig points
+# Git LFS here, so the big files never count against GitHub's LFS quota. Anyone may
+# download (public repository, no sign-in); only token holders may upload.
+#
+# Lives at /srv/docker/nginx-proxy/city-invaders-lfs.yml next to the shared
+# docker-compose.yml (compose project "nginx-proxy"; see vgdata-infra/SERVER.md).
+# Data (SQLite, repositories, LFS objects) in /srv/city-invaders-lfs/data.
+# Secrets only in /srv/city-invaders-lfs/.env (mode 600), never in this file.
+#
+# Usage on the server (ALWAYS name the service; never down/--remove-orphans):
+#   cd /srv/docker/nginx-proxy
+#   docker compose -f docker-compose.yml -f city-invaders-lfs.yml pull city-invaders-lfs
+#   docker compose -f docker-compose.yml -f city-invaders-lfs.yml up -d city-invaders-lfs
+# Deploy from the Mac: server/deploy-city-invaders-lfs.sh
+
+services:
+  city-invaders-lfs:
+    # 15.x is the long-term support line; bump the patch version on purpose, never "latest"
+    image: codeberg.org/forgejo/forgejo:15.0.10
+    container_name: city-invaders-lfs
+    # Memory ceiling (shared VGData server): Forgejo with SQLite idles at ~150 MB.
+    mem_limit: 512m
+    memswap_limit: 768m
+    restart: unless-stopped
+    env_file:
+      - /srv/city-invaders-lfs/.env
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - FORGEJO__server__DOMAIN=lfs.cityinvaders.vgdata.net
+      - FORGEJO__server__ROOT_URL=https://lfs.cityinvaders.vgdata.net/
+      - FORGEJO__server__HTTP_PORT=3000
+      - FORGEJO__server__DISABLE_SSH=true
+      - FORGEJO__server__START_SSH_SERVER=false
+      - FORGEJO__server__LFS_START_SERVER=true
+      - FORGEJO__server__OFFLINE_MODE=true
+      - FORGEJO__database__DB_TYPE=sqlite3
+      - FORGEJO__security__INSTALL_LOCK=true
+      # nobody signs up: the owner adds people (and their tokens) by hand
+      - FORGEJO__service__DISABLE_REGISTRATION=true
+      - FORGEJO__service__REQUIRE_SIGNIN_VIEW=false
+      - FORGEJO__repository__DEFAULT_PRIVATE=public
+      # only Git + LFS: no CI runners, package registry, mail or federation
+      - FORGEJO__actions__ENABLED=false
+      - FORGEJO__packages__ENABLED=false
+      - FORGEJO__mailer__ENABLED=false
+      - FORGEJO__federation__ENABLED=false
+      - FORGEJO__log__LEVEL=Warn
+      - VIRTUAL_HOST=lfs.cityinvaders.vgdata.net
+      - VIRTUAL_PORT=3000
+      - LETSENCRYPT_HOST=lfs.cityinvaders.vgdata.net
+      - LETSENCRYPT_EMAIL=vilson@vgdata.net
+    expose:
+      - "3000"
+    networks:
+      - webnet
+    volumes:
+      - /srv/city-invaders-lfs/data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/api/healthz"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
+networks:
+  webnet:
+    external: true

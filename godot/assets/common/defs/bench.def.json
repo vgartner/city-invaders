@@ -1,0 +1,12 @@
+{
+ "id": "bench",
+ "type": "StreetFurniture",
+ "name": "Banco de praça",
+ "prop": "bench",
+ "model": "res://assets/common/props/painted_wooden_bench/painted_wooden_bench.gltf",
+ "faces": {
+  "front": "+z",
+  "towards": "walk",
+  "gap": 1.0
+ }
+}

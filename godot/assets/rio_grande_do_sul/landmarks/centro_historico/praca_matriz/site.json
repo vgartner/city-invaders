@@ -1,0 +1,317 @@
+{
+  "title": "Pra\u00e7a da Matriz \u2014 m\u00f3dulo paisag\u00edstico",
+  "size_m": [
+    86,
+    13,
+    90
+  ],
+  "entry": [
+    0,
+    0,
+    -45.0
+  ],
+  "interior_scope": "landscape kit with optional independent vegetation and tree sockets; approximate paths, no scanned vegetation. Figurative monuments are original sculptural approximations, not faithful reproductions",
+  "references": [
+    "https://www.prefeitura.poa.br/gp/noticias/praca-da-matriz-e-reaberta-na-semana-dos-250-anos-da-capital"
+  ],
+  "parts": {
+    "ground": {
+      "file": "glb/praca_matriz_ground.glb",
+      "triangles": 132,
+      "bounds": {
+        "min": [
+          -43.0,
+          -0.1599999964237213,
+          -45.0
+        ],
+        "max": [
+          43.0,
+          0.04100000113248825,
+          45.0
+        ]
+      },
+      "collisions": [
+        {
+          "centre": [
+            0.0,
+            -0.07999999821186066,
+            0.0
+          ],
+          "size": [
+            86,
+            0.16,
+            90
+          ],
+          "rotation_y": 0.0,
+          "occluder": false
+        }
+      ],
+      "markers": {
+        "tree_socket_0": [
+          -8.600000381469727,
+          0.0,
+          -24.299999237060547
+        ],
+        "tree_socket_1": [
+          -37.84000015258789,
+          0.0,
+          -24.299999237060547
+        ],
+        "tree_socket_2": [
+          -23.219999313354492,
+          0.0,
+          -9.899999618530273
+        ],
+        "tree_socket_3": [
+          -23.219999313354492,
+          0.0,
+          -38.70000076293945
+        ],
+        "tree_socket_4": [
+          -8.600000381469727,
+          0.0,
+          24.299999237060547
+        ],
+        "tree_socket_5": [
+          -37.84000015258789,
+          0.0,
+          24.299999237060547
+        ],
+        "tree_socket_6": [
+          -23.219999313354492,
+          0.0,
+          9.899999618530273
+        ],
+        "tree_socket_7": [
+          -23.219999313354492,
+          0.0,
+          38.70000076293945
+        ],
+        "tree_socket_8": [
+          8.600000381469727,
+          0.0,
+          -24.299999237060547
+        ],
+        "tree_socket_9": [
+          37.84000015258789,
+          0.0,
+          -24.299999237060547
+        ],
+        "tree_socket_10": [
+          23.219999313354492,
+          0.0,
+          -9.899999618530273
+        ],
+        "tree_socket_11": [
+          23.219999313354492,
+          0.0,
+          -38.70000076293945
+        ],
+        "tree_socket_12": [
+          8.600000381469727,
+          0.0,
+          24.299999237060547
+        ],
+        "tree_socket_13": [
+          37.84000015258789,
+          0.0,
+          24.299999237060547
+        ],
+        "tree_socket_14": [
+          23.219999313354492,
+          0.0,
+          9.899999618530273
+        ],
+        "tree_socket_15": [
+          23.219999313354492,
+          0.0,
+          38.70000076293945
+        ]
+      }
+    },
+    "vegetation": {
+      "file": "glb/praca_matriz_vegetation.glb",
+      "triangles": 11808,
+      "bounds": {
+        "min": [
+          -40.37455749511719,
+          -0.006678479723632336,
+          -29.7574462890625
+        ],
+        "max": [
+          40.3410530090332,
+          10.276763916015625,
+          30.213924407958984
+        ]
+      },
+      "collisions": [],
+      "markers": {}
+    },
+    "furniture": {
+      "file": "glb/praca_matriz_furniture.glb",
+      "triangles": 2112,
+      "bounds": {
+        "min": [
+          -37.22999954223633,
+          -0.0021388523746281862,
+          -38.04999923706055
+        ],
+        "max": [
+          37.22999954223633,
+          4.980000019073486,
+          38.04999923706055
+        ]
+      },
+      "collisions": [],
+      "markers": {
+        "lamp_1": [
+          -36.97999954223633,
+          4.699999809265137,
+          -37.79999923706055
+        ],
+        "lamp_2": [
+          -36.97999954223633,
+          4.699999809265137,
+          37.79999923706055
+        ],
+        "lamp_3": [
+          36.97999954223633,
+          4.699999809265137,
+          -37.79999923706055
+        ],
+        "lamp_4": [
+          36.97999954223633,
+          4.699999809265137,
+          37.79999923706055
+        ]
+      }
+    },
+    "monument": {
+      "file": "glb/praca_matriz_monument.glb",
+      "triangles": 5876,
+      "bounds": {
+        "min": [
+          -4.25,
+          0.0,
+          -3.5
+        ],
+        "max": [
+          4.25,
+          12.520000457763672,
+          3.5
+        ]
+      },
+      "collisions": [
+        {
+          "centre": [
+            0.0,
+            0.15000000596046448,
+            0.0
+          ],
+          "size": [
+            8.5,
+            0.3,
+            7
+          ],
+          "rotation_y": 0.0,
+          "occluder": false
+        },
+        {
+          "centre": [
+            0.0,
+            0.5,
+            0.0
+          ],
+          "size": [
+            7,
+            0.4,
+            5.8
+          ],
+          "rotation_y": 0.0,
+          "occluder": false
+        },
+        {
+          "centre": [
+            0.0,
+            1.2000000476837158,
+            0.0
+          ],
+          "size": [
+            5.5,
+            1,
+            4.5
+          ],
+          "rotation_y": 0.0,
+          "occluder": false
+        },
+        {
+          "centre": [
+            0.0,
+            2.0,
+            0.0
+          ],
+          "size": [
+            4,
+            0.6,
+            3.8
+          ],
+          "rotation_y": 0.0,
+          "occluder": false
+        }
+      ],
+      "markers": {
+        "meeting_point": [
+          0.0,
+          0.0,
+          -6.0
+        ],
+        "rescue_spot": [
+          18.920000076293945,
+          0.0,
+          19.799999237060547
+        ]
+      }
+    },
+    "lod1": {
+      "file": "glb/praca_matriz_lod1.glb",
+      "triangles": 460,
+      "bounds": {
+        "min": [
+          -43.0,
+          -0.1599999964237213,
+          -45.0
+        ],
+        "max": [
+          43.0,
+          9.399999618530273,
+          45.0
+        ]
+      },
+      "collisions": [],
+      "markers": {}
+    },
+    "lod2": {
+      "file": "glb/praca_matriz_lod2.glb",
+      "triangles": 12,
+      "bounds": {
+        "min": [
+          -43.0,
+          -0.1599999964237213,
+          -45.0
+        ],
+        "max": [
+          43.0,
+          0.0,
+          45.0
+        ]
+      },
+      "collisions": [],
+      "markers": {}
+    }
+  },
+  "license": "CC0-1.0",
+  "dimensions_are": "photographic approximations; not survey or OSM registered",
+  "front": "-Z",
+  "up": "+Y",
+  "metres": true
+}

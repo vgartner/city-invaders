@@ -1,0 +1,218 @@
+[
+  {
+    "name": "light_1",
+    "position": [
+      -37,
+      7.99,
+      -31
+    ],
+    "emissive_mesh": "light_1"
+  },
+  {
+    "name": "light_2",
+    "position": [
+      -37,
+      7.99,
+      -16
+    ],
+    "emissive_mesh": "light_2"
+  },
+  {
+    "name": "light_3",
+    "position": [
+      -37,
+      7.99,
+      0
+    ],
+    "emissive_mesh": "light_3"
+  },
+  {
+    "name": "light_4",
+    "position": [
+      -37,
+      7.99,
+      16
+    ],
+    "emissive_mesh": "light_4"
+  },
+  {
+    "name": "light_5",
+    "position": [
+      -37,
+      7.99,
+      31
+    ],
+    "emissive_mesh": "light_5"
+  },
+  {
+    "name": "light_6",
+    "position": [
+      -20,
+      7.99,
+      -31
+    ],
+    "emissive_mesh": "light_6"
+  },
+  {
+    "name": "light_7",
+    "position": [
+      -20,
+      7.99,
+      -16
+    ],
+    "emissive_mesh": "light_7"
+  },
+  {
+    "name": "light_8",
+    "position": [
+      -20,
+      7.99,
+      0
+    ],
+    "emissive_mesh": "light_8"
+  },
+  {
+    "name": "light_9",
+    "position": [
+      -20,
+      7.99,
+      16
+    ],
+    "emissive_mesh": "light_9"
+  },
+  {
+    "name": "light_10",
+    "position": [
+      -20,
+      7.99,
+      31
+    ],
+    "emissive_mesh": "light_10"
+  },
+  {
+    "name": "light_11",
+    "position": [
+      0,
+      7.99,
+      -31
+    ],
+    "emissive_mesh": "light_11"
+  },
+  {
+    "name": "light_12",
+    "position": [
+      0,
+      7.99,
+      -16
+    ],
+    "emissive_mesh": "light_12"
+  },
+  {
+    "name": "light_13",
+    "position": [
+      0,
+      7.99,
+      16
+    ],
+    "emissive_mesh": "light_13"
+  },
+  {
+    "name": "light_14",
+    "position": [
+      0,
+      7.99,
+      31
+    ],
+    "emissive_mesh": "light_14"
+  },
+  {
+    "name": "light_15",
+    "position": [
+      20,
+      7.99,
+      -31
+    ],
+    "emissive_mesh": "light_15"
+  },
+  {
+    "name": "light_16",
+    "position": [
+      20,
+      7.99,
+      -16
+    ],
+    "emissive_mesh": "light_16"
+  },
+  {
+    "name": "light_17",
+    "position": [
+      20,
+      7.99,
+      0
+    ],
+    "emissive_mesh": "light_17"
+  },
+  {
+    "name": "light_18",
+    "position": [
+      20,
+      7.99,
+      16
+    ],
+    "emissive_mesh": "light_18"
+  },
+  {
+    "name": "light_19",
+    "position": [
+      20,
+      7.99,
+      31
+    ],
+    "emissive_mesh": "light_19"
+  },
+  {
+    "name": "light_20",
+    "position": [
+      37,
+      7.99,
+      -31
+    ],
+    "emissive_mesh": "light_20"
+  },
+  {
+    "name": "light_21",
+    "position": [
+      37,
+      7.99,
+      -16
+    ],
+    "emissive_mesh": "light_21"
+  },
+  {
+    "name": "light_22",
+    "position": [
+      37,
+      7.99,
+      0
+    ],
+    "emissive_mesh": "light_22"
+  },
+  {
+    "name": "light_23",
+    "position": [
+      37,
+      7.99,
+      16
+    ],
+    "emissive_mesh": "light_23"
+  },
+  {
+    "name": "light_24",
+    "position": [
+      37,
+      7.99,
+      31
+    ],
+    "emissive_mesh": "light_24"
+  }
+]

@@ -1,0 +1,227 @@
+{
+  "capivara_adulta.glb": {
+    "triangles": 8876,
+    "meshes": 1,
+    "materials": 1,
+    "images": [
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        2048
+      ]
+    ],
+    "bones": 20,
+    "bounds_min_m": [
+      -0.22954849898815155,
+      -0.007334192514273173,
+      -0.7026184871792793
+    ],
+    "bounds_max_m": [
+      0.22979187965393066,
+      0.677120003849268,
+      0.5610100030899048
+    ],
+    "dimensions_m": [
+      0.4593403786420822,
+      0.6844541963635411,
+      1.2636284902691841
+    ],
+    "clips": {
+      "idle": {
+        "duration_s": 3.200000047683716,
+        "fps": 30,
+        "loop": true,
+        "samples": 97
+      },
+      "graze": {
+        "duration_s": 3.200000047683716,
+        "fps": 30,
+        "loop": true,
+        "samples": 97
+      },
+      "walk": {
+        "duration_s": 0.800000011920929,
+        "fps": 30,
+        "loop": true,
+        "samples": 25
+      },
+      "run": {
+        "duration_s": 0.4000000059604645,
+        "fps": 30,
+        "loop": true,
+        "samples": 13
+      },
+      "swim_idle": {
+        "duration_s": 2.0,
+        "fps": 30,
+        "loop": true,
+        "samples": 61
+      },
+      "die": {
+        "duration_s": 1.600000023841858,
+        "fps": 30,
+        "loop": false,
+        "samples": 49
+      }
+    },
+    "sha256": "a643cd70514e7bb4ccf90a2984e45b05c0bc79c7f2d16e7fbda962d7e2f2061c",
+    "issues": []
+  },
+  "capivara_filhote.glb": {
+    "triangles": 8876,
+    "meshes": 1,
+    "materials": 1,
+    "images": [
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        2048
+      ]
+    ],
+    "bones": 20,
+    "bounds_min_m": [
+      -0.11631864709067255,
+      -0.010511796927058874,
+      -0.3621179796755314
+    ],
+    "bounds_max_m": [
+      0.11631863964009193,
+      0.3452919591218233,
+      0.2805050015449524
+    ],
+    "dimensions_m": [
+      0.23263728673076448,
+      0.3558037560488822,
+      0.6426229812204838
+    ],
+    "clips": {
+      "idle": {
+        "duration_s": 3.200000047683716,
+        "fps": 30,
+        "loop": true,
+        "samples": 97
+      },
+      "graze": {
+        "duration_s": 3.200000047683716,
+        "fps": 30,
+        "loop": true,
+        "samples": 97
+      },
+      "walk": {
+        "duration_s": 0.800000011920929,
+        "fps": 30,
+        "loop": true,
+        "samples": 25
+      },
+      "run": {
+        "duration_s": 0.4000000059604645,
+        "fps": 30,
+        "loop": true,
+        "samples": 13
+      },
+      "swim_idle": {
+        "duration_s": 2.0,
+        "fps": 30,
+        "loop": true,
+        "samples": 61
+      },
+      "die": {
+        "duration_s": 1.600000023841858,
+        "fps": 30,
+        "loop": false,
+        "samples": 49
+      }
+    },
+    "sha256": "730fb750a45978761c65c7f76802ea00d604e872e87493c52787ccf91c337a2f",
+    "issues": []
+  },
+  "garca_branca.glb": {
+    "triangles": 6040,
+    "meshes": 1,
+    "materials": 1,
+    "images": [
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        2048
+      ]
+    ],
+    "bones": 18,
+    "bounds_min_m": [
+      -0.2222980224308938,
+      5.7148834457641795e-05,
+      -0.5500277914106846
+    ],
+    "bounds_max_m": [
+      0.2222980224308938,
+      1.1720000430941582,
+      0.7869045696090265
+    ],
+    "dimensions_m": [
+      0.4445960448617876,
+      1.1719428942597006,
+      1.336932361019711
+    ],
+    "clips": {
+      "idle": {
+        "duration_s": 3.200000047683716,
+        "fps": 30,
+        "loop": true,
+        "samples": 97
+      },
+      "walk": {
+        "duration_s": 0.800000011920929,
+        "fps": 30,
+        "loop": true,
+        "samples": 25
+      },
+      "fish": {
+        "duration_s": 1.2000000476837158,
+        "fps": 30,
+        "loop": false,
+        "samples": 37
+      },
+      "takeoff": {
+        "duration_s": 0.8999999761581421,
+        "fps": 30,
+        "loop": false,
+        "samples": 28
+      },
+      "fly": {
+        "duration_s": 1.0,
+        "fps": 30,
+        "loop": true,
+        "samples": 31
+      },
+      "land": {
+        "duration_s": 0.8999999761581421,
+        "fps": 30,
+        "loop": false,
+        "samples": 28
+      }
+    },
+    "sha256": "e470e2b8d17b9af8cb5a98e46c17975dc7ead3f36b1a0fa7b254927cb3739c1a",
+    "issues": []
+  }
+}

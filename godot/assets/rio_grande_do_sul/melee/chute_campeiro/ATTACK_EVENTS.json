@@ -1,0 +1,5 @@
+{
+  "kick_front": {"duration_s": 0.45, "impact_s": 0.22, "loop": false, "reference_bone": "RightToeBase"},
+  "kick_side": {"duration_s": 0.50, "impact_s": 0.30, "loop": false, "reference_bone": "RightFoot"},
+  "stomp": {"duration_s": 0.40, "impact_s": 0.25, "loop": false, "reference_bone": "RightFoot"}
+}

@@ -1,0 +1,12 @@
+{
+ "id": "pedestrian_rs",
+ "type": "Pedestrian",
+ "name": "Gaúcho passer-by",
+ "models": [
+  "res://assets/rio_grande_do_sul/people"
+ ],
+ "tags": [
+  "gaucho"
+ ],
+ "share": 0.35
+}

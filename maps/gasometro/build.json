@@ -1,0 +1,23 @@
+{
+ "osm": "maps/gasometro/data/osm.json",
+ "lat": -30.0341,
+ "lon": -51.2411,
+ "bounds": [
+  -150,
+  -350,
+  600,
+  200
+ ],
+ "facades": [
+  "maps/gasometro/facades/facades_clean.json",
+  "maps/gasometro/facades/facades_commons_clean.json"
+ ],
+ "terrain": "maps/gasometro/data/terrain.json",
+ "textures": "maps/gasometro/out/gasometro_tex",
+ "start": [
+  -40,
+  -20
+ ],
+ "out": "godot/city/gasometro.glb",
+ "ring": true
+}

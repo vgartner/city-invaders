@@ -1,0 +1,8 @@
+{
+ "id": "canhao",
+ "type": "Weapon",
+ "name": "Canhão do mech",
+ "model": "res://assets/common/salvage/mech_cannon_pickup.gltf",
+ "scale": 1.0,
+ "lie": -1
+}

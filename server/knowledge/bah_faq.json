@@ -1,0 +1,61 @@
+{
+ "greeting": "Bah! Eu sou a Bah, tua assistente. Como posso te ajudar?",
+ "faq": [
+  [
+   "O que eu tenho que fazer?",
+   "Os robôs invadiram a cidade. Em cada fase: derruba os robôs e os mechs que pedem no objetivo (lá em cima na tela), acha e destrói as torres de comunicação dos robôs, e protege as pessoas: os Coletores (os robôs sem arma) levam gente na cápsula das costas para os containers de pessoas. Derruba o Coletor antes da nave chegar e abre os containers (E) para soltar todo mundo. Cada duas pessoas perdidas aumentam o objetivo. Feito isso, abre uma saída verde no mapa para a próxima fase."
+  ],
+  [
+   "Comecei sem arma. E agora?",
+   "Todo mundo começa de mãos vazias. Tem pistolas no chão perto de onde tu nasces, e outras armas espalhadas pela cidade. Sem arma, o clique dá soco e chute. Se morreres, perdes tudo e precisas procurar de novo."
+  ],
+  [
+   "Como me curo?",
+   "Espeto de churrasco cura bastante, chimarrão um pouco, o remédio da farmácia mais ainda. O pala protege: absorve parte dos tiros. O guaraná Fruki dá um gás: corres mais rápido por um tempo."
+  ],
+  [
+   "Como abro o mapa e o tablet?",
+   "Aperta T: no tablet tem o GPS (o mapa com robôs, farmácias, postos, mercados e as assistências técnicas), o rádio e eu, a Bah. Aperta T de novo para guardar. Dentro do carro o mapa aparece no canto da tela; a pé, só com os óculos de informação."
+  ],
+  [
+   "Como entro nas lojas?",
+   "Chega na porta de uma loja e aperta E: tu já entras. Para sair, é só caminhar pela porta. Nas farmácias e nos mercados sempre tem algo útil no balcão."
+  ],
+  [
+   "Para que servem as peças?",
+   "Robôs derrubados soltam circuitos, núcleos, lentes e módulos. Junta e leva numa assistência técnica (tecla E no balcão): troca por detector de torres, bateria de drone, um drone novo, pala reforçado ou munição."
+  ],
+  [
+   "Posso dirigir?",
+   "Sim! Chega perto de um carro estacionado, de um ônibus (pela porta da frente) ou de um cavalo e aperta E. Na colheitadeira blindada, o clique dispara espigas de milho. No carro, N liga o rádio."
+  ],
+  [
+   "Como acho as torres?",
+   "Elas ficam em telhados altos. Voa um drone (laça um drone de robô com o laço, tecla 5, e aperta G) e chega perto delas: as que tu enxergares aparecem no GPS em laranja. Na assistência técnica tu também trocas peças por um detector de torres."
+  ],
+  [
+   "O que é o Coletor?",
+   "O URB-C4 Coletor não atira: ele agarra alguém sozinho e leva a pessoa na cápsula das costas até um ponto aberto, onde uma nave de transporte a busca. Ele aparece em laranja no GPS. Derruba ele antes da nave chegar e a pessoa sai correndo livre."
+  ],
+  [
+   "O que são os containers de pessoas?",
+   "É onde os robôs guardam quem os Coletores pegam. Fica longe de onde tu estás. Chega perto e aperta E para soltar todo mundo. Se encher, a nave-mãe vem buscar e as pessoas se perdem - três containers levados e a rodada recomeça. Com o upgrade de GPS da assistência técnica eles aparecem no mapa."
+  ],
+  [
+   "E o enxame?",
+   "Um bando de drones pequenos que rodeiam e mergulham em ti, um de cada vez, e explodem. Cada um cai com um tiro: atira no que pisca, porque é o próximo a mergulhar. A escopeta ajuda."
+  ],
+  [
+   "Como carrego mais coisas?",
+   "Com a mala de garupa! Sem ela, nos bolsos cabem só 4 peças de robô; com a mala, 30. Ela aparece no chão pela cidade (e no acampamento farroupilha) e muito cavalo anda com uma na garupa. Se morreres, perdes a mala junto."
+  ],
+  [
+   "Onde fica o rádio?",
+   "No carro (tecla N) ou aqui no tablet, no app Rádio: escolhe a estação com as setas e Enter."
+  ],
+  [
+   "Quem fez este jogo?",
+   "City Invaders foi criado pelo Vilson Cristiano Gärtner, gaúcho, e é um jogo de código aberto. Quer falar com ele? O contato é vilson@gartner.net.br."
+  ]
+ ]
+}

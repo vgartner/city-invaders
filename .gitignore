@@ -1,0 +1,32 @@
+# Secrets
+.env
+
+# Python env
+tools/.venv/
+__pycache__/
+
+# Generated maps, textures and downloaded photos
+maps/*/out/
+maps/*/facades/img/
+maps/*/facades/tex/
+maps/*/facades/tex_clean/
+maps/*/facades/clean_contact.png
+maps/*/facades/contact.png
+maps/survey/
+*.log
+maps/*/facades/run.log
+maps/*/sky/
+
+# textures Godot extracts from the generated city glb (it extracts them again on import);
+# the tree textures are real files
+godot/city/*.png
+!godot/city/bark.png
+!godot/city/leaves.png
+maps/*/facades/commons/*.jpg
+maps/*/facades/commons/raw/
+maps/*/facades/tex_commons_clean/
+maps/*/facades/commons_clean_contact.png
+
+# exported game builds
+build/
+.DS_Store

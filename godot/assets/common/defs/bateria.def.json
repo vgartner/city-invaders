@@ -1,0 +1,6 @@
+{
+ "id": "bateria",
+ "type": "Gadget",
+ "name": "Bateria de drone",
+ "model": "res://assets/common/salvage/bateria_drone.gltf"
+}

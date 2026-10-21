@@ -1,0 +1,514 @@
+[
+  {
+    "id": 1,
+    "file": "ped_01_student_woman_20s.glb",
+    "description": "student_woman_20s",
+    "gender": "woman",
+    "age": 24,
+    "ageGroup": "young adult",
+    "bodyType": "slim",
+    "heightMetres": 1.65,
+    "skinSource": "young_african_female",
+    "hair": "afro01",
+    "hairColor": [
+      33,
+      23,
+      18
+    ],
+    "clothingSource": "female_casualsuit01",
+    "topColor": [
+      40,
+      113,
+      111
+    ],
+    "bottomColor": [
+      38,
+      67,
+      95
+    ],
+    "accessories": "backpack_glasses",
+    "triangles": 11666,
+    "scale": 0.9212684865078355,
+    "meshFloorCorrection": -0.009761986218756433
+  },
+  {
+    "id": 2,
+    "file": "ped_02_courier_man_20s.glb",
+    "description": "courier_man_20s",
+    "gender": "man",
+    "age": 27,
+    "ageGroup": "young adult",
+    "bodyType": "tall",
+    "heightMetres": 1.85,
+    "skinSource": "young_african_male",
+    "hair": "short01",
+    "hairColor": [
+      22,
+      18,
+      14
+    ],
+    "clothingSource": "male_casualsuit04",
+    "topColor": [
+      202,
+      82,
+      25
+    ],
+    "bottomColor": [
+      42,
+      47,
+      50
+    ],
+    "accessories": "courier_bag_cap",
+    "triangles": 11849,
+    "scale": 1.006408695428707,
+    "meshFloorCorrection": -0.050153636342938894
+  },
+  {
+    "id": 3,
+    "file": "ped_03_office_woman_30s.glb",
+    "description": "office_woman_30s",
+    "gender": "woman",
+    "age": 34,
+    "ageGroup": "adult",
+    "bodyType": "average",
+    "heightMetres": 1.7,
+    "skinSource": "young_caucasian_female",
+    "hair": "braid01",
+    "hairColor": [
+      58,
+      36,
+      23
+    ],
+    "clothingSource": "female_elegantsuit01",
+    "topColor": [
+      217,
+      205,
+      178
+    ],
+    "bottomColor": [
+      33,
+      43,
+      60
+    ],
+    "accessories": "shopping_bag",
+    "triangles": 13827,
+    "scale": 0.974192430652243,
+    "meshFloorCorrection": 0.008369815526835448
+  },
+  {
+    "id": 4,
+    "file": "ped_04_office_man_40s.glb",
+    "description": "office_man_40s",
+    "gender": "man",
+    "age": 46,
+    "ageGroup": "middle-aged",
+    "bodyType": "heavy",
+    "heightMetres": 1.78,
+    "skinSource": "middleage_caucasian_male",
+    "hair": "short04",
+    "hairColor": [
+      77,
+      70,
+      64
+    ],
+    "clothingSource": "male_casualsuit03",
+    "topColor": [
+      138,
+      175,
+      194
+    ],
+    "bottomColor": [
+      48,
+      57,
+      68
+    ],
+    "accessories": "glasses_phone",
+    "triangles": 10406,
+    "scale": 0.9974963115628054,
+    "meshFloorCorrection": -0.02439110713497374
+  },
+  {
+    "id": 5,
+    "file": "ped_05_vendor_woman_50s.glb",
+    "description": "vendor_woman_50s",
+    "gender": "woman",
+    "age": 58,
+    "ageGroup": "middle-aged",
+    "bodyType": "heavy",
+    "heightMetres": 1.6,
+    "skinSource": "middleage_african_female",
+    "hair": "short03",
+    "hairColor": [
+      31,
+      26,
+      24
+    ],
+    "clothingSource": "female_casualsuit01",
+    "topColor": [
+      188,
+      136,
+      55
+    ],
+    "bottomColor": [
+      59,
+      55,
+      70
+    ],
+    "accessories": "apron",
+    "triangles": 10112,
+    "scale": 0.900352062328999,
+    "meshFloorCorrection": -0.009599293363984582
+  },
+  {
+    "id": 6,
+    "file": "ped_06_construction_man_50s.glb",
+    "description": "construction_man_50s",
+    "gender": "man",
+    "age": 55,
+    "ageGroup": "middle-aged",
+    "bodyType": "average",
+    "heightMetres": 1.76,
+    "skinSource": "middleage_caucasian_male",
+    "hair": "short01",
+    "hairColor": [
+      123,
+      121,
+      112
+    ],
+    "clothingSource": "male_worksuit01",
+    "topColor": [
+      116,
+      126,
+      123
+    ],
+    "bottomColor": [
+      84,
+      90,
+      80
+    ],
+    "accessories": "hardhat_vest",
+    "triangles": 13046,
+    "scale": 0.9639924856685924,
+    "meshFloorCorrection": -0.04288358572548628
+  },
+  {
+    "id": 7,
+    "file": "ped_07_retiree_woman_70s.glb",
+    "description": "retiree_woman_70s",
+    "gender": "woman",
+    "age": 71,
+    "ageGroup": "elderly",
+    "bodyType": "short",
+    "heightMetres": 1.56,
+    "skinSource": "old_caucasian_female",
+    "hair": "bob02",
+    "hairColor": [
+      179,
+      178,
+      164
+    ],
+    "clothingSource": "female_casualsuit01",
+    "topColor": [
+      151,
+      132,
+      159
+    ],
+    "bottomColor": [
+      191,
+      183,
+      157
+    ],
+    "accessories": "glasses_umbrella",
+    "triangles": 11546,
+    "scale": 0.884663318547292,
+    "meshFloorCorrection": 0.01081446939114214
+  },
+  {
+    "id": 8,
+    "file": "ped_08_retiree_man_70s.glb",
+    "description": "retiree_man_70s",
+    "gender": "man",
+    "age": 75,
+    "ageGroup": "elderly",
+    "bodyType": "slim",
+    "heightMetres": 1.69,
+    "skinSource": "old_african_male",
+    "hair": "short04",
+    "hairColor": [
+      157,
+      154,
+      142
+    ],
+    "clothingSource": "male_casualsuit06",
+    "topColor": [
+      86,
+      115,
+      85
+    ],
+    "bottomColor": [
+      171,
+      156,
+      121
+    ],
+    "accessories": "shopping_bag",
+    "triangles": 9344,
+    "scale": 0.9404019625545912,
+    "meshFloorCorrection": -0.033335836919126643
+  },
+  {
+    "id": 9,
+    "file": "ped_09_jogger_woman_20s.glb",
+    "description": "jogger_woman_20s",
+    "gender": "woman",
+    "age": 22,
+    "ageGroup": "young adult",
+    "bodyType": "tall",
+    "heightMetres": 1.81,
+    "skinSource": "young_african_female",
+    "hair": "ponytail01",
+    "hairColor": [
+      24,
+      20,
+      17
+    ],
+    "clothingSource": "female_sportsuit01",
+    "topColor": [
+      126,
+      45,
+      65
+    ],
+    "bottomColor": [
+      28,
+      32,
+      35
+    ],
+    "accessories": "sports_watch",
+    "triangles": 13224,
+    "scale": 1.0183602828147698,
+    "meshFloorCorrection": -0.011253657466239252
+  },
+  {
+    "id": 10,
+    "file": "ped_10_student_man_20s.glb",
+    "description": "student_man_20s",
+    "gender": "man",
+    "age": 23,
+    "ageGroup": "young adult",
+    "bodyType": "short",
+    "heightMetres": 1.62,
+    "skinSource": "young_asian_male",
+    "hair": "short02",
+    "hairColor": [
+      53,
+      37,
+      24
+    ],
+    "clothingSource": "male_casualsuit04",
+    "topColor": [
+      191,
+      185,
+      161
+    ],
+    "bottomColor": [
+      49,
+      79,
+      111
+    ],
+    "accessories": "backpack",
+    "triangles": 11087,
+    "scale": 0.9020147645472112,
+    "meshFloorCorrection": -0.023564759515750544
+  },
+  {
+    "id": 11,
+    "file": "ped_11_summer_dress_woman_30s.glb",
+    "description": "summer_dress_woman_30s",
+    "gender": "woman",
+    "age": 35,
+    "ageGroup": "adult",
+    "bodyType": "average",
+    "heightMetres": 1.72,
+    "skinSource": "young_caucasian_female",
+    "hair": "long01",
+    "hairColor": [
+      52,
+      30,
+      23
+    ],
+    "clothingSource": "female_casualsuit02",
+    "topColor": [
+      73,
+      118,
+      159
+    ],
+    "bottomColor": [
+      73,
+      118,
+      159
+    ],
+    "accessories": "summer_dress_handbag",
+    "triangles": 12584,
+    "scale": 0.9822669238952821,
+    "meshFloorCorrection": 0.007499826775212949
+  },
+  {
+    "id": 12,
+    "file": "ped_12_tourist_man_30s.glb",
+    "description": "tourist_man_30s",
+    "gender": "man",
+    "age": 38,
+    "ageGroup": "adult",
+    "bodyType": "heavy",
+    "heightMetres": 1.74,
+    "skinSource": "young_caucasian_male",
+    "hair": "short03",
+    "hairColor": [
+      80,
+      55,
+      36
+    ],
+    "clothingSource": "male_casualsuit04",
+    "topColor": [
+      201,
+      194,
+      162
+    ],
+    "bottomColor": [
+      172,
+      132,
+      75
+    ],
+    "accessories": "cap_camera",
+    "triangles": 9979,
+    "scale": 0.958139772318291,
+    "meshFloorCorrection": -0.029845342701074848
+  },
+  {
+    "id": 13,
+    "file": "ped_13_professional_woman_50s.glb",
+    "description": "professional_woman_50s",
+    "gender": "woman",
+    "age": 59,
+    "ageGroup": "middle-aged",
+    "bodyType": "tall",
+    "heightMetres": 1.8,
+    "skinSource": "middleage_asian_female",
+    "hair": "short01",
+    "hairColor": [
+      75,
+      68,
+      60
+    ],
+    "clothingSource": "female_casualsuit01",
+    "topColor": [
+      172,
+      87,
+      61
+    ],
+    "bottomColor": [
+      42,
+      44,
+      47
+    ],
+    "accessories": "phone",
+    "triangles": 11944,
+    "scale": 1.022824175489332,
+    "meshFloorCorrection": 0.010773797589445156
+  },
+  {
+    "id": 14,
+    "file": "ped_14_jeans_man_40s.glb",
+    "description": "jeans_man_40s",
+    "gender": "man",
+    "age": 41,
+    "ageGroup": "adult",
+    "bodyType": "average",
+    "heightMetres": 1.77,
+    "skinSource": "middleage_african_male",
+    "hair": "short02",
+    "hairColor": [
+      32,
+      24,
+      19
+    ],
+    "clothingSource": "male_casualsuit06",
+    "topColor": [
+      39,
+      54,
+      70
+    ],
+    "bottomColor": [
+      66,
+      97,
+      124
+    ],
+    "accessories": "watch",
+    "triangles": 11740,
+    "scale": 0.9741225963667515,
+    "meshFloorCorrection": -0.04351813808710297
+  },
+  {
+    "id": 15,
+    "file": "ped_15_retiree_woman_60s.glb",
+    "description": "retiree_woman_60s",
+    "gender": "woman",
+    "age": 68,
+    "ageGroup": "elderly",
+    "bodyType": "heavy",
+    "heightMetres": 1.63,
+    "skinSource": "old_caucasian_female",
+    "hair": "bob01",
+    "hairColor": [
+      182,
+      179,
+      166
+    ],
+    "clothingSource": "female_elegantsuit01",
+    "topColor": [
+      96,
+      119,
+      103
+    ],
+    "bottomColor": [
+      113,
+      56,
+      69
+    ],
+    "accessories": "glasses_handbag",
+    "triangles": 14255,
+    "scale": 0.9203325959830264,
+    "meshFloorCorrection": 0.011235750249808885
+  },
+  {
+    "id": 16,
+    "file": "ped_16_gaucho_man_70s.glb",
+    "description": "gaucho_man_70s",
+    "gender": "man",
+    "age": 72,
+    "ageGroup": "elderly",
+    "bodyType": "tall",
+    "heightMetres": 1.88,
+    "skinSource": "old_caucasian_male",
+    "hair": "short04",
+    "hairColor": [
+      143,
+      139,
+      128
+    ],
+    "clothingSource": "male_casualsuit01",
+    "topColor": [
+      110,
+      91,
+      67
+    ],
+    "bottomColor": [
+      65,
+      59,
+      50
+    ],
+    "accessories": "poncho_hat_moustache",
+    "triangles": 11268,
+    "scale": 1.025207300243323,
+    "meshFloorCorrection": -0.051684121073281755
+  }
+]

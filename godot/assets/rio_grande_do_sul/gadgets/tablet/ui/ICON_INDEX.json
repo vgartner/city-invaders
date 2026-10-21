@@ -1,0 +1,158 @@
+{
+  "apps": [
+    {
+      "id": "gps",
+      "label": "GPS"
+    },
+    {
+      "id": "radio",
+      "label": "Rádio"
+    },
+    {
+      "id": "bah",
+      "label": "Bah"
+    },
+    {
+      "id": "camera",
+      "label": "Câmera"
+    },
+    {
+      "id": "rastreador",
+      "label": "Rastreador"
+    },
+    {
+      "id": "pecas",
+      "label": "Peças"
+    },
+    {
+      "id": "mensagens_defesa_civil",
+      "label": "Mensagens"
+    },
+    {
+      "id": "configuracoes",
+      "label": "Configurações"
+    }
+  ],
+  "map": [
+    {
+      "id": "assistencia_tecnica",
+      "label": "Assistência técnica",
+      "added_to_complete_24": false
+    },
+    {
+      "id": "farmacia",
+      "label": "Farmácia",
+      "added_to_complete_24": false
+    },
+    {
+      "id": "posto_gasolina",
+      "label": "Posto de gasolina",
+      "added_to_complete_24": false
+    },
+    {
+      "id": "restaurante",
+      "label": "Restaurante",
+      "added_to_complete_24": false
+    },
+    {
+      "id": "mercado",
+      "label": "Mercado",
+      "added_to_complete_24": false
+    },
+    {
+      "id": "torre_comunicacao",
+      "label": "Torre de comunicação",
+      "added_to_complete_24": false
+    },
+    {
+      "id": "container_pessoas",
+      "label": "Contêiner de pessoas",
+      "added_to_complete_24": false
+    },
+    {
+      "id": "robo",
+      "label": "Robô",
+      "added_to_complete_24": false
+    },
+    {
+      "id": "mech",
+      "label": "Mech",
+      "added_to_complete_24": false
+    },
+    {
+      "id": "drone",
+      "label": "Drone",
+      "added_to_complete_24": false
+    },
+    {
+      "id": "enxame",
+      "label": "Enxame",
+      "added_to_complete_24": false
+    },
+    {
+      "id": "coletor",
+      "label": "Coletor",
+      "added_to_complete_24": false
+    },
+    {
+      "id": "civil",
+      "label": "Civil",
+      "added_to_complete_24": false
+    },
+    {
+      "id": "saida_fase",
+      "label": "Saída da fase",
+      "added_to_complete_24": false
+    },
+    {
+      "id": "voce_aqui",
+      "label": "Você está aqui",
+      "added_to_complete_24": false
+    },
+    {
+      "id": "hospital",
+      "label": "Hospital",
+      "added_to_complete_24": true
+    },
+    {
+      "id": "municao",
+      "label": "Munição",
+      "added_to_complete_24": true
+    },
+    {
+      "id": "abrigo",
+      "label": "Abrigo",
+      "added_to_complete_24": true
+    },
+    {
+      "id": "ponto_onibus",
+      "label": "Ponto de ônibus",
+      "added_to_complete_24": true
+    },
+    {
+      "id": "agua",
+      "label": "Água",
+      "added_to_complete_24": true
+    },
+    {
+      "id": "cavalo",
+      "label": "Cavalo",
+      "added_to_complete_24": true
+    },
+    {
+      "id": "perigo",
+      "label": "Perigo",
+      "added_to_complete_24": true
+    },
+    {
+      "id": "objetivo",
+      "label": "Objetivo",
+      "added_to_complete_24": true
+    },
+    {
+      "id": "ponto_encontro",
+      "label": "Ponto de encontro",
+      "added_to_complete_24": true
+    }
+  ]
+}

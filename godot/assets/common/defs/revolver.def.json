@@ -1,0 +1,7 @@
+{
+ "id": "revolver",
+ "type": "Weapon",
+ "name": ".38 Revolver",
+ "model": "res://assets/common/weapons/revolver/revolver_38_pickup.glb",
+ "stand": true
+}

@@ -1,0 +1,8 @@
+CC0 1.0 UNIVERSAL — PUBLIC DOMAIN DEDICATION
+
+To the extent possible under law, the creator dedicates the original 3D geometry, procedural textures, original decorative compositions and integration scripts in this package to the public domain under CC0 1.0.
+You may copy, modify, distribute and use them, including commercially and in open-source games, without asking permission. No warranty is provided.
+Full legal code: https://creativecommons.org/publicdomain/zero/1.0/legalcode
+
+Historical landmarks are depicted as original game recreations. Reference photographs and museum collections were observed only; they are not distributed or licensed by this dedication. No third-party scans, branded graphics or copied artworks are included.
+Blender, Godot and Khronos Validator are separate software with their own licenses; their binaries are not distributed in this asset package.

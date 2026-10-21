@@ -1,0 +1,89 @@
+{
+  "title": "Fonte Talavera de la Reina",
+  "size_m": [
+    9.6,
+    5.2,
+    9.6
+  ],
+  "entry": [
+    0,
+    0,
+    -5
+  ],
+  "interior_scope": "independent fountain; water is an opaque reflective mesh; geometric ceramic ornament is original, not a replica of the painted tile panels",
+  "references": [
+    "https://prefeitura.poa.br/gp/noticias/cidade-recebe-fonte-talavera-revitalizada-por-parceiros-privados"
+  ],
+  "parts": {
+    "exterior": {
+      "file": "glb/fonte_talavera_exterior.glb",
+      "triangles": 5496,
+      "bounds": {
+        "min": [
+          -4.800000190734863,
+          0.0,
+          -4.800000190734863
+        ],
+        "max": [
+          4.800000190734863,
+          5.019999980926514,
+          4.800000190734863
+        ]
+      },
+      "collisions": [],
+      "markers": {
+        "water_emitter": [
+          0.0,
+          5.0,
+          0.0
+        ],
+        "lamp_1": [
+          0.0,
+          0.4000000059604645,
+          -4.5
+        ]
+      }
+    },
+    "lod1": {
+      "file": "glb/fonte_talavera_lod1.glb",
+      "triangles": 184,
+      "bounds": {
+        "min": [
+          -4.800000190734863,
+          0.0,
+          -4.800000190734863
+        ],
+        "max": [
+          4.800000190734863,
+          4.699999809265137,
+          4.800000190734863
+        ]
+      },
+      "collisions": [],
+      "markers": {}
+    },
+    "lod2": {
+      "file": "glb/fonte_talavera_lod2.glb",
+      "triangles": 56,
+      "bounds": {
+        "min": [
+          -4.800000190734863,
+          0.0,
+          -4.800000190734863
+        ],
+        "max": [
+          4.800000190734863,
+          4.099999904632568,
+          4.800000190734863
+        ]
+      },
+      "collisions": [],
+      "markers": {}
+    }
+  },
+  "license": "CC0-1.0",
+  "dimensions_are": "photographic approximations; not survey or OSM registered",
+  "front": "-Z",
+  "up": "+Y",
+  "metres": true
+}

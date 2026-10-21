@@ -1,0 +1,16 @@
+CC0 1.0 Universal — Public Domain Dedication
+
+Base: “fps arms (rigged only)”, por para, OpenGameArt (2015).
+Malha e textura: MakeHuman; limpeza, UVs, textura rebakeada e rig: para.
+Fonte verificada: https://opengameart.org/content/fps-arms-rigged-only
+Licença indicada na publicação original: CC0.
+
+As alterações de pose, animação e acabamento deste pacote são igualmente
+oferecidas sob CC0 1.0. Na extensão permitida por lei, todos os direitos
+sobre essas contribuições são renunciados, sem garantia de qualquer tipo.
+
+Licença completa e termos oficiais:
+https://creativecommons.org/publicdomain/zero/1.0/legalcode
+
+Crédito sugerido: para / OpenGameArt e equipe MakeHuman (base CC0).
+Nenhuma mão nova, scan ou imagem gerada por IA foi usada.

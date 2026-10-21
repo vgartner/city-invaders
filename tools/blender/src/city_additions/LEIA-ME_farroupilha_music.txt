@@ -1,0 +1,49 @@
+CITY INVADERS — VIOLONISTA E PALCO FARROUPILHA
+Entrega: 2026-10-17
+
+ARQUIVOS PARA O JOGO
+- glb/violonista_gaucho.glb: personagem de 35 anos, 1,76 m em pé, camisa escura, lenço branco, chapéu campeiro, guaiaca, bombacha e botas. Personagem/acessórios: 13.416 triângulos; violão: 4.940; banquinho: 792. Total: 19.148.
+- glb/palco_farroupilha_8x5.glb: 24.408 triângulos. Tablado 8 × 5 m, topo Y=0,9 m; quatro degraus de 22,5 cm, cobertura de lona em duas águas e quatro postes de eucalipto. Dimensões 8 × 5 referem-se ao tablado; telhado e escada estendem o footprint.
+- glb/fardo_feno.glb: 500 triângulos, aproximadamente 0,94 × 0,42 × 0,46 m, origem no chão ao centro. Peça modular para bancos da plateia.
+
+FONTES E PRÉVIAS
+.blend correspondente a cada GLB; mais dupla_musicos.blend e palco_com_musicos.blend, com os dois músicos já posicionados e o gaiteiro anterior incorporado às cenas. Imagens empacotadas, sem dependências externas. Blender 5.2; cenas em +Z para cima, coordenadas nativas do Blender. Os GLBs usam +Y para cima, frente −Z, metros. As cenas-fonte não contêm luzes, câmeras nem chão de apresentação.
+Prévias: dupla sentada, violonista sentado/em pé/close das mãos, palco de frente/três-quartos/noite/com os músicos e fardo. O GIF de 8 s mostra a animação real do dedilhado, amostrada em 64 imagens (a animação no GLB é de 30 fps). Não há áudio.
+
+VIOLÃO E RIG
+Violão clássico genérico de seis cordas, corpo com abertura real da boca, roseta, cavalete, pestana, trastes, braço e cabeçote vazado com tarraxas. Objeto separado guitar. GuitarNeck é um controle próprio ligado ao tórax; o violão acompanha o corpo e as mãos usam alvos de IK assados nos clipes. Não há restrições dinâmicas dependentes do Blender no GLB.
+52 ossos mixamorig canônicos: mesmos nomes, hierarquia e origens de repouso dos pedestres e do gaiteiro. Mais GuitarNeck, total 53. StrumHand é opcional na especificação e não é necessário: o dedilhado usa RightHand e os ossos dos dedos. A mão esquerda muda as posições dos dedos e desliza levemente entre acordes; a direita alterna flexão/proximidade das cordas. A coreografia é procedural, não uma transcrição de uma música ou simulação física das cordas.
+Banquinho stool separado e idêntico ao do gaiteiro. Permanece no local nas animações de levantar/fugir. Ao mover o ator inteiro pelo jogo, desprenda ou substitua o banco por uma instância estática; mover a raiz do GLB também moveria o objeto do banco.
+
+CLIPES — 30 FPS, SEM DESLOCAMENTO ACUMULADO DA RAIZ
+play_seated: 8 s, loop.
+play_standing: 8 s, loop.
+idle_seated: 3,2 s, loop.
+stand_up: 1,2 s, uma vez; inclui transferência local do corpo para a posição de pé.
+flee_with_guitar: 0,8 s, loop, velocidade nominal do ator 3,2 m/s.
+Loop registrado em animation.extras.loop. Confira o loop na importação do Godot, pois o importador pode não aplicar extras automaticamente. Faça o jogo controlar o deslocamento horizontal. Ao trocar do sentado para o em pé, mantenha a referência da cena/banco ou compense o deslocamento local do corpo conforme a transição desejada.
+Contato dos pés em flee conferido numericamente nos quadros de 30 fps, em solo plano e com deslocamento do ator a 3,2 m/s. A interpolação, outras velocidades, terreno inclinado e misturas precisam de ajuste/IK no jogo.
+
+PALCO — NÓS E MARCADORES
+performer_1 = (−1,15; 0,9; 0,25) m: gaiteiro na cena de exemplo.
+performer_2 = (+1,15; 0,9; 0,25) m: violonista na cena de exemplo.
+performer_3 = (0; 0,9; −1,05) m: terceiro músico.
+Todos têm rotação identidade e frente −Z para a plateia. Instancie o personagem no transform do marcador, sem somar 0,9 m novamente. Os pés e o banco usam a própria origem do personagem como referência do chão.
+12 malhas emissivas bulb_1..bulb_12; spot_l e spot_r são as lentes emissivas dos refletores. Suportes, cabos e soquetes em geometria própria. Duas caixas de som de madeira compõem o palco, no chão à frente. Fundo de pano em moldura com laço e esporas pintados, sem textos ou logos.
+Duas malhas chamadas flag, uma sob flag_mount_l e outra sob flag_mount_r. Importe/pesquise pelo pai se o motor acrescentar sufixos aos nomes duplicados. Panos separados para animação de vento pelo jogo; sem clipes de vento embutidos.
+A prévia noturna usa luzes de apresentação nas posições das lâmpadas e refletores. Essas luzes não estão nos GLBs ou fontes limpas; só as superfícies emissivas. Configure luzes reais no Godot se quiser que iluminem o cenário. O terceiro marcador fica livre na cena com a dupla.
+
+COLISÕES SUGERIDAS
+Tablado: BoxShape3D tamanho (8; 0,9; 5), centro (0; 0,45; 0).
+Escada: quatro caixas, alturas 0,225 / 0,45 / 0,675 / 0,9 m; largura em X 0,4 m e comprimento em Z 1,2 m. Centros X 5,39 / 4,99 / 4,59 / 4,19; Y metade da altura; Z=−1,25.
+Postes: quatro cilindros, raio 0,105 m e altura 3,64 m, centros (±3,8; 1,82; ±2,3).
+Fardo: caixa (0,94; 0,42; 0,46), centro aproximado (0; 0,21; 0).
+Valores estruturados em COLLISIONS.json. Nenhuma colisão específica do motor está incorporada no GLB.
+
+TEXTURAS, VALIDAÇÃO E LIMITES
+Mapas PBR 2048 × 2048 embutidos: basecolor, normal tangente OpenGL +Y e metallic_roughness com G=roughness e B=metallic. Violonista usa um atlas humano e outro para pilcha/acessórios/instrumento; palco e fardo usam o atlas regional. Sem animações nos objetos estáticos, sem luzes ou câmeras.
+Os três GLBs passaram no Khronos Validator com zero erros e avisos. Auditoria adicional: geometria finita, normais, UVs, pesos, orçamento, nomes e repouso do rig, 30 fps, duração e fechamento dos loops. Relatórios em validation/. CRC e hashes acompanham o pacote.
+Sem teste de execução/importação no Godot; a validação é dos arquivos e da importação no Blender. Há simplificações visuais em anatomia, dedos, roupa e texturas; não é uma reprodução fotorrealista ou escaneada. As prévias mostram a geometria realmente entregue.
+
+LICENÇA
+Geometria/animação/texturas originais CC0; base humana MakeHuman CC0. A imagem da bandeira é CC BY 2.5 e exige atribuição. Leia LICENSES.txt antes de redistribuir.

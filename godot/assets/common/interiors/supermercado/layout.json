@@ -1,0 +1,1006 @@
+{
+  "format": "City Invaders layout v1",
+  "units": "metres",
+  "up": "+Y",
+  "front": "-Z",
+  "rotation_convention": "Euler XYZ degrees, apply Y yaw; positive clockwise looking down +Y",
+  "room_dimensions_m": [
+    12,
+    3.2,
+    12
+  ],
+  "module_grid_m": 4,
+  "instances": [
+    {
+      "id": "mod_piso_4x4_1",
+      "model": "../shared/glb/mod_piso_4x4.glb",
+      "position": [
+        -4,
+        0,
+        -4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_forro_4x4_2",
+      "model": "../shared/glb/mod_forro_4x4.glb",
+      "position": [
+        -4,
+        0,
+        -4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "ceiling"
+    },
+    {
+      "id": "mod_piso_4x4_3",
+      "model": "../shared/glb/mod_piso_4x4.glb",
+      "position": [
+        -4,
+        0,
+        0.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_forro_4x4_4",
+      "model": "../shared/glb/mod_forro_4x4.glb",
+      "position": [
+        -4,
+        0,
+        0.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "ceiling"
+    },
+    {
+      "id": "mod_piso_4x4_5",
+      "model": "../shared/glb/mod_piso_4x4.glb",
+      "position": [
+        -4,
+        0,
+        4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_forro_4x4_6",
+      "model": "../shared/glb/mod_forro_4x4.glb",
+      "position": [
+        -4,
+        0,
+        4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "ceiling"
+    },
+    {
+      "id": "mod_piso_4x4_7",
+      "model": "../shared/glb/mod_piso_4x4.glb",
+      "position": [
+        0,
+        0,
+        -4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_forro_4x4_8",
+      "model": "../shared/glb/mod_forro_4x4.glb",
+      "position": [
+        0,
+        0,
+        -4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "ceiling"
+    },
+    {
+      "id": "mod_piso_4x4_9",
+      "model": "../shared/glb/mod_piso_4x4.glb",
+      "position": [
+        0,
+        0,
+        0.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_forro_4x4_10",
+      "model": "../shared/glb/mod_forro_4x4.glb",
+      "position": [
+        0,
+        0,
+        0.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "ceiling"
+    },
+    {
+      "id": "mod_piso_4x4_11",
+      "model": "../shared/glb/mod_piso_4x4.glb",
+      "position": [
+        0,
+        0,
+        4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_forro_4x4_12",
+      "model": "../shared/glb/mod_forro_4x4.glb",
+      "position": [
+        0,
+        0,
+        4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "ceiling"
+    },
+    {
+      "id": "mod_piso_4x4_13",
+      "model": "../shared/glb/mod_piso_4x4.glb",
+      "position": [
+        4,
+        0,
+        -4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_forro_4x4_14",
+      "model": "../shared/glb/mod_forro_4x4.glb",
+      "position": [
+        4,
+        0,
+        -4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "ceiling"
+    },
+    {
+      "id": "mod_piso_4x4_15",
+      "model": "../shared/glb/mod_piso_4x4.glb",
+      "position": [
+        4,
+        0,
+        0.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_forro_4x4_16",
+      "model": "../shared/glb/mod_forro_4x4.glb",
+      "position": [
+        4,
+        0,
+        0.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "ceiling"
+    },
+    {
+      "id": "mod_piso_4x4_17",
+      "model": "../shared/glb/mod_piso_4x4.glb",
+      "position": [
+        4,
+        0,
+        4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_forro_4x4_18",
+      "model": "../shared/glb/mod_forro_4x4.glb",
+      "position": [
+        4,
+        0,
+        4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "ceiling"
+    },
+    {
+      "id": "mod_parede_4m_19",
+      "model": "../shared/glb/mod_parede_4m.glb",
+      "position": [
+        -4,
+        0,
+        6.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_fachada_vitrine_4m_20",
+      "model": "../shared/glb/mod_fachada_vitrine_4m.glb",
+      "position": [
+        -4,
+        0,
+        -6.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_parede_4m_21",
+      "model": "../shared/glb/mod_parede_4m.glb",
+      "position": [
+        0,
+        0,
+        6.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_fachada_porta_vitrine_4m_22",
+      "model": "../shared/glb/mod_fachada_porta_vitrine_4m.glb",
+      "position": [
+        0,
+        0,
+        -6.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_parede_4m_23",
+      "model": "../shared/glb/mod_parede_4m.glb",
+      "position": [
+        4,
+        0,
+        6.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_fachada_vitrine_4m_24",
+      "model": "../shared/glb/mod_fachada_vitrine_4m.glb",
+      "position": [
+        4,
+        0,
+        -6.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_parede_4m_25",
+      "model": "../shared/glb/mod_parede_4m.glb",
+      "position": [
+        -6,
+        0,
+        -4.0
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_parede_4m_26",
+      "model": "../shared/glb/mod_parede_4m.glb",
+      "position": [
+        6,
+        0,
+        -4.0
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_parede_4m_27",
+      "model": "../shared/glb/mod_parede_4m.glb",
+      "position": [
+        -6,
+        0,
+        0.0
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_parede_4m_28",
+      "model": "../shared/glb/mod_parede_4m.glb",
+      "position": [
+        6,
+        0,
+        0.0
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_parede_4m_29",
+      "model": "../shared/glb/mod_parede_4m.glb",
+      "position": [
+        -6,
+        0,
+        4.0
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_parede_4m_30",
+      "model": "../shared/glb/mod_parede_4m.glb",
+      "position": [
+        6,
+        0,
+        4.0
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "caixa_esteira_31",
+      "model": "../supermercado/glb/caixa_esteira.glb",
+      "position": [
+        -3.0,
+        0,
+        -3.7
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "gondola_2m_32",
+      "model": "../supermercado/glb/gondola_2m.glb",
+      "position": [
+        -3.4,
+        0,
+        0.1
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "gondola_2m_33",
+      "model": "../supermercado/glb/gondola_2m.glb",
+      "position": [
+        -3.4,
+        0,
+        2.8
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "gondola_2m_34",
+      "model": "../supermercado/glb/gondola_2m.glb",
+      "position": [
+        0,
+        0,
+        0.1
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "gondola_2m_35",
+      "model": "../supermercado/glb/gondola_2m.glb",
+      "position": [
+        0,
+        0,
+        2.8
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "gondola_2m_36",
+      "model": "../supermercado/glb/gondola_2m.glb",
+      "position": [
+        3.4,
+        0,
+        0.1
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "gondola_2m_37",
+      "model": "../supermercado/glb/gondola_2m.glb",
+      "position": [
+        3.4,
+        0,
+        2.8
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "geladeira_vertical_38",
+      "model": "../supermercado/glb/geladeira_vertical.glb",
+      "position": [
+        -4.6,
+        0,
+        5.6
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "geladeira_vertical_39",
+      "model": "../supermercado/glb/geladeira_vertical.glb",
+      "position": [
+        -3.3,
+        0,
+        5.6
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "geladeira_vertical_40",
+      "model": "../supermercado/glb/geladeira_vertical.glb",
+      "position": [
+        -2.0,
+        0,
+        5.6
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "geladeira_vertical_41",
+      "model": "../supermercado/glb/geladeira_vertical.glb",
+      "position": [
+        2.0,
+        0,
+        5.6
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "geladeira_vertical_42",
+      "model": "../supermercado/glb/geladeira_vertical.glb",
+      "position": [
+        3.3,
+        0,
+        5.6
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "geladeira_vertical_43",
+      "model": "../supermercado/glb/geladeira_vertical.glb",
+      "position": [
+        4.6,
+        0,
+        5.6
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "freezer_horizontal_44",
+      "model": "../supermercado/glb/freezer_horizontal.glb",
+      "position": [
+        4.5,
+        0,
+        -2.5
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "banca_frutas_vazia_45",
+      "model": "../supermercado/glb/banca_frutas_vazia.glb",
+      "position": [
+        2.4,
+        0,
+        -3.8
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "carrinho_compras_46",
+      "model": "../supermercado/glb/carrinho_compras.glb",
+      "position": [
+        -4.8,
+        0,
+        -4.8
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "cesta_compras_47",
+      "model": "../supermercado/glb/cesta_compras.glb",
+      "position": [
+        -4.1,
+        0,
+        -4.8
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "tapete_entrada_48",
+      "model": "../extras/glb/tapete_entrada.glb",
+      "position": [
+        -0.9,
+        0.004,
+        -5.15
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "extintor_parede_49",
+      "model": "../extras/glb/extintor_parede.glb",
+      "position": [
+        5.86,
+        0.85,
+        -4.2
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "kit_tomadas_conduite_50",
+      "model": "../extras/glb/kit_tomadas_conduite.glb",
+      "position": [
+        5.86,
+        0.32,
+        0
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "ar_condicionado_split_51",
+      "model": "../extras/glb/ar_condicionado_split.glb",
+      "position": [
+        0,
+        2.55,
+        5.82
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "quadro_avisos_52",
+      "model": "../extras/glb/quadro_avisos.glb",
+      "position": [
+        -5.86,
+        1.15,
+        -1.8
+      ],
+      "rotation_degrees": [
+        0,
+        -90,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "lixeira_pedal_53",
+      "model": "../extras/glb/lixeira_pedal.glb",
+      "position": [
+        4.95,
+        0,
+        -4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "planta_vaso_54",
+      "model": "../extras/glb/planta_vaso.glb",
+      "position": [
+        -5.35,
+        0,
+        1.1
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    }
+  ],
+  "markers": {
+    "door": {
+      "position": [
+        -0.9,
+        0,
+        -6.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    "cashier_spot": {
+      "position": [
+        -3,
+        0,
+        -3.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    "customer_spots": [
+      {
+        "name": "customer_1",
+        "position": [
+          -0.9,
+          0,
+          -4.8
+        ],
+        "rotation_degrees": [
+          0,
+          180,
+          0
+        ]
+      },
+      {
+        "name": "customer_2",
+        "position": [
+          -0.9,
+          0,
+          -4.0
+        ],
+        "rotation_degrees": [
+          0,
+          180,
+          0
+        ]
+      },
+      {
+        "name": "customer_3",
+        "position": [
+          1.0,
+          0,
+          0
+        ],
+        "rotation_degrees": [
+          0,
+          180,
+          0
+        ]
+      }
+    ],
+    "pickup_spots": [
+      {
+        "name": "pickup_1",
+        "position": [
+          -3,
+          0.99,
+          -3.7
+        ]
+      },
+      {
+        "name": "pickup_2",
+        "position": [
+          2.4,
+          0.82,
+          -3.8
+        ]
+      },
+      {
+        "name": "pickup_3",
+        "position": [
+          -4.1,
+          0.15,
+          -4.8
+        ]
+      }
+    ],
+    "lights": [
+      {
+        "name": "light_1",
+        "position": [
+          -4,
+          3.18,
+          -4.0
+        ],
+        "emissive_mesh": "light_surface"
+      },
+      {
+        "name": "light_2",
+        "position": [
+          -4,
+          3.18,
+          0.0
+        ],
+        "emissive_mesh": "light_surface"
+      },
+      {
+        "name": "light_3",
+        "position": [
+          -4,
+          3.18,
+          4.0
+        ],
+        "emissive_mesh": "light_surface"
+      },
+      {
+        "name": "light_4",
+        "position": [
+          0,
+          3.18,
+          -4.0
+        ],
+        "emissive_mesh": "light_surface"
+      },
+      {
+        "name": "light_5",
+        "position": [
+          0,
+          3.18,
+          0.0
+        ],
+        "emissive_mesh": "light_surface"
+      },
+      {
+        "name": "light_6",
+        "position": [
+          0,
+          3.18,
+          4.0
+        ],
+        "emissive_mesh": "light_surface"
+      },
+      {
+        "name": "light_7",
+        "position": [
+          4,
+          3.18,
+          -4.0
+        ],
+        "emissive_mesh": "light_surface"
+      },
+      {
+        "name": "light_8",
+        "position": [
+          4,
+          3.18,
+          0.0
+        ],
+        "emissive_mesh": "light_surface"
+      },
+      {
+        "name": "light_9",
+        "position": [
+          4,
+          3.18,
+          4.0
+        ],
+        "emissive_mesh": "light_surface"
+      }
+    ]
+  },
+  "notes": [
+    "All GLB paths relative to this layout.json folder.",
+    "Ceilings can be hidden for overview; present in complete room.",
+    "Emissive surfaces require runtime lights to illuminate the scene."
+  ]
+}

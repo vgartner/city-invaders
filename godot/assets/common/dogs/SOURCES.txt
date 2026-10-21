@@ -1,0 +1,1 @@
+Original canine meshes, procedurally painted coat atlases, fur cards, quadruped rig and baked motions created for this delivery. No third-party visual assets are embedded. Numerical and mesh-processing tools were used during authoring only.

@@ -1,0 +1,13 @@
+{
+ "id": "skater",
+ "type": "Skater",
+ "name": "Skateboarder",
+ "models": [
+  "res://assets/common/skaters"
+ ],
+ "also_at": [
+  "skatepark"
+ ],
+ "per_place": 4,
+ "roam": 9
+}

@@ -1,0 +1,8 @@
+{
+ "healing_big": "medkit",
+ "healing_small": "medkit",
+ "medicine": "medkit",
+ "booster": "medkit",
+ "armour": "",
+ "ammo": "ammo"
+}

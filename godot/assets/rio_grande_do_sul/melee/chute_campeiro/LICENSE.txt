@@ -1,0 +1,4 @@
+Geometria, rig, animações, tecidos e adaptações originais deste pacote: CC0 1.0 Universal, até onde os direitos do autor permitam. Livre para uso, modificação e redistribuição em jogo comercial ou de código aberto. Sem garantia.
+https://creativecommons.org/publicdomain/zero/1.0/legalcode
+
+A fonte de cor do couro é reaproveitada da imagem gerada pela ferramenta integrada imagegen para o tablet de campo, editada neste atlas. Normal e roughness estimadas. Prompt e fonte em references/. A dedicação CC0 cobre os direitos que o autor possa conceder; não há garantia de exclusividade sobre imagens geradas. Sem marcas ou logotipos.

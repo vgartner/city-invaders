@@ -1,0 +1,35 @@
+MUSICIAN
+
+Gaiteiro de cerca de 55 anos, com os 52 ossos mixamorig do esqueleto canônico dos pedestres (nomes, hierarquia e repouso conferidos), mais Bellows, KeysR e BassL. Pilcha, guaiaca, lenço, chapéu, botas, gaita piano e banquinho. Componentes separados; a seção de fole abre por escala X e os corpos laterais acompanham o movimento.
+
+play_seated e play_standing: loops de 8 s; idle_seated: pausa; stand_up: 1,2 s; flee_with_accordion: loop, velocidade nominal 3,2 m/s. O GIF mostra o ciclo de 8 s do fole. O banquinho é um objeto próprio: mantenha-o no local ao fugir, e não aplique oscilação de personagem ao objeto do banco. Sem áudio. A base anatômica/roupas/pele é MakeHuman CC0; instrumentos, acessórios e animações são originais.
+
+ARQUIVOS
+
+gaiteiro_gaucho.glb: 23.021 triângulos; 55 ossos; 2 materiais.
+  play_seated: 8 s, 30 fps, loop
+  play_standing: 8 s, 30 fps, loop
+  idle_seated: 3.2 s, 30 fps, loop
+  stand_up: 1.2 s, 30 fps, uma vez
+  flee_with_accordion: 0.8 s, 30 fps, loop
+
+CITY INVADERS — ADIÇÕES REGIONAIS / 2026-10-17
+
+CONTEÚDO E USO
+GLB 2.0, metros, +Y para cima e frente −Z. Fontes .blend em coordenadas nativas do Blender (+Z para cima), com imagens incorporadas. GLBs têm mapas PBR incorporados 2048 × 2048: basecolor, normal tangente OpenGL +Y e metallic_roughness (G=roughness; B=metallic). Alguns objetos usam mais de um conjunto/material, conforme os componentes. Sem luzes/câmeras/planos de apresentação nos modelos; o piso dos módulos de deck é parte do próprio objeto.
+
+Animações amostradas a 30 fps; loops identificados em animation.extras.loop. No Godot, confira a opção de loop após importar, pois extras não são garantidos como configuração do AnimationPlayer. Sem deslocamento horizontal acumulado do nó raiz: o jogo controla movimento. Clips de decolagem/pouso e movimentos de reação incluem deslocamentos locais dos componentes.
+
+VALIDAÇÃO
+35 GLBs conferidos: Khronos Validator com zero erros e zero avisos. Auditoria de geometria/texturas/pesos/normais/orçamentos/tempos e fechamento dos loops em GEOMETRY_ANIMATION_AUDIT.json; fontes em BLENDER_SOURCE_AUDIT.json. Relatórios individuais nas pastas validation/. Texturas realmente embutidas, pesos normalizados e sem triângulos degenerados detectados.
+
+Contato dos pés: verificações numéricas nos quadros de 30 fps e velocidades nominais em solo plano. Entre quadros, a interpolação introduz desvios de até aproximadamente 5,9 mm nos casos medidos. Consulte CONTACT_VALIDATION.json e SUBFRAME_CONTACT_CHECK.json. Inclinações, mudanças de velocidade e misturas de clipes precisam de ajuste/IK no jogo.
+
+LIMITES VISUAIS E DE INTEGRAÇÃO
+As prévias são renders dos arquivos entregues. Há simplificações visíveis em anatomia, mãos, penas/pelagem e acabamento; este lote não é fotorrealista e não deve ser interpretado como equivalente a escaneamento ou escultura manual de alta resolução. O fole, as juntas e os clipes existem, mas a qualidade artística de poses e deformações exige avaliação no enquadramento final. Godot não estava instalado para teste de importação/execução; a validação feita é dos arquivos, não um teste dentro do motor. Colisão, física, gameplay, navegação e efeitos são configurados no projeto.
+
+LICENÇAS
+Geometria/animações originais CC0; bases MakeHuman CC0. A imagem da bandeira é CC BY 2.5 e exige crédito. Leia LICENSES.txt e LICENSE-MakeHuman-Assets.txt.
+
+ORGANIZAÇÃO
+Cada pasta traz glb/, blend/, textures/, previews/, validation/, LEIA-ME.txt e CONTACT_SHEET.jpg. CATALOGO.html reúne os arquivos; os GIFs solicitados estão em corn/previews/ e musician/previews/. Todos os GLBs possuem .blend correspondente. Não é necessária conexão de conta para abrir estes arquivos.

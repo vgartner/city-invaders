@@ -1,0 +1,43 @@
+URB
+
+URB-C4 Coletor (~2,4 m): placas rígidas presas a ossos próprios para desmontagem, metal cinza-azulado e emissivos vermelhos. idle, walk, run e carry_run são loops; grab 1,5 s, hit e die são únicos. Walk nominal 1 m/s; run/carry_run 2,8 m/s. Die abre a cápsula e separa as placas. capsule_door é um osso; capsule_slot é o marcador de fixação do civil. A cápsula comporta uma pessoa encolhida: use pose cower/capturada e faça o jogo anexar/remover o NPC durante grab. Nenhum civil é duplicado dentro do GLB.
+
+URB-S2 Enxame (~0,5 m): rotor_1..4 no Y local, olho vermelho e carga inferior. hover em loop; dive 0,6 s, stunned e explode_windup 0,4 s são únicos. Dive inclina/desce localmente; o jogo aplica o avanço ao alvo e o efeito de explosão. As variações emissivas não incluem luzes reais.
+
+ARQUIVOS
+
+urb_c4_coletor.glb: 19.228 triângulos; 58 ossos; 3 materiais.
+  idle: 3.2 s, 30 fps, loop
+  walk: 1.2 s, 30 fps, loop
+  run: 0.8 s, 30 fps, loop
+  grab: 1.5 s, 30 fps, uma vez
+  carry_run: 0.8 s, 30 fps, loop
+  hit: 0.4 s, 30 fps, uma vez
+  die: 1.8 s, 30 fps, uma vez
+
+urb_s2_enxame.glb: 2.188 triângulos; 0 ossos; 2 materiais.
+  hover: 2 s, 30 fps, loop
+  dive: 0.6 s, 30 fps, uma vez
+  stunned: 1 s, 30 fps, uma vez
+  explode_windup: 0.4 s, 30 fps, uma vez
+
+CITY INVADERS — ADIÇÕES REGIONAIS / 2026-10-17
+
+CONTEÚDO E USO
+GLB 2.0, metros, +Y para cima e frente −Z. Fontes .blend em coordenadas nativas do Blender (+Z para cima), com imagens incorporadas. GLBs têm mapas PBR incorporados 2048 × 2048: basecolor, normal tangente OpenGL +Y e metallic_roughness (G=roughness; B=metallic). Alguns objetos usam mais de um conjunto/material, conforme os componentes. Sem luzes/câmeras/planos de apresentação nos modelos; o piso dos módulos de deck é parte do próprio objeto.
+
+Animações amostradas a 30 fps; loops identificados em animation.extras.loop. No Godot, confira a opção de loop após importar, pois extras não são garantidos como configuração do AnimationPlayer. Sem deslocamento horizontal acumulado do nó raiz: o jogo controla movimento. Clips de decolagem/pouso e movimentos de reação incluem deslocamentos locais dos componentes.
+
+VALIDAÇÃO
+35 GLBs conferidos: Khronos Validator com zero erros e zero avisos. Auditoria de geometria/texturas/pesos/normais/orçamentos/tempos e fechamento dos loops em GEOMETRY_ANIMATION_AUDIT.json; fontes em BLENDER_SOURCE_AUDIT.json. Relatórios individuais nas pastas validation/. Texturas realmente embutidas, pesos normalizados e sem triângulos degenerados detectados.
+
+Contato dos pés: verificações numéricas nos quadros de 30 fps e velocidades nominais em solo plano. Entre quadros, a interpolação introduz desvios de até aproximadamente 5,9 mm nos casos medidos. Consulte CONTACT_VALIDATION.json e SUBFRAME_CONTACT_CHECK.json. Inclinações, mudanças de velocidade e misturas de clipes precisam de ajuste/IK no jogo.
+
+LIMITES VISUAIS E DE INTEGRAÇÃO
+As prévias são renders dos arquivos entregues. Há simplificações visíveis em anatomia, mãos, penas/pelagem e acabamento; este lote não é fotorrealista e não deve ser interpretado como equivalente a escaneamento ou escultura manual de alta resolução. O fole, as juntas e os clipes existem, mas a qualidade artística de poses e deformações exige avaliação no enquadramento final. Godot não estava instalado para teste de importação/execução; a validação feita é dos arquivos, não um teste dentro do motor. Colisão, física, gameplay, navegação e efeitos são configurados no projeto.
+
+LICENÇAS
+Geometria/animações originais CC0; bases MakeHuman CC0. A imagem da bandeira é CC BY 2.5 e exige crédito. Leia LICENSES.txt e LICENSE-MakeHuman-Assets.txt.
+
+ORGANIZAÇÃO
+Cada pasta traz glb/, blend/, textures/, previews/, validation/, LEIA-ME.txt e CONTACT_SHEET.jpg. CATALOGO.html reúne os arquivos; os GIFs solicitados estão em corn/previews/ e musician/previews/. Todos os GLBs possuem .blend correspondente. Não é necessária conexão de conta para abrir estes arquivos.

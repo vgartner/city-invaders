@@ -1,0 +1,570 @@
+{
+ "_asphalt": [
+  [
+   45.93,
+   52.46
+  ]
+ ],
+ "_pickups": [
+  {
+   "id": "pala",
+   "x": -102.57,
+   "y": 0.78,
+   "z": 134.73
+  },
+  {
+   "id": "pala",
+   "x": -111.15,
+   "y": 0.57,
+   "z": 113.69
+  },
+  {
+   "id": "pala",
+   "x": -117.72,
+   "y": 0.45,
+   "z": 97.18
+  },
+  {
+   "id": "pala",
+   "x": -122.83,
+   "y": 0.39,
+   "z": 85.24
+  },
+  {
+   "id": "pala",
+   "x": -112.17,
+   "y": 5.58,
+   "z": 96.06
+  }
+ ],
+ "_props": [
+  {
+   "model": "res://assets/rio_grande_do_sul/gaucho/lacador_v3_com_pedestal.glb",
+   "x": -70.48,
+   "yaw": 200.0,
+   "z": 134.41
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/gaucho/gaucho_12_carreta_madeira.glb",
+   "x": 42.9,
+   "yaw": 30.0,
+   "z": 152.8
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/gaucho/gaucho_09_churrasqueira_espeto.glb",
+   "x": 47.4,
+   "yaw": 0.0,
+   "z": 155.3
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/gaucho/gaucho_15_panela_tripe.glb",
+   "x": 49.6,
+   "yaw": 0.0,
+   "z": 156.5
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/gaucho/gaucho_08_chaleira_campeira.glb",
+   "solid": false,
+   "x": 49.6,
+   "yaw": 0.0,
+   "z": 156.5
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/gaucho/gaucho_14_barril_madeira.glb",
+   "x": 45.6,
+   "yaw": 0.0,
+   "z": 157.3
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/gaucho/gaucho_14_barril_madeira.glb",
+   "x": 44.8,
+   "yaw": 40.0,
+   "z": 156.7
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/gaucho/gaucho_07_chimarrao_kit.glb",
+   "solid": false,
+   "x": 46.8,
+   "yaw": 0.0,
+   "z": 157.9
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/gaucho/gaucho_05_bandeira_rio_grande_do_sul.glb",
+   "x": 51.4,
+   "yaw": 0.0,
+   "z": 152.3
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/gaucho/gaucho_13_cerca_mangueira.glb",
+   "x": 46.4,
+   "yaw": 0.0,
+   "z": 160.3
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/gaucho/gaucho_13_cerca_mangueira.glb",
+   "x": 40.4,
+   "yaw": 90.0,
+   "z": 157.3
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/waterfront/catamara_passageiros_25m.glb",
+   "solid": "box",
+   "x": -86.0,
+   "y": -2.2,
+   "yaw": 0.0,
+   "z": -105.0
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/waterfront/barco_passeio_vapor_30m.glb",
+   "solid": "box",
+   "x": -76.0,
+   "y": -2.2,
+   "yaw": 180.0,
+   "z": -152.0
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/waterfront/poste_amarracao.glb",
+   "solid": "box",
+   "x": -69.0,
+   "yaw": 0.0,
+   "z": -97.0
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/waterfront/poste_amarracao.glb",
+   "solid": "box",
+   "x": -69.0,
+   "yaw": 0.0,
+   "z": -113.0
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/fauna/garca_branca.glb",
+   "solid": false,
+   "x": -53.0,
+   "yaw": 90.0,
+   "z": -62.0
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/palco_farroupilha_8x5.glb",
+   "solid": "box",
+   "x": 49.4,
+   "yaw": 180.0,
+   "z": 122.3
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/musicians/gaiteiro_gaucho.glb",
+   "solid": false,
+   "x": 50.55,
+   "y_offset": 0.9,
+   "yaw": 180.0,
+   "z": 122.05
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/musicians/violonista_gaucho.glb",
+   "solid": false,
+   "x": 48.25,
+   "y_offset": 0.9,
+   "yaw": 180.0,
+   "z": 122.05
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/galpao_crioulo_8x5.glb",
+   "solid": true,
+   "x": 37.9,
+   "yaw": -90.0,
+   "z": 133.3
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/galpao_crioulo_8x5.glb",
+   "solid": true,
+   "x": 37.9,
+   "yaw": -90.0,
+   "z": 145.3
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/mesa_comprida_bancos.glb",
+   "solid": "box",
+   "x": 44.4,
+   "yaw": 0.0,
+   "z": 139.3
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/mesa_comprida_bancos.glb",
+   "solid": "box",
+   "x": 44.4,
+   "yaw": 0.0,
+   "z": 147.3
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/fogo_chao_espetos.glb",
+   "solid": "box",
+   "x": 55.4,
+   "yaw": 0.0,
+   "z": 140.3
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/mastro_bandeira_rs.glb",
+   "solid": "box",
+   "x": 60.4,
+   "yaw": 0.0,
+   "z": 120.3
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/carroca_madeira.glb",
+   "solid": "box",
+   "x": 61.4,
+   "yaw": 30.0,
+   "z": 132.3
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/fardo_feno.glb",
+   "solid": "box",
+   "x": 45.4,
+   "yaw": 0.0,
+   "z": 127.8
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/fardo_feno.glb",
+   "solid": "box",
+   "x": 47.4,
+   "yaw": 0.0,
+   "z": 127.8
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/fardo_feno.glb",
+   "solid": "box",
+   "x": 49.4,
+   "yaw": 0.0,
+   "z": 127.8
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/fardo_feno.glb",
+   "solid": "box",
+   "x": 51.4,
+   "yaw": 0.0,
+   "z": 127.8
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/fardo_feno.glb",
+   "solid": "box",
+   "x": 53.4,
+   "yaw": 0.0,
+   "z": 127.8
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/fardo_feno.glb",
+   "solid": "box",
+   "x": 45.4,
+   "yaw": 0.0,
+   "z": 129.8
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/fardo_feno.glb",
+   "solid": "box",
+   "x": 47.4,
+   "yaw": 0.0,
+   "z": 129.8
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/fardo_feno.glb",
+   "solid": "box",
+   "x": 49.4,
+   "yaw": 0.0,
+   "z": 129.8
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/fardo_feno.glb",
+   "solid": "box",
+   "x": 51.4,
+   "yaw": 0.0,
+   "z": 129.8
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/fardo_feno.glb",
+   "solid": "box",
+   "x": 53.4,
+   "yaw": 0.0,
+   "z": 129.8
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/fardo_feno.glb",
+   "solid": "box",
+   "x": 45.4,
+   "yaw": 0.0,
+   "z": 131.8
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/fardo_feno.glb",
+   "solid": "box",
+   "x": 47.4,
+   "yaw": 0.0,
+   "z": 131.8
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/fardo_feno.glb",
+   "solid": "box",
+   "x": 49.4,
+   "yaw": 0.0,
+   "z": 131.8
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/fardo_feno.glb",
+   "solid": "box",
+   "x": 51.4,
+   "yaw": 0.0,
+   "z": 131.8
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/fardo_feno.glb",
+   "solid": "box",
+   "x": 53.4,
+   "yaw": 0.0,
+   "z": 131.8
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/cerca_madeira_2_5m.glb",
+   "solid": "box",
+   "x": 65.4,
+   "yaw": 90.0,
+   "z": 125.3
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/cerca_madeira_2_5m.glb",
+   "solid": "box",
+   "x": 65.4,
+   "yaw": 90.0,
+   "z": 127.8
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/cerca_madeira_2_5m.glb",
+   "solid": "box",
+   "x": 65.4,
+   "yaw": 90.0,
+   "z": 130.3
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/cerca_madeira_2_5m.glb",
+   "solid": "box",
+   "x": 65.4,
+   "yaw": 90.0,
+   "z": 132.8
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/cerca_madeira_2_5m.glb",
+   "solid": "box",
+   "x": 65.4,
+   "yaw": 90.0,
+   "z": 135.3
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/cerca_madeira_2_5m.glb",
+   "solid": "box",
+   "x": 65.4,
+   "yaw": 90.0,
+   "z": 137.8
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/cerca_madeira_2_5m.glb",
+   "solid": "box",
+   "x": 65.4,
+   "yaw": 90.0,
+   "z": 140.3
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/cerca_madeira_2_5m.glb",
+   "solid": "box",
+   "x": 65.4,
+   "yaw": 90.0,
+   "z": 142.8
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/cerca_madeira_2_5m.glb",
+   "solid": "box",
+   "x": 65.4,
+   "yaw": 90.0,
+   "z": 145.3
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/farroupilha/cerca_madeira_2_5m.glb",
+   "solid": "box",
+   "x": 65.4,
+   "yaw": 90.0,
+   "z": 147.8
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/street_furniture/chafariz_imperial.glb",
+   "solid": "box",
+   "x": -45.0,
+   "yaw": 0.0,
+   "z": 45.0
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/street_furniture/relogio_coluna.glb",
+   "solid": "box",
+   "x": -30.0,
+   "yaw": 0.0,
+   "z": 5.0
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/waterfront/deck_modulo_4x2.glb",
+   "solid": true,
+   "x": -73.0,
+   "y": 0.1,
+   "yaw": 0.0,
+   "z": -104.0
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/waterfront/deck_modulo_4x2.glb",
+   "solid": true,
+   "x": -77.0,
+   "y": 0.1,
+   "yaw": 0.0,
+   "z": -104.0
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/fauna/capivara_adulta.glb",
+   "solid": false,
+   "x": 48.0,
+   "yaw": 30.0,
+   "z": 148.0
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/fauna/capivara_filhote.glb",
+   "solid": false,
+   "x": 50.5,
+   "yaw": 60.0,
+   "z": 150.0
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/fauna/capivara_filhote.glb",
+   "solid": false,
+   "x": 46.0,
+   "yaw": -20.0,
+   "z": 151.0
+  },
+  {
+   "type": "repair_shop",
+   "x": -35.0,
+   "yaw": 90.0,
+   "z": 28.0
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/sport/campo_futebol7.glb",
+   "x": 0.0,
+   "z": -100.0,
+   "yaw": 90.0,
+   "solid": true,
+   "leisure": "pitch",
+   "scale": 0.75
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/sport/skate/skatepark_30x22.glb",
+   "x": 10.0,
+   "z": -62.0,
+   "yaw": 0.0,
+   "solid": true,
+   "leisure": "skatepark"
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/sport/skate/skate_manual_pad.glb",
+   "x": -36.0,
+   "z": -55.0,
+   "yaw": 0.0,
+   "solid": true
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/sport/skate/skate_grind_box_3m.glb",
+   "x": -40.0,
+   "z": -62.0,
+   "yaw": 90.0,
+   "solid": true
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/sport/skate/skate_corrimao_3m.glb",
+   "x": -35.0,
+   "z": -69.0,
+   "yaw": 0.0,
+   "solid": true
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/sport/skate/skate_funbox.glb",
+   "x": -38.0,
+   "z": -78.0,
+   "yaw": 0.0,
+   "solid": true
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/sport/skate/skate_bank_3m.glb",
+   "x": -41.0,
+   "z": -89.0,
+   "yaw": 90.0,
+   "solid": true
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/sport/skate/skate_quarter_pipe_3m.glb",
+   "x": -35.0,
+   "z": -96.0,
+   "yaw": 270.0,
+   "solid": true
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/sport/skate/skate_escada_5_degraus.glb",
+   "x": -39.0,
+   "z": -104.0,
+   "yaw": 0.0,
+   "solid": true
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/sport/skate/skate_half_pipe_6m.glb",
+   "x": -38.0,
+   "z": -116.0,
+   "yaw": 90.0,
+   "solid": true,
+   "leisure": "skatepark"
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/sport/skate/skate_bowl_elevado.glb",
+   "x": -36.0,
+   "z": -131.0,
+   "yaw": 0.0,
+   "solid": true
+  },
+  {
+   "model": "res://assets/rio_grande_do_sul/sport/skate/skate_grind_box_3m.glb",
+   "x": -34.0,
+   "z": -140.0,
+   "yaw": 0.0,
+   "solid": true
+  }
+ ],
+ "_remove": [
+  [
+   -44.32,
+   153.79
+  ]
+ ],
+ "relation/8440037": {
+  "at": [
+   0.55,
+   -2.975
+  ],
+  "model": "res://assets/rio_grande_do_sul/landmarks/gasometro/usina_gasometro.glb",
+  "yaw": 0.0
+ },
+ "way/253386212": {
+  "at": [
+   29.1,
+   22.4
+  ],
+  "edited_in_game": "2026-10-16T16:15:30",
+  "height": 117.0,
+  "model": "res://assets/rio_grande_do_sul/landmarks/gasometro/chamine_gasometro.glb",
+  "yaw": 0.0
+ },
+ "way/253386215": {
+  "height": 4.5
+ },
+ "way/655113805": {
+  "model": "@gone",
+  "note": "no pitch on this lawn (the owner's call)"
+ }
+}

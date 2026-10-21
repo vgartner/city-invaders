@@ -1,0 +1,6 @@
+{
+ "id": "oculos",
+ "type": "Gadget",
+ "name": "Óculos de informação",
+ "model": "res://assets/common/salvage/oculos_informacao.gltf"
+}

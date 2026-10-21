@@ -1,0 +1,12 @@
+{
+ "id": "circuit",
+ "type": "Part",
+ "name": "Circuit board",
+ "glow": [
+  0.2,
+  1.0,
+  0.4
+ ],
+ "model": "res://assets/common/salvage/circuit.gltf",
+ "scale": 2.0
+}

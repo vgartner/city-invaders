@@ -1,0 +1,6 @@
+# nginx-proxy per-host settings for the City Invaders API.
+# Copy to /srv/docker/nginx-proxy/vhost.d/api.cityinvaders.vgdata.net
+# Mod uploads are up to 25 MB (multipart overhead on top); feedback screenshots up to 3 MB.
+client_max_body_size 30m;
+# Bah answers can take a few seconds (LLM call with retries).
+proxy_read_timeout 90s;

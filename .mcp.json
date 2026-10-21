@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "city-invaders-devagent": {
+      "command": "tools/.venv/bin/python",
+      "args": ["tools/devagent/devagent_mcp.py"]
+    }
+  }
+}

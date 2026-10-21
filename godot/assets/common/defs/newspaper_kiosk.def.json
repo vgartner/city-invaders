@@ -1,0 +1,12 @@
+{
+ "id": "newspaper_kiosk",
+ "type": "StreetFurniture",
+ "name": "Banca de jornal",
+ "prop": "stall:newspaper_kiosk",
+ "model": "res://assets/rio_grande_do_sul/stalls/prop_newspaper_kiosk.glb",
+ "faces": {
+  "front": "-z",
+  "towards": "walk",
+  "gap": 2.2
+ }
+}

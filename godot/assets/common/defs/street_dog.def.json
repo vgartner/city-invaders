@@ -1,0 +1,8 @@
+{
+ "id": "street_dog",
+ "type": "Dog",
+ "name": "Street dog",
+ "models": [
+  "res://assets/common/dogs"
+ ]
+}

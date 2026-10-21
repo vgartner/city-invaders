@@ -1,0 +1,146 @@
+{
+  "urb_c4_coletor.glb": {
+    "triangles": 19228,
+    "meshes": 4,
+    "materials": 3,
+    "images": [
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        2048
+      ]
+    ],
+    "bones": 58,
+    "bounds_min_m": [
+      -0.8252431288484111,
+      -5.587935614226325e-09,
+      -0.41714197402057346
+    ],
+    "bounds_max_m": [
+      0.8252431288484111,
+      2.395000070333481,
+      0.8569999933242798
+    ],
+    "dimensions_m": [
+      1.6504862576968222,
+      2.3950000759214163,
+      1.2741419673448533
+    ],
+    "clips": {
+      "idle": {
+        "duration_s": 3.200000047683716,
+        "fps": 30,
+        "loop": true,
+        "samples": 97
+      },
+      "walk": {
+        "duration_s": 1.2000000476837158,
+        "fps": 30,
+        "loop": true,
+        "samples": 37
+      },
+      "run": {
+        "duration_s": 0.800000011920929,
+        "fps": 30,
+        "loop": true,
+        "samples": 25
+      },
+      "grab": {
+        "duration_s": 1.5,
+        "fps": 30,
+        "loop": false,
+        "samples": 46
+      },
+      "carry_run": {
+        "duration_s": 0.800000011920929,
+        "fps": 30,
+        "loop": true,
+        "samples": 25
+      },
+      "hit": {
+        "duration_s": 0.4000000059604645,
+        "fps": 30,
+        "loop": false,
+        "samples": 13
+      },
+      "die": {
+        "duration_s": 1.7999999523162842,
+        "fps": 30,
+        "loop": false,
+        "samples": 55
+      }
+    },
+    "sha256": "04ca1351a85f55e39da16e0efbac1acb2ca4ddf8ece9d54c6d8e2669d7e66e78",
+    "issues": []
+  },
+  "urb_s2_enxame.glb": {
+    "triangles": 2188,
+    "meshes": 7,
+    "materials": 2,
+    "images": [
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        2048
+      ]
+    ],
+    "bones": 0,
+    "bounds_min_m": [
+      -0.27944418259175774,
+      -0.17684474153522342,
+      -0.2590000033378601
+    ],
+    "bounds_max_m": [
+      0.27844424925991507,
+      0.11497700285321721,
+      0.2590000033378601
+    ],
+    "dimensions_m": [
+      0.5578884318516728,
+      0.29182174438844066,
+      0.5180000066757202
+    ],
+    "clips": {
+      "hover": {
+        "duration_s": 2.0,
+        "fps": 30,
+        "loop": true,
+        "samples": 61
+      },
+      "dive": {
+        "duration_s": 0.6000000238418579,
+        "fps": 30,
+        "loop": false,
+        "samples": 19
+      },
+      "stunned": {
+        "duration_s": 1.0,
+        "fps": 30,
+        "loop": false,
+        "samples": 31
+      },
+      "explode_windup": {
+        "duration_s": 0.4000000059604645,
+        "fps": 30,
+        "loop": false,
+        "samples": 13
+      }
+    },
+    "sha256": "507184444032bc0f800507da9b9a3d1990ffbe298212f83c3ed6e4057c71d7c7",
+    "issues": []
+  }
+}

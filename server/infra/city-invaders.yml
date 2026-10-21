@@ -1,0 +1,57 @@
+# City Invaders API - compose extension for the VGData server (vmd171796).
+#
+# Lives at /srv/docker/nginx-proxy/city-invaders.yml next to the shared docker-compose.yml
+# (compose project "nginx-proxy"; see vgdata-infra/SERVER.md). Built on the server from
+# /srv/city-invaders (the City_Invaders repository's server/ folder, rsynced there).
+# Secrets only in /srv/city-invaders/.env (mode 600), never in this file.
+#
+# Usage on the server (ALWAYS name the service; never down/--remove-orphans):
+#   cd /srv/docker/nginx-proxy
+#   docker compose -f docker-compose.yml -f city-invaders.yml build city-invaders-api
+#   docker compose -f docker-compose.yml -f city-invaders.yml up -d city-invaders-api
+#
+# The named volume becomes nginx-proxy_city_invaders_data
+# (/var/lib/docker/volumes/nginx-proxy_city_invaders_data/_data): SQLite + screenshots + mods.
+
+services:
+  city-invaders-api:
+    build:
+      context: /srv/city-invaders
+      dockerfile: Dockerfile
+    image: city-invaders-api:latest
+    container_name: city-invaders-api
+    # Memory ceiling (shared VGData server): Node + SQLite, expected peak ~120 MB.
+    mem_limit: 256m
+    memswap_limit: 384m
+    restart: unless-stopped
+    env_file:
+      - /srv/city-invaders/.env
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - DATA_DIR=/data
+      - TRUST_PROXY_HOPS=1
+      - VIRTUAL_HOST=api.cityinvaders.vgdata.net
+      - VIRTUAL_PORT=8080
+      - LETSENCRYPT_HOST=api.cityinvaders.vgdata.net
+      - LETSENCRYPT_EMAIL=vilson@vgdata.net
+    expose:
+      - "8080"
+    networks:
+      - webnet
+    volumes:
+      - city_invaders_data:/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+networks:
+  webnet:
+    external: true
+
+volumes:
+  city_invaders_data:
+    driver: local

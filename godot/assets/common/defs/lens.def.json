@@ -1,0 +1,12 @@
+{
+ "id": "lens",
+ "type": "Part",
+ "name": "Optical lens",
+ "glow": [
+  0.4,
+  1.0,
+  1.0
+ ],
+ "model": "res://assets/common/salvage/lens.gltf",
+ "scale": 2.0
+}

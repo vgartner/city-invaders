@@ -1,0 +1,204 @@
+{
+ "Item": {
+  "pickup": true,
+  "scale": 1.0,
+  "glow": [
+   1,
+   1,
+   1
+  ]
+ },
+ "Healing": {
+  "extends": "Item",
+  "category": "healing",
+  "effect": {
+   "heal": 25
+  },
+  "glow": [
+   0.3,
+   1.0,
+   0.45
+  ]
+ },
+ "Armour": {
+  "extends": "Item",
+  "category": "armour",
+  "effect": {
+   "armor": 100
+  },
+  "glow": [
+   0.85,
+   0.65,
+   1.0
+  ]
+ },
+ "Booster": {
+  "extends": "Item",
+  "category": "booster",
+  "effect": {
+   "heal": 25,
+   "adrenaline": 12
+  },
+  "glow": [
+   1.0,
+   0.85,
+   0.1
+  ]
+ },
+ "Ammo": {
+  "extends": "Item",
+  "category": "ammo",
+  "effect": {
+   "ammo": true
+  },
+  "glow": [
+   1.0,
+   0.75,
+   0.25
+  ]
+ },
+ "Weapon": {
+  "extends": "Item",
+  "category": "weapon",
+  "glow": [
+   0.3,
+   0.85,
+   1.0
+  ]
+ },
+ "Part": {
+  "extends": "Item",
+  "category": "part",
+  "effect": {
+   "part": true
+  }
+ },
+ "Gadget": {
+  "extends": "Item",
+  "category": "gadget"
+ },
+ "Scenery": {
+  "category": "scenery"
+ },
+ "Musician": {
+  "extends": "Scenery",
+  "category": "musician",
+  "sound": {
+   "range": 35
+  }
+ },
+ "StreetFurniture": {
+  "extends": "Scenery",
+  "_doc": "stands by a street or a path; `faces` turns its front side towards it: front = the model's own axis (+z, -z, +x, -x), towards = street (the nearest car street), walk (a car street, footway or promenade, whichever is nearest); gap = the least distance in metres between the model's centre and the asphalt"
+ },
+ "BusStop": {
+  "extends": "StreetFurniture",
+  "category": "transport",
+  "tags": [
+   "bus_stop"
+  ],
+  "links": [
+   "bus_line"
+  ]
+ },
+ "Person": {
+  "category": "person",
+  "gait": "shared",
+  "health": 45,
+  "speed": {
+   "walk": 1.2,
+   "run": 4.0
+  },
+  "react": "flee",
+  "hunted": true,
+  "capsule": {
+   "radius": 0.28,
+   "height": 1.72
+  },
+  "spawn": "street",
+  "share": 1.0
+ },
+ "Pedestrian": {
+  "extends": "Person"
+ },
+ "Skater": {
+  "extends": "Person",
+  "gait": "own",
+  "speed": {
+   "walk": 3.9,
+   "run": 5.5
+  },
+  "share": 0.15
+ },
+ "Vendor": {
+  "extends": "Person",
+  "spawn": "stall",
+  "idle": "idle_selling",
+  "share": 0
+ },
+ "Police": {
+  "extends": "Person",
+  "spawn": "patrol",
+  "react": "fight",
+  "health": 75,
+  "idle": "idle_alert",
+  "armed": true,
+  "standoff": 22,
+  "share": 0
+ },
+ "Animal": {
+  "category": "animal",
+  "gait": "own",
+  "health": 45,
+  "react": "flee",
+  "hunted": false,
+  "spawn": "street",
+  "share": 0
+ },
+ "Dog": {
+  "extends": "Animal",
+  "speed": {
+   "walk": 1.2,
+   "run": 6.0
+  },
+  "capsule": {
+   "radius": 0.3,
+   "height": 0.7
+  },
+  "share": 0.08
+ },
+ "Footballer": {
+  "extends": "Person",
+  "gait": "own",
+  "spawn": "pitch",
+  "roam": 13,
+  "share": 0,
+  "speed": {
+   "walk": 1.15,
+   "run": 3.0
+  }
+ },
+ "Child": {
+  "extends": "Person",
+  "gait": "own",
+  "spawn": "playground",
+  "roam": 5,
+  "share": 0,
+  "hunted": false,
+  "invulnerable": true,
+  "speed": {
+   "walk": 1.0,
+   "run": 2.4
+  },
+  "capsule": {
+   "radius": 0.22,
+   "height": 1.3
+  }
+ },
+ "Bird": {
+  "extends": "Animal",
+  "spawn": "lawn",
+  "health": 30,
+  "react": "defend"
+ }
+}

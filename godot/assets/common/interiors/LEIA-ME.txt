@@ -1,0 +1,25 @@
+CITY INVADERS — ESPETO GAÚCHO E SEIS INTERIORES
+
+Entrega: 2026-10-17. 63 GLBs: 4 do espeto, 8 módulos compartilhados de sala e 41 móveis/equipamentos revisados e 10 acessórios adicionais. 69 fontes Blender: um .blend por GLB e seis cenas de interiores montados. Seis layout.json, um por estabelecimento.
+
+COORDENADAS E MATERIAIS
+GLB 2.0, metros, +Y para cima, frente −Z. Fontes Blender em +Z para cima, coordenadas nativas. GLBs e fontes têm mapas incorporados. PBR 2048 × 2048: basecolor, normal tangente OpenGL +Y, metallic_roughness (G=roughness, B=metallic). Sem luzes ou câmeras reais nos arquivos. Todos os elementos luminosos entregues são malhas emissivas; as luzes das prévias são apenas apresentação.
+
+Os seis interiores compartilham exatamente o mesmo atlas interior_shared, disponível também em shared/textures/. Cada GLB incorpora sua própria cópia para ser autossuficiente. Para reduzir memória no jogo, reúna os materiais/texturas em recursos compartilhados depois de importar. Vidro e espelho usam fatores próprios sobre o mesmo atlas. Os dois view models reutilizam byte a byte os três mapas arms_shared do Arsenal FPS, com um atlas próprio adicional para aço/madeira/carne.
+
+VALIDAÇÃO E LIMITES
+Khronos Validator: 63 GLBs, zero erros e zero avisos. Auditoria adicional: geometria finita, normais, UVs, pesos, contagem, referências dos layouts, nomes e duração dos clipes, loop e posição dos braços. Fontes importadas/salvas no Blender. Relatórios em GEOMETRY_ANIMATION_AUDIT.json, KHRONOS_SUMMARY.json e validation/ de cada conjunto. As fontes não têm câmeras, luzes ou planos de apresentação. Pisos, paredes e forros são partes reais da sala.
+
+Não foi feito teste dentro do Godot. A integração, colisões, iluminação dinâmica, navegação, animações de gameplay e interpretação de layout.json cabem ao projeto. Revisão v2: madeira com grão natural, escala de piso corrigida, tecidos, encostos curvos, cabos e ferragens, roupas com silhueta, manequim anatômico e dez acessórios. As mãos foram reconstruídas mantendo rig e atlas. Ainda há simplificações visíveis, sobretudo nas mãos, produtos pequenos e formas de alguns móveis; não é uma digitalização ou uma promessa de fotorrealismo. O realismo final depende também da iluminação, composição e integração no jogo. As prévias mostram os modelos efetivamente entregues, com corte de paredes/forro apenas nas vistas gerais e plantas para permitir ver o interior.
+
+PASTAS
+espeto/: modelos de primeira pessoa e pickups limpo/com carne, fontes, mapas, prévias e documentação própria.
+shared/: módulos de piso, parede, forro, fachada recortada e divisória; mapas compartilhados.
+farmacia/, roupas/, escritorio/, supermercado/, cinema/, bar_lancheria/: móveis, fontes, layout.json e três prévias por interior.
+extras/: tomadas/conduíte, extintor, lixeira de pedal, ar-condicionado, ventilador, papelaria/caneca, quadro de avisos, tapete, planta e persiana.
+COMPARACAO_ANTES_DEPOIS.jpg: renders reais v1/v2 da mesma câmera.
+references/: fontes de materiais geradas e prompts. Normais e roughness foram estimadas.
+CATALOGO.html: acesso às seis vistas, layouts e arquivos. CONTACT_SHEET_INTERIORES.jpg: visão dos seis conjuntos. SHA256SUMS.txt: integridade.
+
+LICENÇA
+CC0 para os ativos originais deste lote, incluindo a arte genérica de embalagens/telas. Leia LICENSES.txt.

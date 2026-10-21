@@ -1,0 +1,12 @@
+{
+ "id": "core",
+ "type": "Part",
+ "name": "Power core",
+ "glow": [
+  0.3,
+  0.6,
+  1.0
+ ],
+ "model": "res://assets/common/salvage/core.gltf",
+ "scale": 2.0
+}

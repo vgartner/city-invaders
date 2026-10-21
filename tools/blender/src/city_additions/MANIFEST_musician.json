@@ -1,0 +1,88 @@
+{
+  "gaiteiro_gaucho.glb": {
+    "triangles": 23021,
+    "meshes": 11,
+    "materials": 2,
+    "images": [
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        2048
+      ],
+      [
+        2048,
+        2048
+      ]
+    ],
+    "bones": 55,
+    "bounds_min_m": [
+      -0.41844437027410436,
+      -0.0010039564222097397,
+      -0.5632921260412119
+    ],
+    "bounds_max_m": [
+      0.41619039973851635,
+      1.5629050176875696,
+      0.26499998569488525
+    ],
+    "dimensions_m": [
+      0.8346347700126207,
+      1.5639089741097794,
+      0.8282921117360972
+    ],
+    "clips": {
+      "play_seated": {
+        "duration_s": 8.0,
+        "fps": 30,
+        "loop": true,
+        "samples": 241
+      },
+      "play_standing": {
+        "duration_s": 8.0,
+        "fps": 30,
+        "loop": true,
+        "samples": 241
+      },
+      "idle_seated": {
+        "duration_s": 3.200000047683716,
+        "fps": 30,
+        "loop": true,
+        "samples": 97
+      },
+      "stand_up": {
+        "duration_s": 1.2000000476837158,
+        "fps": 30,
+        "loop": false,
+        "samples": 37
+      },
+      "flee_with_accordion": {
+        "duration_s": 0.800000011920929,
+        "fps": 30,
+        "loop": true,
+        "samples": 25
+      }
+    },
+    "sha256": "c071e29c775ff913d197e18885ca2384238b478f19f25ead9f19a419ce875c35",
+    "component_triangles": {
+      "character_including_pilcha_and_straps": 13705,
+      "accordion": 8524,
+      "stool": 792
+    },
+    "issues": []
+  }
+}

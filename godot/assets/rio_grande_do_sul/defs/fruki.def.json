@@ -1,0 +1,11 @@
+{
+ "id": "fruki",
+ "type": "Booster",
+ "name": "Guaraná Fruki",
+ "model": "res://assets/rio_grande_do_sul/pickups/fruki/fruki.glb",
+ "scale": 3.0,
+ "tags": [
+  "gaucho",
+  "drink"
+ ]
+}

@@ -1,0 +1,98 @@
+{
+ "_about": "Asset collections. Each collection is a folder under res://assets: 'common' holds generic assets any city can reuse, regional collections (rio_grande_do_sul, ...) hold what belongs to a place. A new city reuses common/ and adds its own collection folder. Each category lists folders or single files relative to res://assets; the map editor groups its object picker by these. Shared engine resources (audio, ui, materials, kenney) stay at the top level.",
+ "common": {
+  "label": "Common",
+  "categories": {
+   "Transport": [
+    "common/cars",
+    "common/buses",
+    "common/motoboys",
+    "common/cyclists",
+    "common/props/bus_shelter"
+   ],
+   "People": [
+    "common/people",
+    "common/skaters"
+   ],
+   "Animals": [
+    "common/dogs",
+    "common/pigeons"
+   ],
+   "Furniture": [
+    "common/props"
+   ],
+   "Pickups": [
+    "common/pickups/ammo",
+    "common/pickups/medkit"
+   ],
+   "Weapons": [
+    "common/weapons"
+   ],
+   "Enemies": [
+    "common/enemies"
+   ],
+   "Interiors": [
+    "common/interiors"
+   ]
+  }
+ },
+ "rio_grande_do_sul": {
+  "label": "Rio Grande do Sul",
+  "categories": {
+   "Landmarks (Porto Alegre)": [
+    "rio_grande_do_sul/landmarks"
+   ],
+   "Gaúcho culture": [
+    "rio_grande_do_sul/gaucho",
+    "rio_grande_do_sul/farroupilha"
+   ],
+   "People": [
+    "rio_grande_do_sul/people",
+    "rio_grande_do_sul/vendors",
+    "rio_grande_do_sul/police"
+   ],
+   "Animals": [
+    "rio_grande_do_sul/horses",
+    "rio_grande_do_sul/birds"
+   ],
+   "Transport": [
+    "rio_grande_do_sul/trucks",
+    "rio_grande_do_sul/lorries",
+    "rio_grande_do_sul/tram",
+    "rio_grande_do_sul/war",
+    "rio_grande_do_sul/buses",
+    "rio_grande_do_sul/cars",
+    "rio_grande_do_sul/service",
+    "rio_grande_do_sul/rail"
+   ],
+   "Street stalls": [
+    "rio_grande_do_sul/stalls"
+   ],
+   "Pickups": [
+    "rio_grande_do_sul/pickups/churrasco",
+    "rio_grande_do_sul/pickups/chimarrao",
+    "rio_grande_do_sul/pickups/pala",
+    "rio_grande_do_sul/pickups/fruki",
+    "rio_grande_do_sul/pickups/laco"
+   ],
+   "Films": [
+    "rio_grande_do_sul/video/cities/gasometro"
+   ],
+   "Weapons": [
+    "rio_grande_do_sul/weapons"
+   ],
+   "Furniture (Porto Alegre)": [
+    "rio_grande_do_sul/street_furniture"
+   ],
+   "Waterfront": [
+    "rio_grande_do_sul/waterfront"
+   ],
+   "Wildlife": [
+    "rio_grande_do_sul/fauna"
+   ],
+   "Musicians": [
+    "rio_grande_do_sul/musicians"
+   ]
+  }
+ }
+}

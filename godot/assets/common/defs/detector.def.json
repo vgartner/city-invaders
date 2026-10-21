@@ -1,0 +1,6 @@
+{
+ "id": "detector",
+ "type": "Gadget",
+ "name": "Detector de torres",
+ "model": "res://assets/common/salvage/detector_torres_pickup.gltf"
+}

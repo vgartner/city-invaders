@@ -1,0 +1,7 @@
+Original geometry, generated textures and layout data in this package are dedicated
+to the public domain under CC0 1.0 Universal.
+https://creativecommons.org/publicdomain/zero/1.0/
+You may modify and redistribute them, including in an open-source or commercial game.
+Reference photographs and the real building are not claimed as original works here.
+No reference photographs are included in the textures. No affiliation with the
+municipality, Mercado Público or its traders is implied. Provided without warranty.

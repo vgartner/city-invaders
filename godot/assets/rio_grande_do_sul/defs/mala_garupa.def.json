@@ -1,0 +1,12 @@
+{
+ "id": "mala_garupa",
+ "type": "Gadget",
+ "name": "Mala de garupa",
+ "category": "bag",
+ "model": "res://assets/rio_grande_do_sul/gaucho/mala_garupa/mala_garupa_chao.glb",
+ "scale": 1.0,
+ "lift": 0.0,
+ "glow": [0.95, 0.7, 0.35],
+ "effect": {"bag": true},
+ "tags": ["gaucho"]
+}

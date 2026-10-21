@@ -1,0 +1,73 @@
+PORTO ALEGRE PEDESTRIANS — 16 CHARACTER PACK
+
+CONTENTS
+16 self-contained glTF 2.0 binary characters, named ped_01_... to ped_16_....
+Individual previews, a horizontal side-by-side contact sheet, an additional
+4x4 overview, roster.json, and Pedestrians_Validation.json are included.
+
+VARIETY
+8 women and 8 men, all adults. Four young adults, four adults, four middle-aged
+adults, and four elderly adults. Statures range from 1.56 to 1.88 metres.
+The roster combines slim, average, heavy, tall and short builds; distinct
+complexions, age-specific faces, haircuts and hair colours; office clothing,
+students with backpacks, a courier with insulated bag, street vendor with
+apron, construction worker with hardhat/vest, jogger, retirees, tourist with
+camera/cap, summer dress, jeans/T-shirt and a gaúcho-style striped poncho.
+Small accessories include glasses, phone, handbag, shopping bag, umbrella,
+and watch. The poncho is the requested cold-day exception to warm-weather wear.
+
+TECHNICAL
+- One skinned mesh, one primitive, one material per GLB.
+- 9,344 to 14,255 triangles, including hair and accessories.
+- Metres, +Y up, facing -Z; ground-contact soles at Y=0 and feet at the origin.
+- Three embedded 2048x2048 PNG PBR maps: base colour, tangent-space normal,
+  metallic/roughness. Roughness is G and metallic B.
+- One padded atlas combines body, outfit, hair, footwear, eyes and accessories.
+  UV seams are retained; deliberate UV reuse on repeated accessory surfaces.
+- Hair and eyebrows use alpha masking within the same material. Preserve
+  MASK, alphaCutoff=0.35, doubleSided=true and the supplied texture sampler.
+- No lights, cameras, ground plane, scene background, or external textures.
+
+SHARED RIG
+All characters use the same 52-bone canonical humanoid rig with mixamorig:
+bone names, identical hierarchy, local bind transforms and inverse bind
+matrices. Fingers and toes are included. The bind pose is a relaxed A-pose.
+An outer stature wrapper scales the skeleton uniformly for different heights;
+keep that wrapper scale when importing. The mesh node is a scene-root node,
+and the stature wrapper is a separate scene root carrying the skeleton.
+Do not reset wrapper scales without baking the corresponding skin transforms.
+Humanoid retargeting may require your engine's bone mapping configuration;
+these assets have not been uploaded to the Mixamo web service.
+
+ANIMATION — IDENTICAL SET IN EVERY FILE, SAMPLED AT 30 FPS
+idle      3.0 seconds    loop
+walk      1.0 second     loop, in place
+sprint    0.6 seconds    loop, in place
+ die      2.0 seconds    one-shot backward collapse, hold final pose
+
+All rotation tracks and timestamps are shared across the 16 files. The hip
+translation receives a small per-character floor-contact adjustment so shoes,
+physiques and carried items do not sink into the floor. Idle, walk and sprint
+endpoints match. Loop intent is recorded in extras.loop; set repeat playback
+for those clips in your engine. glTF does not provide a universal runtime loop
+flag. Use one-shot playback and hold/clamp for die. No optional clips included.
+Set locomotion speed, collisions, navigation, ragdoll behavior and gameplay
+in your engine. Clothing and carried accessories are skinned; the files do
+not require a runtime cloth simulator.
+
+VALIDATION
+Every GLB passes Khronos glTF Validator with 0 errors and 0 warnings.
+Independent checks read the delivered binaries and verify:
+triangle budget; real-world height; feet origin; texture dimensions/embedding;
+finite geometry; nondegenerate triangles; unit normals/tangents; UV range;
+normalized weights; valid joints; matching skeleton and inverse binds;
+matching clip rotation/timing data; exact clip names; 30 fps samples;
+loop seams; and finite, nondegenerate, floor-contact poses at every frame.
+Pedestrians_Validation.json includes per-file SHA-256 hashes and results.
+The contact sheet and previews were rendered from the delivered GLBs through
+Three.js GLTFLoader. Preview lighting and background are absent from the GLBs.
+
+SOURCE ASSETS
+Anatomical meshes, age/body/facial morphs, fitted core garments, hair, and
+skin surface resources are adapted from MakeHuman's CC0 graphical assets.
+See SOURCES.txt and LICENSE-MakeHuman-Assets.txt for source and licence details.

@@ -1,0 +1,33 @@
+{
+  "mala_garupa_cavalo": {
+    "catalogue_translation": [
+      -1.35,
+      0,
+      0
+    ],
+    "reset_translation_for_horse": [
+      0,
+      0,
+      0
+    ],
+    "horse": "criollo_bay_gaucho.glb",
+    "suggested_bone": "Pelvis",
+    "calibrated_at": "idle t=0"
+  },
+  "mala_garupa_costas": {
+    "catalogue_translation": [
+      1.35,
+      0,
+      0
+    ],
+    "attach_node": "attach_spine",
+    "target_bone": "mixamorig:Spine2",
+    "reference_spine_world_m": [
+      0.0,
+      1.2748332759328183,
+      0.017805657822290537
+    ],
+    "reference_pedestrian": "ped_14_jeans_man_40s.glb",
+    "wearing_style": "over left shoulder, one end front and one back"
+  }
+}

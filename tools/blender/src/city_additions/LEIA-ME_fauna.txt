@@ -1,0 +1,52 @@
+FAUNA
+
+Capivara adulta e filhote (metade da escala), com esqueleto próprio. idle, graze, walk, run e swim_idle em loop; die uma vez. Velocidades nominais: adulta walk 0,598 m/s e run 2,3 m/s; filhote 0,299 e 1,15 m/s. O ciclo de nado é local: o jogo define nível da água e deslocamento.
+
+Garça-branca com esqueleto próprio e asas articuladas: idle, walk e fly em loop; fish, takeoff e land uma vez. Walk nominal 0,35 m/s; voo local a cerca de 0,8 m acima da referência do solo. As penas e a anatomia apresentam simplificações visíveis; não são modelos escaneados.
+
+ARQUIVOS
+
+capivara_adulta.glb: 8.876 triângulos; 20 ossos; 1 materiais.
+  idle: 3.2 s, 30 fps, loop
+  graze: 3.2 s, 30 fps, loop
+  walk: 0.8 s, 30 fps, loop
+  run: 0.4 s, 30 fps, loop
+  swim_idle: 2 s, 30 fps, loop
+  die: 1.6 s, 30 fps, uma vez
+
+capivara_filhote.glb: 8.876 triângulos; 20 ossos; 1 materiais.
+  idle: 3.2 s, 30 fps, loop
+  graze: 3.2 s, 30 fps, loop
+  walk: 0.8 s, 30 fps, loop
+  run: 0.4 s, 30 fps, loop
+  swim_idle: 2 s, 30 fps, loop
+  die: 1.6 s, 30 fps, uma vez
+
+garca_branca.glb: 6.040 triângulos; 18 ossos; 1 materiais.
+  idle: 3.2 s, 30 fps, loop
+  walk: 0.8 s, 30 fps, loop
+  fish: 1.2 s, 30 fps, uma vez
+  takeoff: 0.9 s, 30 fps, uma vez
+  fly: 1 s, 30 fps, loop
+  land: 0.9 s, 30 fps, uma vez
+
+CITY INVADERS — ADIÇÕES REGIONAIS / 2026-10-17
+
+CONTEÚDO E USO
+GLB 2.0, metros, +Y para cima e frente −Z. Fontes .blend em coordenadas nativas do Blender (+Z para cima), com imagens incorporadas. GLBs têm mapas PBR incorporados 2048 × 2048: basecolor, normal tangente OpenGL +Y e metallic_roughness (G=roughness; B=metallic). Alguns objetos usam mais de um conjunto/material, conforme os componentes. Sem luzes/câmeras/planos de apresentação nos modelos; o piso dos módulos de deck é parte do próprio objeto.
+
+Animações amostradas a 30 fps; loops identificados em animation.extras.loop. No Godot, confira a opção de loop após importar, pois extras não são garantidos como configuração do AnimationPlayer. Sem deslocamento horizontal acumulado do nó raiz: o jogo controla movimento. Clips de decolagem/pouso e movimentos de reação incluem deslocamentos locais dos componentes.
+
+VALIDAÇÃO
+35 GLBs conferidos: Khronos Validator com zero erros e zero avisos. Auditoria de geometria/texturas/pesos/normais/orçamentos/tempos e fechamento dos loops em GEOMETRY_ANIMATION_AUDIT.json; fontes em BLENDER_SOURCE_AUDIT.json. Relatórios individuais nas pastas validation/. Texturas realmente embutidas, pesos normalizados e sem triângulos degenerados detectados.
+
+Contato dos pés: verificações numéricas nos quadros de 30 fps e velocidades nominais em solo plano. Entre quadros, a interpolação introduz desvios de até aproximadamente 5,9 mm nos casos medidos. Consulte CONTACT_VALIDATION.json e SUBFRAME_CONTACT_CHECK.json. Inclinações, mudanças de velocidade e misturas de clipes precisam de ajuste/IK no jogo.
+
+LIMITES VISUAIS E DE INTEGRAÇÃO
+As prévias são renders dos arquivos entregues. Há simplificações visíveis em anatomia, mãos, penas/pelagem e acabamento; este lote não é fotorrealista e não deve ser interpretado como equivalente a escaneamento ou escultura manual de alta resolução. O fole, as juntas e os clipes existem, mas a qualidade artística de poses e deformações exige avaliação no enquadramento final. Godot não estava instalado para teste de importação/execução; a validação feita é dos arquivos, não um teste dentro do motor. Colisão, física, gameplay, navegação e efeitos são configurados no projeto.
+
+LICENÇAS
+Geometria/animações originais CC0; bases MakeHuman CC0. A imagem da bandeira é CC BY 2.5 e exige crédito. Leia LICENSES.txt e LICENSE-MakeHuman-Assets.txt.
+
+ORGANIZAÇÃO
+Cada pasta traz glb/, blend/, textures/, previews/, validation/, LEIA-ME.txt e CONTACT_SHEET.jpg. CATALOGO.html reúne os arquivos; os GIFs solicitados estão em corn/previews/ e musician/previews/. Todos os GLBs possuem .blend correspondente. Não é necessária conexão de conta para abrir estes arquivos.

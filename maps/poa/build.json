@@ -1,0 +1,23 @@
+{
+ "osm": "maps/poa/data/osm_centro.json",
+ "lat": -30.03,
+ "lon": -51.229,
+ "facades": [
+  "maps/poa/facades/facades_clean.json",
+  "maps/poa/facades/facades_commons_clean.json"
+ ],
+ "terrain": "maps/poa/data/terrain.json",
+ "textures": "maps/poa/out/poa_tex",
+ "start": [
+  108,
+  -5
+ ],
+ "out": "godot/city/poa.glb",
+ "bounds": [
+  -250,
+  -250,
+  250,
+  340
+ ],
+ "ring": true
+}

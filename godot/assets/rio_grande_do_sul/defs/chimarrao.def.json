@@ -1,0 +1,13 @@
+{
+ "id": "chimarrao",
+ "type": "Healing",
+ "name": "Chimarrão",
+ "model": "res://assets/rio_grande_do_sul/pickups/chimarrao/chimarrao.glb",
+ "effect": {
+  "heal": 20
+ },
+ "scale": 2.2,
+ "tags": [
+  "gaucho"
+ ]
+}

@@ -1,0 +1,4 @@
+Mala de garupa: geometria, mapas PBR, listras, adaptações e documentação originais, disponibilizados sob CC0 1.0 Universal, até onde seja juridicamente possível. Pode usar, modificar e redistribuir em jogo de código aberto ou comercial. Sem garantia.
+https://creativecommons.org/publicdomain/zero/1.0/legalcode
+
+As fotografias e páginas externas são referências visuais; não foram usadas como texturas nem incluídas como ativos. Os modelos de cavalo e pedestre nas prévias pertencem às entregas anteriores do projeto; não são redistribuídos no GLB deste pacote. A base anatômica do pedestre é MakeHuman CC0, conforme a documentação daquele pacote.

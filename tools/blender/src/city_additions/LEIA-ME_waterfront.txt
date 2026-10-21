@@ -1,0 +1,42 @@
+WATERFRONT
+
+Catamarã de cerca de 25 m e barco de passeio estilo vapor de cerca de 30 m. float_idle é um loop de 6 s com oscilação local; o jogo coloca o conjunto na superfície da água. A origem vertical é a referência inferior do casco, não o plano da água. Ajuste a altura de flutuação observando a linha dos cascos; não use cegamente a origem como nível da água. Hélices props_l / props_r giram no Z local; paddle_wheel controla as rodas de pás laterais no X local.
+
+Deck: módulos 4 × 2 m e guarda-corpo de 2 m, grade de encaixe de 0,5 m. Escada: footprint 1 × 1 m, três degraus, patamar superior Y=0,5875 m; coincide com o topo do deck. Poste de amarração separado. Alinhe os módulos por translações de 0,5 m. Água, navegação, passageiros e colisões são responsabilidade do jogo.
+
+ARQUIVOS
+
+barco_passeio_vapor_30m.glb: 39.372 triângulos; 0 ossos; 2 materiais.
+  float_idle: 6 s, 30 fps, loop
+
+catamara_passageiros_25m.glb: 30.476 triângulos; 0 ossos; 2 materiais.
+  float_idle: 6 s, 30 fps, loop
+
+deck_escada_3_degraus.glb: 1.100 triângulos; 0 ossos; 1 materiais.
+
+deck_guarda_corpo_2m.glb: 2.916 triângulos; 0 ossos; 1 materiais.
+
+deck_modulo_4x2.glb: 3.336 triângulos; 0 ossos; 1 materiais.
+
+poste_amarracao.glb: 1.052 triângulos; 0 ossos; 1 materiais.
+
+CITY INVADERS — ADIÇÕES REGIONAIS / 2026-10-17
+
+CONTEÚDO E USO
+GLB 2.0, metros, +Y para cima e frente −Z. Fontes .blend em coordenadas nativas do Blender (+Z para cima), com imagens incorporadas. GLBs têm mapas PBR incorporados 2048 × 2048: basecolor, normal tangente OpenGL +Y e metallic_roughness (G=roughness; B=metallic). Alguns objetos usam mais de um conjunto/material, conforme os componentes. Sem luzes/câmeras/planos de apresentação nos modelos; o piso dos módulos de deck é parte do próprio objeto.
+
+Animações amostradas a 30 fps; loops identificados em animation.extras.loop. No Godot, confira a opção de loop após importar, pois extras não são garantidos como configuração do AnimationPlayer. Sem deslocamento horizontal acumulado do nó raiz: o jogo controla movimento. Clips de decolagem/pouso e movimentos de reação incluem deslocamentos locais dos componentes.
+
+VALIDAÇÃO
+35 GLBs conferidos: Khronos Validator com zero erros e zero avisos. Auditoria de geometria/texturas/pesos/normais/orçamentos/tempos e fechamento dos loops em GEOMETRY_ANIMATION_AUDIT.json; fontes em BLENDER_SOURCE_AUDIT.json. Relatórios individuais nas pastas validation/. Texturas realmente embutidas, pesos normalizados e sem triângulos degenerados detectados.
+
+Contato dos pés: verificações numéricas nos quadros de 30 fps e velocidades nominais em solo plano. Entre quadros, a interpolação introduz desvios de até aproximadamente 5,9 mm nos casos medidos. Consulte CONTACT_VALIDATION.json e SUBFRAME_CONTACT_CHECK.json. Inclinações, mudanças de velocidade e misturas de clipes precisam de ajuste/IK no jogo.
+
+LIMITES VISUAIS E DE INTEGRAÇÃO
+As prévias são renders dos arquivos entregues. Há simplificações visíveis em anatomia, mãos, penas/pelagem e acabamento; este lote não é fotorrealista e não deve ser interpretado como equivalente a escaneamento ou escultura manual de alta resolução. O fole, as juntas e os clipes existem, mas a qualidade artística de poses e deformações exige avaliação no enquadramento final. Godot não estava instalado para teste de importação/execução; a validação feita é dos arquivos, não um teste dentro do motor. Colisão, física, gameplay, navegação e efeitos são configurados no projeto.
+
+LICENÇAS
+Geometria/animações originais CC0; bases MakeHuman CC0. A imagem da bandeira é CC BY 2.5 e exige crédito. Leia LICENSES.txt e LICENSE-MakeHuman-Assets.txt.
+
+ORGANIZAÇÃO
+Cada pasta traz glb/, blend/, textures/, previews/, validation/, LEIA-ME.txt e CONTACT_SHEET.jpg. CATALOGO.html reúne os arquivos; os GIFs solicitados estão em corn/previews/ e musician/previews/. Todos os GLBs possuem .blend correspondente. Não é necessária conexão de conta para abrir estes arquivos.

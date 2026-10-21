@@ -1,0 +1,19 @@
+{
+  "texture_size": [
+    2048,
+    2048
+  ],
+  "wrap_region_pixels": [
+    0,
+    0,
+    2048,
+    1024
+  ],
+  "logo_centres_u": [
+    0.25,
+    0.75
+  ],
+  "angular_separation_degrees": 180,
+  "uv_origin": "Blender bottom-left; wrap uses v=0.5..1",
+  "note": "Original vector label arrangement for game readability; not official packaging artwork."
+}

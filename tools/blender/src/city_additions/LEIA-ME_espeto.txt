@@ -1,0 +1,27 @@
+ESPETO GAÚCHO — ARSENAL FPS
+
+Quatro GLBs:
+espeto_churrasco_viewmodel.glb — 18.768 triângulos.
+espeto_churrasco_pickup.glb — 3.936 triângulos.
+espeto_com_carne_viewmodel.glb — 19.740 triângulos.
+espeto_com_carne_pickup.glb — 4.908 triângulos.
+
+Comprimento aproximado 80 cm, lâmina de aço inox chata de 2,5 cm de largura e 3 mm de espessura, ponta afiada e cabo torneado de madeira com anéis metálicos. Variante com três pedaços de carne assada. Pickups deitados, eixo longo −Z, origem no centro do volume. Os pickups não têm mãos ou rig.
+
+VIEW MODEL
+ViewRoot na câmera (0,0,0), olhando −Z; FOV horizontal 70° em 16:9, vertical cerca de 43°. Mesmo conjunto de 43 ossos-base do revólver original do Arsenal FPS, incluindo Weapon; Magazine, SpareMagazine, Bolt, Speedloader e Ejector são preservados como ossos de compatibilidade, sem peças de arma de fogo. Cylinder/Hammer da revisão específica do revólver não são necessários para este espeto. Mangas e punhos preservados, mãos substituídas por uma base anatômica contínua MakeHuman CC0, adaptada ao rig existente; três mapas arms_shared idênticos aos anteriores. Empunhadura na mão direita, esquerda em guarda. Sem geometria atrás da câmera nos quadros conferidos dos seis clipes.
+
+CLIPES
+idle: 1,6 s, único loop.
+draw: 0,4 s, sobe da borda inferior.
+stab: 0,35 s, estocada com avanço e retorno.
+slash: 0,5 s, movimento lateral da direita para a esquerda e retorno.
+throw: 0,6 s, giro de arremesso; o modelo em primeira pessoa é ocultado após soltar.
+block: 0,3 s, defesa e retorno.
+Todos são amostrados nominalmente a 30 fps. Para preservar exatamente os 0,35 s da estocada, a última chave está em meio quadro (quadro 10,5), após as chaves regulares de 30 fps. Não foi arredondada para 0,333 ou 0,367 s. Confira a duração após eventual reamostragem pelo motor.
+
+throw: liberação em 1/3 s (quadro 10). Weapon.scale muda em STEP para escala pequena. O jogo deve criar o projétil, dar-lhe velocidade/giro e configurar dano/colisão; nenhum projétil físico é criado pelo GLB. Use o pickup correspondente. A origem do pickup fica aproximadamente 0,32 m à frente do pivô Weapon, no eixo local −Z: compense esse deslocamento ao reaproveitar o transform da empunhadura para instanciar o projétil. idle/draw restauram a escala do espeto. Não há root motion.
+
+As prévias camera_70, stab, slash, block e throw usam a câmera exata de 70°. As fontes .blend têm todos os clipes importados; selecione a ação/faixa desejada ao editar. O modelo está em arquivo separado: nenhum arquivo de arma antiga ou script do motor foi modificado.
+
+PBR 2048 incorporado. Mapas em textures/. Normal OpenGL +Y e metallic_roughness G/B. GLBs sem luzes/câmeras. Fontes limpas, sem fundo de apresentação. Validação Khronos sem erros/avisos. Há simplificações visuais nas mãos e materiais; sem teste em Godot.

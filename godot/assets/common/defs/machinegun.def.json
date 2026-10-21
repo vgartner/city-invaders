@@ -1,0 +1,7 @@
+{
+ "id": "machinegun",
+ "type": "Weapon",
+ "name": "Machine gun",
+ "model": "res://assets/common/weapons/machinegun/carbine_556_pickup.glb",
+ "stand": true
+}

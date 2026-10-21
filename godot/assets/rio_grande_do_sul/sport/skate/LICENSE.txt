@@ -1,0 +1,11 @@
+CC0 1.0 Universal
+
+To the extent possible under law, all original geometry, textures and preview
+images in this skatepark package are dedicated to the public domain under
+CC0 1.0 Universal. Commercial use, modification and redistribution permitted.
+No attribution required. https://creativecommons.org/publicdomain/zero/1.0/
+
+Original procedural geometry and texture artwork created for this delivery.
+No manufacturer assets, logos, photographs, scans or third-party graffiti.
+Blender, Godot and Khronos Validator retain their own software licenses and
+are not redistributed as part of this package.

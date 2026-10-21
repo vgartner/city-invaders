@@ -1,0 +1,390 @@
+{
+  "farmacia_loja_06m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -6.19
+      ],
+      "size_m": [
+        5.5,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "farmacia_loja_09m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -6.19
+      ],
+      "size_m": [
+        6,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "farmacia_loja_12m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -6.19
+      ],
+      "size_m": [
+        6,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "farmacia_modulo_04m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -4.19
+      ],
+      "size_m": [
+        3.5,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "farmacia_modulo_06m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -4.19
+      ],
+      "size_m": [
+        5.5,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "farmacia_modulo_08m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -4.19
+      ],
+      "size_m": [
+        6,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "mercado_loja_06m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -6.19
+      ],
+      "size_m": [
+        5.5,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "mercado_loja_09m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -6.19
+      ],
+      "size_m": [
+        6,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "mercado_loja_12m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -6.19
+      ],
+      "size_m": [
+        6,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "mercado_modulo_04m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -4.19
+      ],
+      "size_m": [
+        3.5,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "mercado_modulo_06m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -4.19
+      ],
+      "size_m": [
+        5.5,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "mercado_modulo_08m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -4.19
+      ],
+      "size_m": [
+        6,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "padaria_loja_06m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -6.19
+      ],
+      "size_m": [
+        5.5,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "padaria_loja_09m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -6.19
+      ],
+      "size_m": [
+        6,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "padaria_loja_12m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -6.19
+      ],
+      "size_m": [
+        6,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "padaria_modulo_04m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -4.19
+      ],
+      "size_m": [
+        3.5,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "padaria_modulo_06m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -4.19
+      ],
+      "size_m": [
+        5.5,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "padaria_modulo_08m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -4.19
+      ],
+      "size_m": [
+        6,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "banco_loja_06m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -6.19
+      ],
+      "size_m": [
+        5.5,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "banco_loja_09m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -6.19
+      ],
+      "size_m": [
+        6,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "banco_loja_12m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -6.19
+      ],
+      "size_m": [
+        6,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "banco_modulo_04m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -4.19
+      ],
+      "size_m": [
+        3.5,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "banco_modulo_06m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -4.19
+      ],
+      "size_m": [
+        5.5,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "banco_modulo_08m.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        3.3,
+        -4.19
+      ],
+      "size_m": [
+        6,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ],
+  "posto_generico.glb": [
+    {
+      "node": "caption_1",
+      "position_m": [
+        0,
+        5.64,
+        -8.12
+      ],
+      "size_m": [
+        6.0,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    },
+    {
+      "node": "caption_2",
+      "position_m": [
+        -11.2,
+        4.5,
+        -10.5
+      ],
+      "size_m": [
+        3.5,
+        0.78
+      ],
+      "outward_local_axis": "-Z"
+    }
+  ]
+}

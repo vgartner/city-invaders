@@ -1,0 +1,15 @@
+CC0 1.0 Universal — Public Domain Dedication
+
+Modelagem, atlas procedural, montagem e alterações deste pacote são oferecidos
+sob CC0 1.0. Os móveis reutilizados são os modelos originais dos pacotes de
+interiores produzidos anteriormente para City Invaders, igualmente CC0.
+
+Na extensão permitida por lei, todos os direitos sobre essas contribuições
+são renunciados. É permitido copiar, modificar, distribuir e usar em jogos
+comerciais ou de código aberto, sem exigência de atribuição.
+Sem garantia de qualquer tipo.
+
+Termos oficiais completos:
+https://creativecommons.org/publicdomain/zero/1.0/legalcode
+
+Sem logos, marcas, fotografias ou modelos de terceiros incorporados.

@@ -1,0 +1,1516 @@
+{
+  "format": "City Invaders layout v1",
+  "units": "metres",
+  "up": "+Y",
+  "front": "-Z",
+  "rotation_convention": "Euler XYZ degrees, apply Y yaw; positive clockwise looking down +Y",
+  "room_dimensions_m": [
+    12,
+    3.2,
+    12
+  ],
+  "module_grid_m": 4,
+  "instances": [
+    {
+      "id": "mod_piso_carpete_4x4_1",
+      "model": "../shared/glb/mod_piso_carpete_4x4.glb",
+      "position": [
+        -4,
+        0,
+        -4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_forro_4x4_2",
+      "model": "../shared/glb/mod_forro_4x4.glb",
+      "position": [
+        -4,
+        0,
+        -4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "ceiling"
+    },
+    {
+      "id": "mod_piso_carpete_4x4_3",
+      "model": "../shared/glb/mod_piso_carpete_4x4.glb",
+      "position": [
+        -4,
+        0,
+        0.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_forro_4x4_4",
+      "model": "../shared/glb/mod_forro_4x4.glb",
+      "position": [
+        -4,
+        0,
+        0.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "ceiling"
+    },
+    {
+      "id": "mod_piso_carpete_4x4_5",
+      "model": "../shared/glb/mod_piso_carpete_4x4.glb",
+      "position": [
+        -4,
+        0,
+        4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_forro_4x4_6",
+      "model": "../shared/glb/mod_forro_4x4.glb",
+      "position": [
+        -4,
+        0,
+        4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "ceiling"
+    },
+    {
+      "id": "mod_piso_carpete_4x4_7",
+      "model": "../shared/glb/mod_piso_carpete_4x4.glb",
+      "position": [
+        0,
+        0,
+        -4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_forro_4x4_8",
+      "model": "../shared/glb/mod_forro_4x4.glb",
+      "position": [
+        0,
+        0,
+        -4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "ceiling"
+    },
+    {
+      "id": "mod_piso_carpete_4x4_9",
+      "model": "../shared/glb/mod_piso_carpete_4x4.glb",
+      "position": [
+        0,
+        0,
+        0.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_forro_4x4_10",
+      "model": "../shared/glb/mod_forro_4x4.glb",
+      "position": [
+        0,
+        0,
+        0.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "ceiling"
+    },
+    {
+      "id": "mod_piso_carpete_4x4_11",
+      "model": "../shared/glb/mod_piso_carpete_4x4.glb",
+      "position": [
+        0,
+        0,
+        4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_forro_4x4_12",
+      "model": "../shared/glb/mod_forro_4x4.glb",
+      "position": [
+        0,
+        0,
+        4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "ceiling"
+    },
+    {
+      "id": "mod_piso_carpete_4x4_13",
+      "model": "../shared/glb/mod_piso_carpete_4x4.glb",
+      "position": [
+        4,
+        0,
+        -4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_forro_4x4_14",
+      "model": "../shared/glb/mod_forro_4x4.glb",
+      "position": [
+        4,
+        0,
+        -4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "ceiling"
+    },
+    {
+      "id": "mod_piso_carpete_4x4_15",
+      "model": "../shared/glb/mod_piso_carpete_4x4.glb",
+      "position": [
+        4,
+        0,
+        0.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_forro_4x4_16",
+      "model": "../shared/glb/mod_forro_4x4.glb",
+      "position": [
+        4,
+        0,
+        0.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "ceiling"
+    },
+    {
+      "id": "mod_piso_carpete_4x4_17",
+      "model": "../shared/glb/mod_piso_carpete_4x4.glb",
+      "position": [
+        4,
+        0,
+        4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_forro_4x4_18",
+      "model": "../shared/glb/mod_forro_4x4.glb",
+      "position": [
+        4,
+        0,
+        4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "ceiling"
+    },
+    {
+      "id": "mod_parede_4m_19",
+      "model": "../shared/glb/mod_parede_4m.glb",
+      "position": [
+        -4,
+        0,
+        6.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_fachada_vitrine_4m_20",
+      "model": "../shared/glb/mod_fachada_vitrine_4m.glb",
+      "position": [
+        -4,
+        0,
+        -6.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_parede_4m_21",
+      "model": "../shared/glb/mod_parede_4m.glb",
+      "position": [
+        0,
+        0,
+        6.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_fachada_porta_vitrine_4m_22",
+      "model": "../shared/glb/mod_fachada_porta_vitrine_4m.glb",
+      "position": [
+        0,
+        0,
+        -6.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_parede_4m_23",
+      "model": "../shared/glb/mod_parede_4m.glb",
+      "position": [
+        4,
+        0,
+        6.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_fachada_vitrine_4m_24",
+      "model": "../shared/glb/mod_fachada_vitrine_4m.glb",
+      "position": [
+        4,
+        0,
+        -6.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_parede_4m_25",
+      "model": "../shared/glb/mod_parede_4m.glb",
+      "position": [
+        -6,
+        0,
+        -4.0
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_parede_4m_26",
+      "model": "../shared/glb/mod_parede_4m.glb",
+      "position": [
+        6,
+        0,
+        -4.0
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_parede_4m_27",
+      "model": "../shared/glb/mod_parede_4m.glb",
+      "position": [
+        -6,
+        0,
+        0.0
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_parede_4m_28",
+      "model": "../shared/glb/mod_parede_4m.glb",
+      "position": [
+        6,
+        0,
+        0.0
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_parede_4m_29",
+      "model": "../shared/glb/mod_parede_4m.glb",
+      "position": [
+        -6,
+        0,
+        4.0
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_parede_4m_30",
+      "model": "../shared/glb/mod_parede_4m.glb",
+      "position": [
+        6,
+        0,
+        4.0
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "balcao_recepcao_31",
+      "model": "../escritorio/glb/balcao_recepcao.glb",
+      "position": [
+        -3.5,
+        0,
+        -3.8
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "mesa_baia_32",
+      "model": "../escritorio/glb/mesa_baia.glb",
+      "position": [
+        -4.4,
+        0,
+        -0.9
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "monitor_teclado_mouse_33",
+      "model": "../escritorio/glb/monitor_teclado_mouse.glb",
+      "position": [
+        -4.4,
+        0.75,
+        -0.9
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "computador_torre_34",
+      "model": "../escritorio/glb/computador_torre.glb",
+      "position": [
+        -3.8800000000000003,
+        0,
+        -0.8
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "cadeira_giratoria_35",
+      "model": "../escritorio/glb/cadeira_giratoria.glb",
+      "position": [
+        -4.4,
+        0,
+        -1.69
+      ],
+      "rotation_degrees": [
+        0,
+        180,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "mesa_baia_36",
+      "model": "../escritorio/glb/mesa_baia.glb",
+      "position": [
+        -4.4,
+        0,
+        1.4
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "monitor_teclado_mouse_37",
+      "model": "../escritorio/glb/monitor_teclado_mouse.glb",
+      "position": [
+        -4.4,
+        0.75,
+        1.4
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "computador_torre_38",
+      "model": "../escritorio/glb/computador_torre.glb",
+      "position": [
+        -3.8800000000000003,
+        0,
+        1.5
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "cadeira_giratoria_39",
+      "model": "../escritorio/glb/cadeira_giratoria.glb",
+      "position": [
+        -4.4,
+        0,
+        0.6099999999999999
+      ],
+      "rotation_degrees": [
+        0,
+        180,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "mesa_baia_40",
+      "model": "../escritorio/glb/mesa_baia.glb",
+      "position": [
+        -4.4,
+        0,
+        3.7
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "monitor_teclado_mouse_41",
+      "model": "../escritorio/glb/monitor_teclado_mouse.glb",
+      "position": [
+        -4.4,
+        0.75,
+        3.7
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "computador_torre_42",
+      "model": "../escritorio/glb/computador_torre.glb",
+      "position": [
+        -3.8800000000000003,
+        0,
+        3.8000000000000003
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "cadeira_giratoria_43",
+      "model": "../escritorio/glb/cadeira_giratoria.glb",
+      "position": [
+        -4.4,
+        0,
+        2.91
+      ],
+      "rotation_degrees": [
+        0,
+        180,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "mesa_baia_44",
+      "model": "../escritorio/glb/mesa_baia.glb",
+      "position": [
+        -2.4,
+        0,
+        -0.9
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "monitor_teclado_mouse_45",
+      "model": "../escritorio/glb/monitor_teclado_mouse.glb",
+      "position": [
+        -2.4,
+        0.75,
+        -0.9
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "computador_torre_46",
+      "model": "../escritorio/glb/computador_torre.glb",
+      "position": [
+        -1.88,
+        0,
+        -0.8
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "cadeira_giratoria_47",
+      "model": "../escritorio/glb/cadeira_giratoria.glb",
+      "position": [
+        -2.4,
+        0,
+        -1.69
+      ],
+      "rotation_degrees": [
+        0,
+        180,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "mesa_baia_48",
+      "model": "../escritorio/glb/mesa_baia.glb",
+      "position": [
+        -2.4,
+        0,
+        1.4
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "monitor_teclado_mouse_49",
+      "model": "../escritorio/glb/monitor_teclado_mouse.glb",
+      "position": [
+        -2.4,
+        0.75,
+        1.4
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "computador_torre_50",
+      "model": "../escritorio/glb/computador_torre.glb",
+      "position": [
+        -1.88,
+        0,
+        1.5
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "cadeira_giratoria_51",
+      "model": "../escritorio/glb/cadeira_giratoria.glb",
+      "position": [
+        -2.4,
+        0,
+        0.6099999999999999
+      ],
+      "rotation_degrees": [
+        0,
+        180,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "mesa_baia_52",
+      "model": "../escritorio/glb/mesa_baia.glb",
+      "position": [
+        -2.4,
+        0,
+        3.7
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "monitor_teclado_mouse_53",
+      "model": "../escritorio/glb/monitor_teclado_mouse.glb",
+      "position": [
+        -2.4,
+        0.75,
+        3.7
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "computador_torre_54",
+      "model": "../escritorio/glb/computador_torre.glb",
+      "position": [
+        -1.88,
+        0,
+        3.8000000000000003
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "cadeira_giratoria_55",
+      "model": "../escritorio/glb/cadeira_giratoria.glb",
+      "position": [
+        -2.4,
+        0,
+        2.91
+      ],
+      "rotation_degrees": [
+        0,
+        180,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "armario_arquivos_56",
+      "model": "../escritorio/glb/armario_arquivos.glb",
+      "position": [
+        -4.7,
+        0,
+        5.6
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "armario_arquivos_57",
+      "model": "../escritorio/glb/armario_arquivos.glb",
+      "position": [
+        -3.7,
+        0,
+        5.6
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "armario_arquivos_58",
+      "model": "../escritorio/glb/armario_arquivos.glb",
+      "position": [
+        -2.7,
+        0,
+        5.6
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "impressora_59",
+      "model": "../escritorio/glb/impressora.glb",
+      "position": [
+        -3.7,
+        1.44,
+        5.6
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "bebedouro_60",
+      "model": "../escritorio/glb/bebedouro.glb",
+      "position": [
+        4.9,
+        0,
+        -3.8
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "mesa_reuniao_61",
+      "model": "../escritorio/glb/mesa_reuniao.glb",
+      "position": [
+        3.9,
+        0,
+        4.0
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "cadeira_giratoria_62",
+      "model": "../escritorio/glb/cadeira_giratoria.glb",
+      "position": [
+        2.9,
+        0,
+        3.2
+      ],
+      "rotation_degrees": [
+        0,
+        -90,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "cadeira_giratoria_63",
+      "model": "../escritorio/glb/cadeira_giratoria.glb",
+      "position": [
+        4.9,
+        0,
+        3.2
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "cadeira_giratoria_64",
+      "model": "../escritorio/glb/cadeira_giratoria.glb",
+      "position": [
+        2.9,
+        0,
+        4.0
+      ],
+      "rotation_degrees": [
+        0,
+        -90,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "cadeira_giratoria_65",
+      "model": "../escritorio/glb/cadeira_giratoria.glb",
+      "position": [
+        4.9,
+        0,
+        4.0
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "cadeira_giratoria_66",
+      "model": "../escritorio/glb/cadeira_giratoria.glb",
+      "position": [
+        2.9,
+        0,
+        4.8
+      ],
+      "rotation_degrees": [
+        0,
+        -90,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "cadeira_giratoria_67",
+      "model": "../escritorio/glb/cadeira_giratoria.glb",
+      "position": [
+        4.9,
+        0,
+        4.8
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "mod_divisoria_porta_4m_68",
+      "model": "../shared/glb/mod_divisoria_porta_4m.glb",
+      "position": [
+        4,
+        0,
+        2.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "mod_parede_4m_69",
+      "model": "../shared/glb/mod_parede_4m.glb",
+      "position": [
+        2,
+        0,
+        4
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "room"
+    },
+    {
+      "id": "tapete_entrada_70",
+      "model": "../extras/glb/tapete_entrada.glb",
+      "position": [
+        -0.9,
+        0.004,
+        -5.15
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "extintor_parede_71",
+      "model": "../extras/glb/extintor_parede.glb",
+      "position": [
+        5.86,
+        0.85,
+        -4.2
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "kit_tomadas_conduite_72",
+      "model": "../extras/glb/kit_tomadas_conduite.glb",
+      "position": [
+        5.86,
+        0.32,
+        0
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "ar_condicionado_split_73",
+      "model": "../extras/glb/ar_condicionado_split.glb",
+      "position": [
+        0,
+        2.55,
+        5.82
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "quadro_avisos_74",
+      "model": "../extras/glb/quadro_avisos.glb",
+      "position": [
+        -5.86,
+        1.15,
+        -1.8
+      ],
+      "rotation_degrees": [
+        0,
+        -90,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "lixeira_pedal_75",
+      "model": "../extras/glb/lixeira_pedal.glb",
+      "position": [
+        4.95,
+        0,
+        -4.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "planta_vaso_76",
+      "model": "../extras/glb/planta_vaso.glb",
+      "position": [
+        -5.35,
+        0,
+        1.1
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "ventilador_parede_77",
+      "model": "../extras/glb/ventilador_parede.glb",
+      "position": [
+        5.65,
+        2.0,
+        2.8
+      ],
+      "rotation_degrees": [
+        0,
+        90,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "papelaria_caneca_78",
+      "model": "../extras/glb/papelaria_caneca.glb",
+      "position": [
+        -4.4,
+        0.75,
+        -0.9
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "papelaria_caneca_79",
+      "model": "../extras/glb/papelaria_caneca.glb",
+      "position": [
+        -4.4,
+        0.75,
+        1.4
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "papelaria_caneca_80",
+      "model": "../extras/glb/papelaria_caneca.glb",
+      "position": [
+        -4.4,
+        0.75,
+        3.7
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "papelaria_caneca_81",
+      "model": "../extras/glb/papelaria_caneca.glb",
+      "position": [
+        -2.4,
+        0.75,
+        -0.9
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "papelaria_caneca_82",
+      "model": "../extras/glb/papelaria_caneca.glb",
+      "position": [
+        -2.4,
+        0.75,
+        1.4
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "papelaria_caneca_83",
+      "model": "../extras/glb/papelaria_caneca.glb",
+      "position": [
+        -2.4,
+        0.75,
+        3.7
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "persiana_veneziana_84",
+      "model": "../extras/glb/persiana_veneziana.glb",
+      "position": [
+        -4.9,
+        0.5,
+        -5.82
+      ],
+      "rotation_degrees": [
+        0,
+        180,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "persiana_veneziana_85",
+      "model": "../extras/glb/persiana_veneziana.glb",
+      "position": [
+        -3.1,
+        0.5,
+        -5.82
+      ],
+      "rotation_degrees": [
+        0,
+        180,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "persiana_veneziana_86",
+      "model": "../extras/glb/persiana_veneziana.glb",
+      "position": [
+        3.1,
+        0.5,
+        -5.82
+      ],
+      "rotation_degrees": [
+        0,
+        180,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "persiana_veneziana_87",
+      "model": "../extras/glb/persiana_veneziana.glb",
+      "position": [
+        4.9,
+        0.5,
+        -5.82
+      ],
+      "rotation_degrees": [
+        0,
+        180,
+        0
+      ],
+      "category": "furniture"
+    },
+    {
+      "id": "persiana_veneziana_88",
+      "model": "../extras/glb/persiana_veneziana.glb",
+      "position": [
+        0.95,
+        0.5,
+        -5.82
+      ],
+      "rotation_degrees": [
+        0,
+        180,
+        0
+      ],
+      "category": "furniture"
+    }
+  ],
+  "markers": {
+    "door": {
+      "position": [
+        -0.9,
+        0,
+        -6.0
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    "cashier_spot": {
+      "position": [
+        -3.5,
+        0,
+        -3.1
+      ],
+      "rotation_degrees": [
+        0,
+        0,
+        0
+      ]
+    },
+    "customer_spots": [
+      {
+        "name": "customer_1",
+        "position": [
+          -0.9,
+          0,
+          -4.8
+        ],
+        "rotation_degrees": [
+          0,
+          180,
+          0
+        ]
+      },
+      {
+        "name": "customer_2",
+        "position": [
+          -0.9,
+          0,
+          -4.0
+        ],
+        "rotation_degrees": [
+          0,
+          180,
+          0
+        ]
+      },
+      {
+        "name": "customer_3",
+        "position": [
+          1.0,
+          0,
+          0
+        ],
+        "rotation_degrees": [
+          0,
+          180,
+          0
+        ]
+      }
+    ],
+    "pickup_spots": [
+      {
+        "name": "pickup_1",
+        "position": [
+          -3.5,
+          0.99,
+          -3.8
+        ]
+      },
+      {
+        "name": "pickup_2",
+        "position": [
+          3.9,
+          0.76,
+          4.5
+        ]
+      },
+      {
+        "name": "pickup_3",
+        "position": [
+          -4.9,
+          0.75,
+          -0.6
+        ]
+      }
+    ],
+    "lights": [
+      {
+        "name": "light_1",
+        "position": [
+          -4,
+          3.18,
+          -4.0
+        ],
+        "emissive_mesh": "light_surface"
+      },
+      {
+        "name": "light_2",
+        "position": [
+          -4,
+          3.18,
+          0.0
+        ],
+        "emissive_mesh": "light_surface"
+      },
+      {
+        "name": "light_3",
+        "position": [
+          -4,
+          3.18,
+          4.0
+        ],
+        "emissive_mesh": "light_surface"
+      },
+      {
+        "name": "light_4",
+        "position": [
+          0,
+          3.18,
+          -4.0
+        ],
+        "emissive_mesh": "light_surface"
+      },
+      {
+        "name": "light_5",
+        "position": [
+          0,
+          3.18,
+          0.0
+        ],
+        "emissive_mesh": "light_surface"
+      },
+      {
+        "name": "light_6",
+        "position": [
+          0,
+          3.18,
+          4.0
+        ],
+        "emissive_mesh": "light_surface"
+      },
+      {
+        "name": "light_7",
+        "position": [
+          4,
+          3.18,
+          -4.0
+        ],
+        "emissive_mesh": "light_surface"
+      },
+      {
+        "name": "light_8",
+        "position": [
+          4,
+          3.18,
+          0.0
+        ],
+        "emissive_mesh": "light_surface"
+      },
+      {
+        "name": "light_9",
+        "position": [
+          4,
+          3.18,
+          4.0
+        ],
+        "emissive_mesh": "light_surface"
+      }
+    ]
+  },
+  "notes": [
+    "All GLB paths relative to this layout.json folder.",
+    "Ceilings can be hidden for overview; present in complete room.",
+    "Emissive surfaces require runtime lights to illuminate the scene."
+  ]
+}

@@ -1,0 +1,18 @@
+{
+ "id": "churrasco",
+ "type": "Healing",
+ "name": "Espeto de churrasco",
+ "model": "res://assets/rio_grande_do_sul/pickups/churrasco/churrasco.glb",
+ "effect": {
+  "heal": 35
+ },
+ "glow": [
+  1.0,
+  0.45,
+  0.2
+ ],
+ "tags": [
+  "gaucho",
+  "food"
+ ]
+}

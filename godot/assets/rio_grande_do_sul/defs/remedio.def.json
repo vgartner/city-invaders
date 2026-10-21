@@ -1,0 +1,10 @@
+{
+ "id": "remedio",
+ "type": "Healing",
+ "name": "Remédio",
+ "model": "res://assets/common/pickups/medkit/medkit.glb",
+ "effect": {
+  "heal": 50
+ },
+ "scale": 0.6
+}

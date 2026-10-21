@@ -1,0 +1,216 @@
+{
+ "_doc": "What an OpenStreetMap place is in the game (tools/osm2gltf.py writes <map>.places.json from it; main.gd reads both). match: OSM tag -> values. label: shown in the editor and the tablet. icon: the tablet's map pictogram (gadgets/tablet/ui/map/<icon>.png). pickup: a role (roles.json) or item id put at its door, respawning. sign: a sign on its facade. model: a hand-made model placed there when the place is not a building (a fuel station's forecourt). interior: an interior set (layout.json) for a small one-storey shop: the building becomes a walk-in shell (walls, shop window, door, a sign with the place's name) with that furniture inside. caption: the sign's text when OSM has no name. storefront: generic shop models (common/storefronts, %s = front width in metres) - shop: a whole one-storey shop, widths; a small shop building gets the widest that fits, the rest of its footprint stays a building. module: the street-level shop module for a taller building (its front just outside the facade).",
+ "fuel": {
+  "match": {
+   "amenity": [
+    "fuel"
+   ]
+  },
+  "label": "Posto de gasolina",
+  "icon": "posto_gasolina",
+  "model": "res://assets/common/storefronts/posto_generico.gltf",
+  "clear_m": 17,
+  "caption": "POSTO"
+ },
+ "pharmacy": {
+  "match": {
+   "amenity": [
+    "pharmacy"
+   ],
+   "shop": [
+    "chemist"
+   ],
+   "healthcare": [
+    "pharmacy"
+   ]
+  },
+  "label": "Farmácia",
+  "icon": "farmacia",
+  "pickup": "medicine",
+  "sign": "cross",
+  "interior": "res://assets/common/interiors/farmacia/layout.json",
+  "caption": "FARMÁCIA",
+  "storefront": {
+   "shop": "res://assets/common/storefronts/farmacia_loja_%02dm.gltf",
+   "widths": [
+    6,
+    9,
+    12
+   ],
+   "depth": 12,
+   "module": "res://assets/common/storefronts/farmacia_modulo_%02dm.gltf",
+   "module_widths": [
+    4,
+    6,
+    8
+   ]
+  }
+ },
+ "hospital": {
+  "match": {
+   "amenity": [
+    "hospital",
+    "clinic",
+    "doctors"
+   ],
+   "healthcare": [
+    "hospital",
+    "clinic",
+    "doctor"
+   ]
+  },
+  "label": "Hospital",
+  "icon": "hospital",
+  "pickup": "medicine",
+  "sign": "cross",
+  "caption": "HOSPITAL"
+ },
+ "bakery": {
+  "match": {
+   "shop": [
+    "bakery",
+    "pastry",
+    "confectionery"
+   ]
+  },
+  "label": "Padaria",
+  "icon": "restaurante",
+  "pickup": "healing_small",
+  "caption": "PADARIA",
+  "storefront": {
+   "shop": "res://assets/common/storefronts/padaria_loja_%02dm.gltf",
+   "widths": [
+    6,
+    9,
+    12
+   ],
+   "depth": 12,
+   "module": "res://assets/common/storefronts/padaria_modulo_%02dm.gltf",
+   "module_widths": [
+    4,
+    6,
+    8
+   ]
+  },
+  "interior": "res://assets/common/interiors/bar_lancheria/layout.json"
+ },
+ "market": {
+  "match": {
+   "shop": [
+    "supermarket",
+    "convenience",
+    "greengrocer",
+    "butcher"
+   ],
+   "amenity": [
+    "marketplace"
+   ]
+  },
+  "label": "Mercado",
+  "icon": "mercado",
+  "pickup": "healing_small",
+  "interior": "res://assets/common/interiors/supermercado/layout.json",
+  "caption": "MERCADO",
+  "storefront": {
+   "shop": "res://assets/common/storefronts/mercado_loja_%02dm.gltf",
+   "widths": [
+    6,
+    9,
+    12
+   ],
+   "depth": 12,
+   "module": "res://assets/common/storefronts/mercado_modulo_%02dm.gltf",
+   "module_widths": [
+    4,
+    6,
+    8
+   ]
+  }
+ },
+ "restaurant": {
+  "match": {
+   "amenity": [
+    "restaurant",
+    "fast_food",
+    "cafe",
+    "bar",
+    "pub"
+   ]
+  },
+  "label": "Restaurante",
+  "icon": "restaurante",
+  "pickup": "healing_big",
+  "interior": "res://assets/common/interiors/bar_lancheria/layout.json",
+  "caption": "LANCHERIA",
+  "storefront": {
+   "shop": "res://assets/common/storefronts/padaria_loja_%02dm.gltf",
+   "widths": [
+    6,
+    9,
+    12
+   ],
+   "depth": 12,
+   "module": "res://assets/common/storefronts/padaria_modulo_%02dm.gltf",
+   "module_widths": [
+    4,
+    6,
+    8
+   ]
+  }
+ },
+ "bank": {
+  "match": {
+   "amenity": [
+    "bank"
+   ]
+  },
+  "label": "Banco",
+  "icon": "objetivo",
+  "caption": "BANCO",
+  "storefront": {
+   "shop": "res://assets/common/storefronts/banco_loja_%02dm.gltf",
+   "widths": [
+    6,
+    9,
+    12
+   ],
+   "depth": 12,
+   "module": "res://assets/common/storefronts/banco_modulo_%02dm.gltf",
+   "module_widths": [
+    4,
+    6,
+    8
+   ]
+  },
+  "interior": "res://assets/common/interiors/escritorio/layout.json"
+ },
+ "repair_shop": {
+  "match": {
+   "shop": [
+    "electronics",
+    "mobile_phone",
+    "computer",
+    "repair"
+   ],
+   "craft": [
+    "electronics_repair"
+   ]
+  },
+  "label": "Assistência técnica",
+  "icon": "assistencia_tecnica",
+  "caption": "ASSISTÊNCIA TÉCNICA",
+  "storefront": {
+   "shop": "res://assets/common/storefronts/assistencia_loja_%02dm.glb",
+   "widths": [
+    9
+   ],
+   "depth": 12,
+   "module": "res://assets/common/storefronts/banco_modulo_%02dm.gltf",
+   "module_widths": [
+    4,
+    6,
+    8
+   ]
+  }
+ }
+}

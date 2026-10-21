@@ -1,0 +1,4 @@
+CC0 1.0 UNIVERSAL — PUBLIC DOMAIN DEDICATION
+To the extent permitted by law, all copyright and related rights in the original model geometry, texture artwork, animation, preview images and source scripts created for this pack are waived under CC0 1.0 Universal. You may copy, modify, redistribute and use them in commercial or open-source games without permission or attribution. No warranty is provided.
+Legal instrument: https://creativecommons.org/publicdomain/zero/1.0/legalcode
+The existing City Invaders URB dropship was observed as an art-direction reference; none of its geometry or texture files is redistributed in this pack. No photo textures, real manufacturer marks or third-party scans are included.

@@ -1,0 +1,12 @@
+{
+ "id": "violonista",
+ "type": "Musician",
+ "name": "Violonista",
+ "model": "res://assets/rio_grande_do_sul/musicians/violonista_gaucho.glb",
+ "sound": {
+  "station": "violao"
+ },
+ "tags": [
+  "gaucho"
+ ]
+}

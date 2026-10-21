@@ -1,0 +1,31 @@
+MAKEHUMAN GRAPHICAL ASSET SOURCES
+
+The pedestrian characters adapt CC0 MakeHuman graphical assets. This includes
+the hm08 anatomical base mesh, native skin weights, age/body/facial morphs,
+core fitted garments and footwear, hair cards, eye meshes, eyebrow meshes,
+and source diffuse/normal surface maps. Added role accessories and cloth
+panels were built for this batch. Character surfaces were recoloured, atlas
+packed, and combined; geometry was fitted and reduced, then rigged/exported
+with a shared Mixamo-named skeleton and animated for this pack.
+
+Official repository:
+https://github.com/makehumancommunity/makehuman
+
+Base mesh:
+https://github.com/makehumancommunity/makehuman/blob/master/makehuman/data/3dobjs/base.obj
+
+Official system asset-pack catalogue, listing the included CC0 resources:
+https://static.makehumancommunity.org/assets/assetpacks/makehuman_system_assets.html
+
+Downloaded official asset pack:
+https://files2.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip
+
+Asset licensing:
+https://github.com/makehumancommunity/makehuman/blob/master/LICENSE.ASSETS.md
+https://github.com/makehumancommunity/makehuman/blob/master/LICENSE.md
+
+The source assets identify MakeHuman Team contributors, Data Collection AB,
+Joel Palmius and Jonas Hauquier, among others. Original per-asset and per-file
+credits are retained in the official source distribution. Graphical assets
+are released under CC0 1.0 Universal, separately from the application's code
+licence. A copy of the asset licence is included beside this document.

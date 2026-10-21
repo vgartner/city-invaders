@@ -1,0 +1,8 @@
+{
+ "id": "street_vendor",
+ "type": "Vendor",
+ "name": "Street vendor",
+ "models": [
+  "res://assets/rio_grande_do_sul/vendors"
+ ]
+}

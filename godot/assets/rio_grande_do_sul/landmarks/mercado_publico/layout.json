@@ -1,0 +1,3994 @@
+{
+ "units": "metres",
+ "up": "+Y",
+ "front": "-Z",
+ "cardinal_convention": "N=-Z, S=+Z, E=+X, W=-X; game axes, not a surveyed true-north registration",
+ "origin": "ground at footprint centre",
+ "footprint_m": [
+  110,
+  95
+ ],
+ "instances": [
+  {
+   "id": "market_building",
+   "model": "building/mercado_publico_porto_alegre.glb",
+   "position": [
+    0,
+    0,
+    0
+   ],
+   "rotation_degrees": [
+    0,
+    0,
+    0
+   ],
+   "category": "building"
+  },
+  {
+   "id": "stall_001",
+   "model": "stalls/banca_frutas_verduras.glb",
+   "position": [
+    -39.0,
+    0.0,
+    -37.0
+   ],
+   "rotation_degrees": [
+    0,
+    180,
+    0
+   ],
+   "category": "stall",
+   "type": "frutas_verduras"
+  },
+  {
+   "id": "stall_002",
+   "model": "stalls/banca_peixe_carne.glb",
+   "position": [
+    -33.0,
+    0.0,
+    -37.0
+   ],
+   "rotation_degrees": [
+    0,
+    180,
+    0
+   ],
+   "category": "stall",
+   "type": "peixe_carne"
+  },
+  {
+   "id": "stall_003",
+   "model": "stalls/banca_erva_mate_cuias.glb",
+   "position": [
+    -27.0,
+    0.0,
+    -37.0
+   ],
+   "rotation_degrees": [
+    0,
+    180,
+    0
+   ],
+   "category": "stall",
+   "type": "erva_mate_cuias"
+  },
+  {
+   "id": "stall_004",
+   "model": "stalls/banca_temperos_graos.glb",
+   "position": [
+    -21.0,
+    0.0,
+    -37.0
+   ],
+   "rotation_degrees": [
+    0,
+    180,
+    0
+   ],
+   "category": "stall",
+   "type": "temperos_graos"
+  },
+  {
+   "id": "stall_005",
+   "model": "stalls/banca_artigos_gauchos.glb",
+   "position": [
+    -15.0,
+    0.0,
+    -37.0
+   ],
+   "rotation_degrees": [
+    0,
+    180,
+    0
+   ],
+   "category": "stall",
+   "type": "artigos_gauchos"
+  },
+  {
+   "id": "stall_006",
+   "model": "stalls/banca_cafe_lancheria.glb",
+   "position": [
+    -9.0,
+    0.0,
+    -37.0
+   ],
+   "rotation_degrees": [
+    0,
+    180,
+    0
+   ],
+   "category": "stall",
+   "type": "cafe_lancheria"
+  },
+  {
+   "id": "stall_007",
+   "model": "stalls/banca_flores.glb",
+   "position": [
+    9.0,
+    0.0,
+    -37.0
+   ],
+   "rotation_degrees": [
+    0,
+    180,
+    0
+   ],
+   "category": "stall",
+   "type": "flores"
+  },
+  {
+   "id": "stall_008",
+   "model": "stalls/banca_frutas_verduras.glb",
+   "position": [
+    15.0,
+    0.0,
+    -37.0
+   ],
+   "rotation_degrees": [
+    0,
+    180,
+    0
+   ],
+   "category": "stall",
+   "type": "frutas_verduras"
+  },
+  {
+   "id": "stall_009",
+   "model": "stalls/banca_peixe_carne.glb",
+   "position": [
+    21.0,
+    0.0,
+    -37.0
+   ],
+   "rotation_degrees": [
+    0,
+    180,
+    0
+   ],
+   "category": "stall",
+   "type": "peixe_carne"
+  },
+  {
+   "id": "stall_010",
+   "model": "stalls/banca_erva_mate_cuias.glb",
+   "position": [
+    27.0,
+    0.0,
+    -37.0
+   ],
+   "rotation_degrees": [
+    0,
+    180,
+    0
+   ],
+   "category": "stall",
+   "type": "erva_mate_cuias"
+  },
+  {
+   "id": "stall_011",
+   "model": "stalls/banca_temperos_graos.glb",
+   "position": [
+    33.0,
+    0.0,
+    -37.0
+   ],
+   "rotation_degrees": [
+    0,
+    180,
+    0
+   ],
+   "category": "stall",
+   "type": "temperos_graos"
+  },
+  {
+   "id": "stall_012",
+   "model": "stalls/banca_artigos_gauchos.glb",
+   "position": [
+    39.0,
+    0.0,
+    -37.0
+   ],
+   "rotation_degrees": [
+    0,
+    180,
+    0
+   ],
+   "category": "stall",
+   "type": "artigos_gauchos"
+  },
+  {
+   "id": "stall_013",
+   "model": "stalls/banca_cafe_lancheria.glb",
+   "position": [
+    -39.0,
+    0.0,
+    37.0
+   ],
+   "rotation_degrees": [
+    0,
+    0,
+    0
+   ],
+   "category": "stall",
+   "type": "cafe_lancheria"
+  },
+  {
+   "id": "stall_014",
+   "model": "stalls/banca_flores.glb",
+   "position": [
+    -33.0,
+    0.0,
+    37.0
+   ],
+   "rotation_degrees": [
+    0,
+    0,
+    0
+   ],
+   "category": "stall",
+   "type": "flores"
+  },
+  {
+   "id": "stall_015",
+   "model": "stalls/banca_frutas_verduras.glb",
+   "position": [
+    -27.0,
+    0.0,
+    37.0
+   ],
+   "rotation_degrees": [
+    0,
+    0,
+    0
+   ],
+   "category": "stall",
+   "type": "frutas_verduras"
+  },
+  {
+   "id": "stall_016",
+   "model": "stalls/banca_peixe_carne.glb",
+   "position": [
+    -21.0,
+    0.0,
+    37.0
+   ],
+   "rotation_degrees": [
+    0,
+    0,
+    0
+   ],
+   "category": "stall",
+   "type": "peixe_carne"
+  },
+  {
+   "id": "stall_017",
+   "model": "stalls/banca_erva_mate_cuias.glb",
+   "position": [
+    -15.0,
+    0.0,
+    37.0
+   ],
+   "rotation_degrees": [
+    0,
+    0,
+    0
+   ],
+   "category": "stall",
+   "type": "erva_mate_cuias"
+  },
+  {
+   "id": "stall_018",
+   "model": "stalls/banca_temperos_graos.glb",
+   "position": [
+    -9.0,
+    0.0,
+    37.0
+   ],
+   "rotation_degrees": [
+    0,
+    0,
+    0
+   ],
+   "category": "stall",
+   "type": "temperos_graos"
+  },
+  {
+   "id": "stall_019",
+   "model": "stalls/banca_artigos_gauchos.glb",
+   "position": [
+    9.0,
+    0.0,
+    37.0
+   ],
+   "rotation_degrees": [
+    0,
+    0,
+    0
+   ],
+   "category": "stall",
+   "type": "artigos_gauchos"
+  },
+  {
+   "id": "stall_020",
+   "model": "stalls/banca_cafe_lancheria.glb",
+   "position": [
+    15.0,
+    0.0,
+    37.0
+   ],
+   "rotation_degrees": [
+    0,
+    0,
+    0
+   ],
+   "category": "stall",
+   "type": "cafe_lancheria"
+  },
+  {
+   "id": "stall_021",
+   "model": "stalls/banca_flores.glb",
+   "position": [
+    21.0,
+    0.0,
+    37.0
+   ],
+   "rotation_degrees": [
+    0,
+    0,
+    0
+   ],
+   "category": "stall",
+   "type": "flores"
+  },
+  {
+   "id": "stall_022",
+   "model": "stalls/banca_frutas_verduras.glb",
+   "position": [
+    27.0,
+    0.0,
+    37.0
+   ],
+   "rotation_degrees": [
+    0,
+    0,
+    0
+   ],
+   "category": "stall",
+   "type": "frutas_verduras"
+  },
+  {
+   "id": "stall_023",
+   "model": "stalls/banca_peixe_carne.glb",
+   "position": [
+    33.0,
+    0.0,
+    37.0
+   ],
+   "rotation_degrees": [
+    0,
+    0,
+    0
+   ],
+   "category": "stall",
+   "type": "peixe_carne"
+  },
+  {
+   "id": "stall_024",
+   "model": "stalls/banca_erva_mate_cuias.glb",
+   "position": [
+    39.0,
+    0.0,
+    37.0
+   ],
+   "rotation_degrees": [
+    0,
+    0,
+    0
+   ],
+   "category": "stall",
+   "type": "erva_mate_cuias"
+  },
+  {
+   "id": "stall_025",
+   "model": "stalls/banca_temperos_graos.glb",
+   "position": [
+    -45.0,
+    0.0,
+    -27.0
+   ],
+   "rotation_degrees": [
+    0,
+    -90,
+    0
+   ],
+   "category": "stall",
+   "type": "temperos_graos"
+  },
+  {
+   "id": "stall_026",
+   "model": "stalls/banca_artigos_gauchos.glb",
+   "position": [
+    -45.0,
+    0.0,
+    -21.0
+   ],
+   "rotation_degrees": [
+    0,
+    -90,
+    0
+   ],
+   "category": "stall",
+   "type": "artigos_gauchos"
+  },
+  {
+   "id": "stall_027",
+   "model": "stalls/banca_cafe_lancheria.glb",
+   "position": [
+    -45.0,
+    0.0,
+    -15.0
+   ],
+   "rotation_degrees": [
+    0,
+    -90,
+    0
+   ],
+   "category": "stall",
+   "type": "cafe_lancheria"
+  },
+  {
+   "id": "stall_028",
+   "model": "stalls/banca_flores.glb",
+   "position": [
+    -45.0,
+    0.0,
+    -9.0
+   ],
+   "rotation_degrees": [
+    0,
+    -90,
+    0
+   ],
+   "category": "stall",
+   "type": "flores"
+  },
+  {
+   "id": "stall_029",
+   "model": "stalls/banca_frutas_verduras.glb",
+   "position": [
+    -45.0,
+    0.0,
+    9.0
+   ],
+   "rotation_degrees": [
+    0,
+    -90,
+    0
+   ],
+   "category": "stall",
+   "type": "frutas_verduras"
+  },
+  {
+   "id": "stall_030",
+   "model": "stalls/banca_peixe_carne.glb",
+   "position": [
+    -45.0,
+    0.0,
+    15.0
+   ],
+   "rotation_degrees": [
+    0,
+    -90,
+    0
+   ],
+   "category": "stall",
+   "type": "peixe_carne"
+  },
+  {
+   "id": "stall_031",
+   "model": "stalls/banca_erva_mate_cuias.glb",
+   "position": [
+    -45.0,
+    0.0,
+    21.0
+   ],
+   "rotation_degrees": [
+    0,
+    -90,
+    0
+   ],
+   "category": "stall",
+   "type": "erva_mate_cuias"
+  },
+  {
+   "id": "stall_032",
+   "model": "stalls/banca_temperos_graos.glb",
+   "position": [
+    -45.0,
+    0.0,
+    27.0
+   ],
+   "rotation_degrees": [
+    0,
+    -90,
+    0
+   ],
+   "category": "stall",
+   "type": "temperos_graos"
+  },
+  {
+   "id": "stall_033",
+   "model": "stalls/banca_artigos_gauchos.glb",
+   "position": [
+    45.0,
+    0.0,
+    -27.0
+   ],
+   "rotation_degrees": [
+    0,
+    90,
+    0
+   ],
+   "category": "stall",
+   "type": "artigos_gauchos"
+  },
+  {
+   "id": "stall_034",
+   "model": "stalls/banca_cafe_lancheria.glb",
+   "position": [
+    45.0,
+    0.0,
+    -21.0
+   ],
+   "rotation_degrees": [
+    0,
+    90,
+    0
+   ],
+   "category": "stall",
+   "type": "cafe_lancheria"
+  },
+  {
+   "id": "stall_035",
+   "model": "stalls/banca_flores.glb",
+   "position": [
+    45.0,
+    0.0,
+    -15.0
+   ],
+   "rotation_degrees": [
+    0,
+    90,
+    0
+   ],
+   "category": "stall",
+   "type": "flores"
+  },
+  {
+   "id": "stall_036",
+   "model": "stalls/banca_frutas_verduras.glb",
+   "position": [
+    45.0,
+    0.0,
+    -9.0
+   ],
+   "rotation_degrees": [
+    0,
+    90,
+    0
+   ],
+   "category": "stall",
+   "type": "frutas_verduras"
+  },
+  {
+   "id": "stall_037",
+   "model": "stalls/banca_peixe_carne.glb",
+   "position": [
+    45.0,
+    0.0,
+    9.0
+   ],
+   "rotation_degrees": [
+    0,
+    90,
+    0
+   ],
+   "category": "stall",
+   "type": "peixe_carne"
+  },
+  {
+   "id": "stall_038",
+   "model": "stalls/banca_erva_mate_cuias.glb",
+   "position": [
+    45.0,
+    0.0,
+    15.0
+   ],
+   "rotation_degrees": [
+    0,
+    90,
+    0
+   ],
+   "category": "stall",
+   "type": "erva_mate_cuias"
+  },
+  {
+   "id": "stall_039",
+   "model": "stalls/banca_temperos_graos.glb",
+   "position": [
+    45.0,
+    0.0,
+    21.0
+   ],
+   "rotation_degrees": [
+    0,
+    90,
+    0
+   ],
+   "category": "stall",
+   "type": "temperos_graos"
+  },
+  {
+   "id": "stall_040",
+   "model": "stalls/banca_artigos_gauchos.glb",
+   "position": [
+    45.0,
+    0.0,
+    27.0
+   ],
+   "rotation_degrees": [
+    0,
+    90,
+    0
+   ],
+   "category": "stall",
+   "type": "artigos_gauchos"
+  },
+  {
+   "id": "stall_041",
+   "model": "stalls/banca_cafe_lancheria.glb",
+   "position": [
+    -7.0,
+    0.0,
+    -4.0
+   ],
+   "rotation_degrees": [
+    0,
+    180,
+    0
+   ],
+   "category": "stall",
+   "type": "cafe_lancheria"
+  },
+  {
+   "id": "stall_042",
+   "model": "stalls/banca_flores.glb",
+   "position": [
+    -13.0,
+    0.0,
+    -4.0
+   ],
+   "rotation_degrees": [
+    0,
+    180,
+    0
+   ],
+   "category": "stall",
+   "type": "flores"
+  },
+  {
+   "id": "stall_043",
+   "model": "stalls/banca_frutas_verduras.glb",
+   "position": [
+    -19.0,
+    0.0,
+    -4.0
+   ],
+   "rotation_degrees": [
+    0,
+    180,
+    0
+   ],
+   "category": "stall",
+   "type": "frutas_verduras"
+  },
+  {
+   "id": "stall_044",
+   "model": "stalls/banca_peixe_carne.glb",
+   "position": [
+    -25.0,
+    0.0,
+    -4.0
+   ],
+   "rotation_degrees": [
+    0,
+    180,
+    0
+   ],
+   "category": "stall",
+   "type": "peixe_carne"
+  },
+  {
+   "id": "stall_045",
+   "model": "stalls/banca_erva_mate_cuias.glb",
+   "position": [
+    -31.0,
+    0.0,
+    -4.0
+   ],
+   "rotation_degrees": [
+    0,
+    180,
+    0
+   ],
+   "category": "stall",
+   "type": "erva_mate_cuias"
+  },
+  {
+   "id": "stall_046",
+   "model": "stalls/banca_temperos_graos.glb",
+   "position": [
+    -4.0,
+    0.0,
+    -8.0
+   ],
+   "rotation_degrees": [
+    0,
+    -90,
+    0
+   ],
+   "category": "stall",
+   "type": "temperos_graos"
+  },
+  {
+   "id": "stall_047",
+   "model": "stalls/banca_artigos_gauchos.glb",
+   "position": [
+    -4.0,
+    0.0,
+    -15.0
+   ],
+   "rotation_degrees": [
+    0,
+    -90,
+    0
+   ],
+   "category": "stall",
+   "type": "artigos_gauchos"
+  },
+  {
+   "id": "stall_048",
+   "model": "stalls/banca_cafe_lancheria.glb",
+   "position": [
+    -4.0,
+    0.0,
+    -22.0
+   ],
+   "rotation_degrees": [
+    0,
+    -90,
+    0
+   ],
+   "category": "stall",
+   "type": "cafe_lancheria"
+  },
+  {
+   "id": "stall_049",
+   "model": "stalls/banca_flores.glb",
+   "position": [
+    -7.0,
+    0.0,
+    4.0
+   ],
+   "rotation_degrees": [
+    0,
+    0,
+    0
+   ],
+   "category": "stall",
+   "type": "flores"
+  },
+  {
+   "id": "stall_050",
+   "model": "stalls/banca_frutas_verduras.glb",
+   "position": [
+    -13.0,
+    0.0,
+    4.0
+   ],
+   "rotation_degrees": [
+    0,
+    0,
+    0
+   ],
+   "category": "stall",
+   "type": "frutas_verduras"
+  },
+  {
+   "id": "stall_051",
+   "model": "stalls/banca_peixe_carne.glb",
+   "position": [
+    -19.0,
+    0.0,
+    4.0
+   ],
+   "rotation_degrees": [
+    0,
+    0,
+    0
+   ],
+   "category": "stall",
+   "type": "peixe_carne"
+  },
+  {
+   "id": "stall_052",
+   "model": "stalls/banca_erva_mate_cuias.glb",
+   "position": [
+    -25.0,
+    0.0,
+    4.0
+   ],
+   "rotation_degrees": [
+    0,
+    0,
+    0
+   ],
+   "category": "stall",
+   "type": "erva_mate_cuias"
+  },
+  {
+   "id": "stall_053",
+   "model": "stalls/banca_temperos_graos.glb",
+   "position": [
+    -31.0,
+    0.0,
+    4.0
+   ],
+   "rotation_degrees": [
+    0,
+    0,
+    0
+   ],
+   "category": "stall",
+   "type": "temperos_graos"
+  },
+  {
+   "id": "stall_054",
+   "model": "stalls/banca_artigos_gauchos.glb",
+   "position": [
+    -4.0,
+    0.0,
+    8.0
+   ],
+   "rotation_degrees": [
+    0,
+    -90,
+    0
+   ],
+   "category": "stall",
+   "type": "artigos_gauchos"
+  },
+  {
+   "id": "stall_055",
+   "model": "stalls/banca_cafe_lancheria.glb",
+   "position": [
+    -4.0,
+    0.0,
+    15.0
+   ],
+   "rotation_degrees": [
+    0,
+    -90,
+    0
+   ],
+   "category": "stall",
+   "type": "cafe_lancheria"
+  },
+  {
+   "id": "stall_056",
+   "model": "stalls/banca_flores.glb",
+   "position": [
+    -4.0,
+    0.0,
+    22.0
+   ],
+   "rotation_degrees": [
+    0,
+    -90,
+    0
+   ],
+   "category": "stall",
+   "type": "flores"
+  },
+  {
+   "id": "stall_057",
+   "model": "stalls/banca_frutas_verduras.glb",
+   "position": [
+    7.0,
+    0.0,
+    -4.0
+   ],
+   "rotation_degrees": [
+    0,
+    180,
+    0
+   ],
+   "category": "stall",
+   "type": "frutas_verduras"
+  },
+  {
+   "id": "stall_058",
+   "model": "stalls/banca_peixe_carne.glb",
+   "position": [
+    13.0,
+    0.0,
+    -4.0
+   ],
+   "rotation_degrees": [
+    0,
+    180,
+    0
+   ],
+   "category": "stall",
+   "type": "peixe_carne"
+  },
+  {
+   "id": "stall_059",
+   "model": "stalls/banca_erva_mate_cuias.glb",
+   "position": [
+    19.0,
+    0.0,
+    -4.0
+   ],
+   "rotation_degrees": [
+    0,
+    180,
+    0
+   ],
+   "category": "stall",
+   "type": "erva_mate_cuias"
+  },
+  {
+   "id": "stall_060",
+   "model": "stalls/banca_temperos_graos.glb",
+   "position": [
+    25.0,
+    0.0,
+    -4.0
+   ],
+   "rotation_degrees": [
+    0,
+    180,
+    0
+   ],
+   "category": "stall",
+   "type": "temperos_graos"
+  },
+  {
+   "id": "stall_061",
+   "model": "stalls/banca_artigos_gauchos.glb",
+   "position": [
+    31.0,
+    0.0,
+    -4.0
+   ],
+   "rotation_degrees": [
+    0,
+    180,
+    0
+   ],
+   "category": "stall",
+   "type": "artigos_gauchos"
+  },
+  {
+   "id": "stall_062",
+   "model": "stalls/banca_cafe_lancheria.glb",
+   "position": [
+    4.0,
+    0.0,
+    -8.0
+   ],
+   "rotation_degrees": [
+    0,
+    90,
+    0
+   ],
+   "category": "stall",
+   "type": "cafe_lancheria"
+  },
+  {
+   "id": "stall_063",
+   "model": "stalls/banca_flores.glb",
+   "position": [
+    4.0,
+    0.0,
+    -15.0
+   ],
+   "rotation_degrees": [
+    0,
+    90,
+    0
+   ],
+   "category": "stall",
+   "type": "flores"
+  },
+  {
+   "id": "stall_064",
+   "model": "stalls/banca_frutas_verduras.glb",
+   "position": [
+    4.0,
+    0.0,
+    -22.0
+   ],
+   "rotation_degrees": [
+    0,
+    90,
+    0
+   ],
+   "category": "stall",
+   "type": "frutas_verduras"
+  },
+  {
+   "id": "stall_065",
+   "model": "stalls/banca_peixe_carne.glb",
+   "position": [
+    7.0,
+    0.0,
+    4.0
+   ],
+   "rotation_degrees": [
+    0,
+    0,
+    0
+   ],
+   "category": "stall",
+   "type": "peixe_carne"
+  },
+  {
+   "id": "stall_066",
+   "model": "stalls/banca_erva_mate_cuias.glb",
+   "position": [
+    13.0,
+    0.0,
+    4.0
+   ],
+   "rotation_degrees": [
+    0,
+    0,
+    0
+   ],
+   "category": "stall",
+   "type": "erva_mate_cuias"
+  },
+  {
+   "id": "stall_067",
+   "model": "stalls/banca_temperos_graos.glb",
+   "position": [
+    19.0,
+    0.0,
+    4.0
+   ],
+   "rotation_degrees": [
+    0,
+    0,
+    0
+   ],
+   "category": "stall",
+   "type": "temperos_graos"
+  },
+  {
+   "id": "stall_068",
+   "model": "stalls/banca_artigos_gauchos.glb",
+   "position": [
+    25.0,
+    0.0,
+    4.0
+   ],
+   "rotation_degrees": [
+    0,
+    0,
+    0
+   ],
+   "category": "stall",
+   "type": "artigos_gauchos"
+  },
+  {
+   "id": "stall_069",
+   "model": "stalls/banca_cafe_lancheria.glb",
+   "position": [
+    31.0,
+    0.0,
+    4.0
+   ],
+   "rotation_degrees": [
+    0,
+    0,
+    0
+   ],
+   "category": "stall",
+   "type": "cafe_lancheria"
+  },
+  {
+   "id": "stall_070",
+   "model": "stalls/banca_flores.glb",
+   "position": [
+    4.0,
+    0.0,
+    8.0
+   ],
+   "rotation_degrees": [
+    0,
+    90,
+    0
+   ],
+   "category": "stall",
+   "type": "flores"
+  },
+  {
+   "id": "stall_071",
+   "model": "stalls/banca_frutas_verduras.glb",
+   "position": [
+    4.0,
+    0.0,
+    15.0
+   ],
+   "rotation_degrees": [
+    0,
+    90,
+    0
+   ],
+   "category": "stall",
+   "type": "frutas_verduras"
+  },
+  {
+   "id": "stall_072",
+   "model": "stalls/banca_peixe_carne.glb",
+   "position": [
+    4.0,
+    0.0,
+    22.0
+   ],
+   "rotation_degrees": [
+    0,
+    90,
+    0
+   ],
+   "category": "stall",
+   "type": "peixe_carne"
+  }
+ ],
+ "markers": {
+  "door_n": [
+   0,
+   0,
+   -47.5
+  ],
+  "door_s": [
+   0,
+   0,
+   47.5
+  ],
+  "door_e": [
+   55,
+   0,
+   0
+  ],
+  "door_w": [
+   -55,
+   0,
+   0
+  ],
+  "stall_spots": [
+   {
+    "id": "stall_001",
+    "position": [
+     -39.0,
+     0.0,
+     -37.0
+    ],
+    "rotation_y_degrees": 180
+   },
+   {
+    "id": "stall_002",
+    "position": [
+     -33.0,
+     0.0,
+     -37.0
+    ],
+    "rotation_y_degrees": 180
+   },
+   {
+    "id": "stall_003",
+    "position": [
+     -27.0,
+     0.0,
+     -37.0
+    ],
+    "rotation_y_degrees": 180
+   },
+   {
+    "id": "stall_004",
+    "position": [
+     -21.0,
+     0.0,
+     -37.0
+    ],
+    "rotation_y_degrees": 180
+   },
+   {
+    "id": "stall_005",
+    "position": [
+     -15.0,
+     0.0,
+     -37.0
+    ],
+    "rotation_y_degrees": 180
+   },
+   {
+    "id": "stall_006",
+    "position": [
+     -9.0,
+     0.0,
+     -37.0
+    ],
+    "rotation_y_degrees": 180
+   },
+   {
+    "id": "stall_007",
+    "position": [
+     9.0,
+     0.0,
+     -37.0
+    ],
+    "rotation_y_degrees": 180
+   },
+   {
+    "id": "stall_008",
+    "position": [
+     15.0,
+     0.0,
+     -37.0
+    ],
+    "rotation_y_degrees": 180
+   },
+   {
+    "id": "stall_009",
+    "position": [
+     21.0,
+     0.0,
+     -37.0
+    ],
+    "rotation_y_degrees": 180
+   },
+   {
+    "id": "stall_010",
+    "position": [
+     27.0,
+     0.0,
+     -37.0
+    ],
+    "rotation_y_degrees": 180
+   },
+   {
+    "id": "stall_011",
+    "position": [
+     33.0,
+     0.0,
+     -37.0
+    ],
+    "rotation_y_degrees": 180
+   },
+   {
+    "id": "stall_012",
+    "position": [
+     39.0,
+     0.0,
+     -37.0
+    ],
+    "rotation_y_degrees": 180
+   },
+   {
+    "id": "stall_013",
+    "position": [
+     -39.0,
+     0.0,
+     37.0
+    ],
+    "rotation_y_degrees": 0
+   },
+   {
+    "id": "stall_014",
+    "position": [
+     -33.0,
+     0.0,
+     37.0
+    ],
+    "rotation_y_degrees": 0
+   },
+   {
+    "id": "stall_015",
+    "position": [
+     -27.0,
+     0.0,
+     37.0
+    ],
+    "rotation_y_degrees": 0
+   },
+   {
+    "id": "stall_016",
+    "position": [
+     -21.0,
+     0.0,
+     37.0
+    ],
+    "rotation_y_degrees": 0
+   },
+   {
+    "id": "stall_017",
+    "position": [
+     -15.0,
+     0.0,
+     37.0
+    ],
+    "rotation_y_degrees": 0
+   },
+   {
+    "id": "stall_018",
+    "position": [
+     -9.0,
+     0.0,
+     37.0
+    ],
+    "rotation_y_degrees": 0
+   },
+   {
+    "id": "stall_019",
+    "position": [
+     9.0,
+     0.0,
+     37.0
+    ],
+    "rotation_y_degrees": 0
+   },
+   {
+    "id": "stall_020",
+    "position": [
+     15.0,
+     0.0,
+     37.0
+    ],
+    "rotation_y_degrees": 0
+   },
+   {
+    "id": "stall_021",
+    "position": [
+     21.0,
+     0.0,
+     37.0
+    ],
+    "rotation_y_degrees": 0
+   },
+   {
+    "id": "stall_022",
+    "position": [
+     27.0,
+     0.0,
+     37.0
+    ],
+    "rotation_y_degrees": 0
+   },
+   {
+    "id": "stall_023",
+    "position": [
+     33.0,
+     0.0,
+     37.0
+    ],
+    "rotation_y_degrees": 0
+   },
+   {
+    "id": "stall_024",
+    "position": [
+     39.0,
+     0.0,
+     37.0
+    ],
+    "rotation_y_degrees": 0
+   },
+   {
+    "id": "stall_025",
+    "position": [
+     -45.0,
+     0.0,
+     -27.0
+    ],
+    "rotation_y_degrees": -90
+   },
+   {
+    "id": "stall_026",
+    "position": [
+     -45.0,
+     0.0,
+     -21.0
+    ],
+    "rotation_y_degrees": -90
+   },
+   {
+    "id": "stall_027",
+    "position": [
+     -45.0,
+     0.0,
+     -15.0
+    ],
+    "rotation_y_degrees": -90
+   },
+   {
+    "id": "stall_028",
+    "position": [
+     -45.0,
+     0.0,
+     -9.0
+    ],
+    "rotation_y_degrees": -90
+   },
+   {
+    "id": "stall_029",
+    "position": [
+     -45.0,
+     0.0,
+     9.0
+    ],
+    "rotation_y_degrees": -90
+   },
+   {
+    "id": "stall_030",
+    "position": [
+     -45.0,
+     0.0,
+     15.0
+    ],
+    "rotation_y_degrees": -90
+   },
+   {
+    "id": "stall_031",
+    "position": [
+     -45.0,
+     0.0,
+     21.0
+    ],
+    "rotation_y_degrees": -90
+   },
+   {
+    "id": "stall_032",
+    "position": [
+     -45.0,
+     0.0,
+     27.0
+    ],
+    "rotation_y_degrees": -90
+   },
+   {
+    "id": "stall_033",
+    "position": [
+     45.0,
+     0.0,
+     -27.0
+    ],
+    "rotation_y_degrees": 90
+   },
+   {
+    "id": "stall_034",
+    "position": [
+     45.0,
+     0.0,
+     -21.0
+    ],
+    "rotation_y_degrees": 90
+   },
+   {
+    "id": "stall_035",
+    "position": [
+     45.0,
+     0.0,
+     -15.0
+    ],
+    "rotation_y_degrees": 90
+   },
+   {
+    "id": "stall_036",
+    "position": [
+     45.0,
+     0.0,
+     -9.0
+    ],
+    "rotation_y_degrees": 90
+   },
+   {
+    "id": "stall_037",
+    "position": [
+     45.0,
+     0.0,
+     9.0
+    ],
+    "rotation_y_degrees": 90
+   },
+   {
+    "id": "stall_038",
+    "position": [
+     45.0,
+     0.0,
+     15.0
+    ],
+    "rotation_y_degrees": 90
+   },
+   {
+    "id": "stall_039",
+    "position": [
+     45.0,
+     0.0,
+     21.0
+    ],
+    "rotation_y_degrees": 90
+   },
+   {
+    "id": "stall_040",
+    "position": [
+     45.0,
+     0.0,
+     27.0
+    ],
+    "rotation_y_degrees": 90
+   },
+   {
+    "id": "stall_041",
+    "position": [
+     -7.0,
+     0.0,
+     -4.0
+    ],
+    "rotation_y_degrees": 180
+   },
+   {
+    "id": "stall_042",
+    "position": [
+     -13.0,
+     0.0,
+     -4.0
+    ],
+    "rotation_y_degrees": 180
+   },
+   {
+    "id": "stall_043",
+    "position": [
+     -19.0,
+     0.0,
+     -4.0
+    ],
+    "rotation_y_degrees": 180
+   },
+   {
+    "id": "stall_044",
+    "position": [
+     -25.0,
+     0.0,
+     -4.0
+    ],
+    "rotation_y_degrees": 180
+   },
+   {
+    "id": "stall_045",
+    "position": [
+     -31.0,
+     0.0,
+     -4.0
+    ],
+    "rotation_y_degrees": 180
+   },
+   {
+    "id": "stall_046",
+    "position": [
+     -4.0,
+     0.0,
+     -8.0
+    ],
+    "rotation_y_degrees": -90
+   },
+   {
+    "id": "stall_047",
+    "position": [
+     -4.0,
+     0.0,
+     -15.0
+    ],
+    "rotation_y_degrees": -90
+   },
+   {
+    "id": "stall_048",
+    "position": [
+     -4.0,
+     0.0,
+     -22.0
+    ],
+    "rotation_y_degrees": -90
+   },
+   {
+    "id": "stall_049",
+    "position": [
+     -7.0,
+     0.0,
+     4.0
+    ],
+    "rotation_y_degrees": 0
+   },
+   {
+    "id": "stall_050",
+    "position": [
+     -13.0,
+     0.0,
+     4.0
+    ],
+    "rotation_y_degrees": 0
+   },
+   {
+    "id": "stall_051",
+    "position": [
+     -19.0,
+     0.0,
+     4.0
+    ],
+    "rotation_y_degrees": 0
+   },
+   {
+    "id": "stall_052",
+    "position": [
+     -25.0,
+     0.0,
+     4.0
+    ],
+    "rotation_y_degrees": 0
+   },
+   {
+    "id": "stall_053",
+    "position": [
+     -31.0,
+     0.0,
+     4.0
+    ],
+    "rotation_y_degrees": 0
+   },
+   {
+    "id": "stall_054",
+    "position": [
+     -4.0,
+     0.0,
+     8.0
+    ],
+    "rotation_y_degrees": -90
+   },
+   {
+    "id": "stall_055",
+    "position": [
+     -4.0,
+     0.0,
+     15.0
+    ],
+    "rotation_y_degrees": -90
+   },
+   {
+    "id": "stall_056",
+    "position": [
+     -4.0,
+     0.0,
+     22.0
+    ],
+    "rotation_y_degrees": -90
+   },
+   {
+    "id": "stall_057",
+    "position": [
+     7.0,
+     0.0,
+     -4.0
+    ],
+    "rotation_y_degrees": 180
+   },
+   {
+    "id": "stall_058",
+    "position": [
+     13.0,
+     0.0,
+     -4.0
+    ],
+    "rotation_y_degrees": 180
+   },
+   {
+    "id": "stall_059",
+    "position": [
+     19.0,
+     0.0,
+     -4.0
+    ],
+    "rotation_y_degrees": 180
+   },
+   {
+    "id": "stall_060",
+    "position": [
+     25.0,
+     0.0,
+     -4.0
+    ],
+    "rotation_y_degrees": 180
+   },
+   {
+    "id": "stall_061",
+    "position": [
+     31.0,
+     0.0,
+     -4.0
+    ],
+    "rotation_y_degrees": 180
+   },
+   {
+    "id": "stall_062",
+    "position": [
+     4.0,
+     0.0,
+     -8.0
+    ],
+    "rotation_y_degrees": 90
+   },
+   {
+    "id": "stall_063",
+    "position": [
+     4.0,
+     0.0,
+     -15.0
+    ],
+    "rotation_y_degrees": 90
+   },
+   {
+    "id": "stall_064",
+    "position": [
+     4.0,
+     0.0,
+     -22.0
+    ],
+    "rotation_y_degrees": 90
+   },
+   {
+    "id": "stall_065",
+    "position": [
+     7.0,
+     0.0,
+     4.0
+    ],
+    "rotation_y_degrees": 0
+   },
+   {
+    "id": "stall_066",
+    "position": [
+     13.0,
+     0.0,
+     4.0
+    ],
+    "rotation_y_degrees": 0
+   },
+   {
+    "id": "stall_067",
+    "position": [
+     19.0,
+     0.0,
+     4.0
+    ],
+    "rotation_y_degrees": 0
+   },
+   {
+    "id": "stall_068",
+    "position": [
+     25.0,
+     0.0,
+     4.0
+    ],
+    "rotation_y_degrees": 0
+   },
+   {
+    "id": "stall_069",
+    "position": [
+     31.0,
+     0.0,
+     4.0
+    ],
+    "rotation_y_degrees": 0
+   },
+   {
+    "id": "stall_070",
+    "position": [
+     4.0,
+     0.0,
+     8.0
+    ],
+    "rotation_y_degrees": 90
+   },
+   {
+    "id": "stall_071",
+    "position": [
+     4.0,
+     0.0,
+     15.0
+    ],
+    "rotation_y_degrees": 90
+   },
+   {
+    "id": "stall_072",
+    "position": [
+     4.0,
+     0.0,
+     22.0
+    ],
+    "rotation_y_degrees": 90
+   }
+  ],
+  "vendor_spots": [
+   {
+    "id": "stall_001_vendor",
+    "position": [
+     -39.0,
+     0.0,
+     -37.45
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_002_vendor",
+    "position": [
+     -33.0,
+     0.0,
+     -37.45
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_003_vendor",
+    "position": [
+     -27.0,
+     0.0,
+     -37.45
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_004_vendor",
+    "position": [
+     -21.0,
+     0.0,
+     -36.95
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_005_vendor",
+    "position": [
+     -15.0,
+     0.0,
+     -37.05
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_006_vendor",
+    "position": [
+     -9.6,
+     0.0,
+     -37.66
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_007_vendor",
+    "position": [
+     9.0,
+     0.0,
+     -37.65
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_008_vendor",
+    "position": [
+     15.0,
+     0.0,
+     -37.45
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_009_vendor",
+    "position": [
+     21.0,
+     0.0,
+     -37.45
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_010_vendor",
+    "position": [
+     27.0,
+     0.0,
+     -37.45
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_011_vendor",
+    "position": [
+     33.0,
+     0.0,
+     -36.95
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_012_vendor",
+    "position": [
+     39.0,
+     0.0,
+     -37.05
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_013_vendor",
+    "position": [
+     -38.4,
+     0.0,
+     37.66
+    ],
+    "facing_y_degrees": 0
+   },
+   {
+    "id": "stall_014_vendor",
+    "position": [
+     -33.0,
+     0.0,
+     37.65
+    ],
+    "facing_y_degrees": 0
+   },
+   {
+    "id": "stall_015_vendor",
+    "position": [
+     -27.0,
+     0.0,
+     37.45
+    ],
+    "facing_y_degrees": 0
+   },
+   {
+    "id": "stall_016_vendor",
+    "position": [
+     -21.0,
+     0.0,
+     37.45
+    ],
+    "facing_y_degrees": 0
+   },
+   {
+    "id": "stall_017_vendor",
+    "position": [
+     -15.0,
+     0.0,
+     37.45
+    ],
+    "facing_y_degrees": 0
+   },
+   {
+    "id": "stall_018_vendor",
+    "position": [
+     -9.0,
+     0.0,
+     36.95
+    ],
+    "facing_y_degrees": 0
+   },
+   {
+    "id": "stall_019_vendor",
+    "position": [
+     9.0,
+     0.0,
+     37.05
+    ],
+    "facing_y_degrees": 0
+   },
+   {
+    "id": "stall_020_vendor",
+    "position": [
+     15.6,
+     0.0,
+     37.66
+    ],
+    "facing_y_degrees": 0
+   },
+   {
+    "id": "stall_021_vendor",
+    "position": [
+     21.0,
+     0.0,
+     37.65
+    ],
+    "facing_y_degrees": 0
+   },
+   {
+    "id": "stall_022_vendor",
+    "position": [
+     27.0,
+     0.0,
+     37.45
+    ],
+    "facing_y_degrees": 0
+   },
+   {
+    "id": "stall_023_vendor",
+    "position": [
+     33.0,
+     0.0,
+     37.45
+    ],
+    "facing_y_degrees": 0
+   },
+   {
+    "id": "stall_024_vendor",
+    "position": [
+     39.0,
+     0.0,
+     37.45
+    ],
+    "facing_y_degrees": 0
+   },
+   {
+    "id": "stall_025_vendor",
+    "position": [
+     -44.95,
+     0.0,
+     -27.0
+    ],
+    "facing_y_degrees": -90
+   },
+   {
+    "id": "stall_026_vendor",
+    "position": [
+     -45.05,
+     0.0,
+     -21.0
+    ],
+    "facing_y_degrees": -90
+   },
+   {
+    "id": "stall_027_vendor",
+    "position": [
+     -45.66,
+     0.0,
+     -14.4
+    ],
+    "facing_y_degrees": -90
+   },
+   {
+    "id": "stall_028_vendor",
+    "position": [
+     -45.65,
+     0.0,
+     -9.0
+    ],
+    "facing_y_degrees": -90
+   },
+   {
+    "id": "stall_029_vendor",
+    "position": [
+     -45.45,
+     0.0,
+     9.0
+    ],
+    "facing_y_degrees": -90
+   },
+   {
+    "id": "stall_030_vendor",
+    "position": [
+     -45.45,
+     0.0,
+     15.0
+    ],
+    "facing_y_degrees": -90
+   },
+   {
+    "id": "stall_031_vendor",
+    "position": [
+     -45.45,
+     0.0,
+     21.0
+    ],
+    "facing_y_degrees": -90
+   },
+   {
+    "id": "stall_032_vendor",
+    "position": [
+     -44.95,
+     0.0,
+     27.0
+    ],
+    "facing_y_degrees": -90
+   },
+   {
+    "id": "stall_033_vendor",
+    "position": [
+     45.05,
+     0.0,
+     -27.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_034_vendor",
+    "position": [
+     45.66,
+     0.0,
+     -21.6
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_035_vendor",
+    "position": [
+     45.65,
+     0.0,
+     -15.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_036_vendor",
+    "position": [
+     45.45,
+     0.0,
+     -9.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_037_vendor",
+    "position": [
+     45.45,
+     0.0,
+     9.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_038_vendor",
+    "position": [
+     45.45,
+     0.0,
+     15.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_039_vendor",
+    "position": [
+     44.95,
+     0.0,
+     21.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_040_vendor",
+    "position": [
+     45.05,
+     0.0,
+     27.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_041_vendor",
+    "position": [
+     -7.6,
+     0.0,
+     -4.66
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_042_vendor",
+    "position": [
+     -13.0,
+     0.0,
+     -4.65
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_043_vendor",
+    "position": [
+     -19.0,
+     0.0,
+     -4.45
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_044_vendor",
+    "position": [
+     -25.0,
+     0.0,
+     -4.45
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_045_vendor",
+    "position": [
+     -31.0,
+     0.0,
+     -4.45
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_046_vendor",
+    "position": [
+     -3.95,
+     0.0,
+     -8.0
+    ],
+    "facing_y_degrees": -90
+   },
+   {
+    "id": "stall_047_vendor",
+    "position": [
+     -4.05,
+     0.0,
+     -15.0
+    ],
+    "facing_y_degrees": -90
+   },
+   {
+    "id": "stall_048_vendor",
+    "position": [
+     -4.66,
+     0.0,
+     -21.4
+    ],
+    "facing_y_degrees": -90
+   },
+   {
+    "id": "stall_049_vendor",
+    "position": [
+     -7.0,
+     0.0,
+     4.65
+    ],
+    "facing_y_degrees": 0
+   },
+   {
+    "id": "stall_050_vendor",
+    "position": [
+     -13.0,
+     0.0,
+     4.45
+    ],
+    "facing_y_degrees": 0
+   },
+   {
+    "id": "stall_051_vendor",
+    "position": [
+     -19.0,
+     0.0,
+     4.45
+    ],
+    "facing_y_degrees": 0
+   },
+   {
+    "id": "stall_052_vendor",
+    "position": [
+     -25.0,
+     0.0,
+     4.45
+    ],
+    "facing_y_degrees": 0
+   },
+   {
+    "id": "stall_053_vendor",
+    "position": [
+     -31.0,
+     0.0,
+     3.95
+    ],
+    "facing_y_degrees": 0
+   },
+   {
+    "id": "stall_054_vendor",
+    "position": [
+     -4.05,
+     0.0,
+     8.0
+    ],
+    "facing_y_degrees": -90
+   },
+   {
+    "id": "stall_055_vendor",
+    "position": [
+     -4.66,
+     0.0,
+     15.6
+    ],
+    "facing_y_degrees": -90
+   },
+   {
+    "id": "stall_056_vendor",
+    "position": [
+     -4.65,
+     0.0,
+     22.0
+    ],
+    "facing_y_degrees": -90
+   },
+   {
+    "id": "stall_057_vendor",
+    "position": [
+     7.0,
+     0.0,
+     -4.45
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_058_vendor",
+    "position": [
+     13.0,
+     0.0,
+     -4.45
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_059_vendor",
+    "position": [
+     19.0,
+     0.0,
+     -4.45
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_060_vendor",
+    "position": [
+     25.0,
+     0.0,
+     -3.95
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_061_vendor",
+    "position": [
+     31.0,
+     0.0,
+     -4.05
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_062_vendor",
+    "position": [
+     4.66,
+     0.0,
+     -8.6
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_063_vendor",
+    "position": [
+     4.65,
+     0.0,
+     -15.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_064_vendor",
+    "position": [
+     4.45,
+     0.0,
+     -22.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_065_vendor",
+    "position": [
+     7.0,
+     0.0,
+     4.45
+    ],
+    "facing_y_degrees": 0
+   },
+   {
+    "id": "stall_066_vendor",
+    "position": [
+     13.0,
+     0.0,
+     4.45
+    ],
+    "facing_y_degrees": 0
+   },
+   {
+    "id": "stall_067_vendor",
+    "position": [
+     19.0,
+     0.0,
+     3.95
+    ],
+    "facing_y_degrees": 0
+   },
+   {
+    "id": "stall_068_vendor",
+    "position": [
+     25.0,
+     0.0,
+     4.05
+    ],
+    "facing_y_degrees": 0
+   },
+   {
+    "id": "stall_069_vendor",
+    "position": [
+     31.6,
+     0.0,
+     4.66
+    ],
+    "facing_y_degrees": 0
+   },
+   {
+    "id": "stall_070_vendor",
+    "position": [
+     4.65,
+     0.0,
+     8.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_071_vendor",
+    "position": [
+     4.45,
+     0.0,
+     15.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_072_vendor",
+    "position": [
+     4.45,
+     0.0,
+     22.0
+    ],
+    "facing_y_degrees": 90
+   }
+  ],
+  "customer_spots": [
+   {
+    "id": "stall_001_customer",
+    "position": [
+     -39.0,
+     0.0,
+     -35.0
+    ],
+    "facing_y_degrees": 360
+   },
+   {
+    "id": "stall_002_customer",
+    "position": [
+     -33.0,
+     0.0,
+     -35.0
+    ],
+    "facing_y_degrees": 360
+   },
+   {
+    "id": "stall_003_customer",
+    "position": [
+     -27.0,
+     0.0,
+     -35.0
+    ],
+    "facing_y_degrees": 360
+   },
+   {
+    "id": "stall_004_customer",
+    "position": [
+     -21.0,
+     0.0,
+     -35.0
+    ],
+    "facing_y_degrees": 360
+   },
+   {
+    "id": "stall_005_customer",
+    "position": [
+     -15.0,
+     0.0,
+     -35.0
+    ],
+    "facing_y_degrees": 360
+   },
+   {
+    "id": "stall_006_customer",
+    "position": [
+     -9.0,
+     0.0,
+     -35.0
+    ],
+    "facing_y_degrees": 360
+   },
+   {
+    "id": "stall_007_customer",
+    "position": [
+     9.0,
+     0.0,
+     -35.0
+    ],
+    "facing_y_degrees": 360
+   },
+   {
+    "id": "stall_008_customer",
+    "position": [
+     15.0,
+     0.0,
+     -35.0
+    ],
+    "facing_y_degrees": 360
+   },
+   {
+    "id": "stall_009_customer",
+    "position": [
+     21.0,
+     0.0,
+     -35.0
+    ],
+    "facing_y_degrees": 360
+   },
+   {
+    "id": "stall_010_customer",
+    "position": [
+     27.0,
+     0.0,
+     -35.0
+    ],
+    "facing_y_degrees": 360
+   },
+   {
+    "id": "stall_011_customer",
+    "position": [
+     33.0,
+     0.0,
+     -35.0
+    ],
+    "facing_y_degrees": 360
+   },
+   {
+    "id": "stall_012_customer",
+    "position": [
+     39.0,
+     0.0,
+     -35.0
+    ],
+    "facing_y_degrees": 360
+   },
+   {
+    "id": "stall_013_customer",
+    "position": [
+     -39.0,
+     0.0,
+     35.0
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_014_customer",
+    "position": [
+     -33.0,
+     0.0,
+     35.0
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_015_customer",
+    "position": [
+     -27.0,
+     0.0,
+     35.0
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_016_customer",
+    "position": [
+     -21.0,
+     0.0,
+     35.0
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_017_customer",
+    "position": [
+     -15.0,
+     0.0,
+     35.0
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_018_customer",
+    "position": [
+     -9.0,
+     0.0,
+     35.0
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_019_customer",
+    "position": [
+     9.0,
+     0.0,
+     35.0
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_020_customer",
+    "position": [
+     15.0,
+     0.0,
+     35.0
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_021_customer",
+    "position": [
+     21.0,
+     0.0,
+     35.0
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_022_customer",
+    "position": [
+     27.0,
+     0.0,
+     35.0
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_023_customer",
+    "position": [
+     33.0,
+     0.0,
+     35.0
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_024_customer",
+    "position": [
+     39.0,
+     0.0,
+     35.0
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_025_customer",
+    "position": [
+     -43.0,
+     0.0,
+     -27.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_026_customer",
+    "position": [
+     -43.0,
+     0.0,
+     -21.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_027_customer",
+    "position": [
+     -43.0,
+     0.0,
+     -15.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_028_customer",
+    "position": [
+     -43.0,
+     0.0,
+     -9.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_029_customer",
+    "position": [
+     -43.0,
+     0.0,
+     9.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_030_customer",
+    "position": [
+     -43.0,
+     0.0,
+     15.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_031_customer",
+    "position": [
+     -43.0,
+     0.0,
+     21.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_032_customer",
+    "position": [
+     -43.0,
+     0.0,
+     27.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_033_customer",
+    "position": [
+     43.0,
+     0.0,
+     -27.0
+    ],
+    "facing_y_degrees": 270
+   },
+   {
+    "id": "stall_034_customer",
+    "position": [
+     43.0,
+     0.0,
+     -21.0
+    ],
+    "facing_y_degrees": 270
+   },
+   {
+    "id": "stall_035_customer",
+    "position": [
+     43.0,
+     0.0,
+     -15.0
+    ],
+    "facing_y_degrees": 270
+   },
+   {
+    "id": "stall_036_customer",
+    "position": [
+     43.0,
+     0.0,
+     -9.0
+    ],
+    "facing_y_degrees": 270
+   },
+   {
+    "id": "stall_037_customer",
+    "position": [
+     43.0,
+     0.0,
+     9.0
+    ],
+    "facing_y_degrees": 270
+   },
+   {
+    "id": "stall_038_customer",
+    "position": [
+     43.0,
+     0.0,
+     15.0
+    ],
+    "facing_y_degrees": 270
+   },
+   {
+    "id": "stall_039_customer",
+    "position": [
+     43.0,
+     0.0,
+     21.0
+    ],
+    "facing_y_degrees": 270
+   },
+   {
+    "id": "stall_040_customer",
+    "position": [
+     43.0,
+     0.0,
+     27.0
+    ],
+    "facing_y_degrees": 270
+   },
+   {
+    "id": "stall_041_customer",
+    "position": [
+     -7.0,
+     0.0,
+     -2.0
+    ],
+    "facing_y_degrees": 360
+   },
+   {
+    "id": "stall_042_customer",
+    "position": [
+     -13.0,
+     0.0,
+     -2.0
+    ],
+    "facing_y_degrees": 360
+   },
+   {
+    "id": "stall_043_customer",
+    "position": [
+     -19.0,
+     0.0,
+     -2.0
+    ],
+    "facing_y_degrees": 360
+   },
+   {
+    "id": "stall_044_customer",
+    "position": [
+     -25.0,
+     0.0,
+     -2.0
+    ],
+    "facing_y_degrees": 360
+   },
+   {
+    "id": "stall_045_customer",
+    "position": [
+     -31.0,
+     0.0,
+     -2.0
+    ],
+    "facing_y_degrees": 360
+   },
+   {
+    "id": "stall_046_customer",
+    "position": [
+     -2.0,
+     0.0,
+     -8.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_047_customer",
+    "position": [
+     -2.0,
+     0.0,
+     -15.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_048_customer",
+    "position": [
+     -2.0,
+     0.0,
+     -22.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_049_customer",
+    "position": [
+     -7.0,
+     0.0,
+     2.0
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_050_customer",
+    "position": [
+     -13.0,
+     0.0,
+     2.0
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_051_customer",
+    "position": [
+     -19.0,
+     0.0,
+     2.0
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_052_customer",
+    "position": [
+     -25.0,
+     0.0,
+     2.0
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_053_customer",
+    "position": [
+     -31.0,
+     0.0,
+     2.0
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_054_customer",
+    "position": [
+     -2.0,
+     0.0,
+     8.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_055_customer",
+    "position": [
+     -2.0,
+     0.0,
+     15.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_056_customer",
+    "position": [
+     -2.0,
+     0.0,
+     22.0
+    ],
+    "facing_y_degrees": 90
+   },
+   {
+    "id": "stall_057_customer",
+    "position": [
+     7.0,
+     0.0,
+     -2.0
+    ],
+    "facing_y_degrees": 360
+   },
+   {
+    "id": "stall_058_customer",
+    "position": [
+     13.0,
+     0.0,
+     -2.0
+    ],
+    "facing_y_degrees": 360
+   },
+   {
+    "id": "stall_059_customer",
+    "position": [
+     19.0,
+     0.0,
+     -2.0
+    ],
+    "facing_y_degrees": 360
+   },
+   {
+    "id": "stall_060_customer",
+    "position": [
+     25.0,
+     0.0,
+     -2.0
+    ],
+    "facing_y_degrees": 360
+   },
+   {
+    "id": "stall_061_customer",
+    "position": [
+     31.0,
+     0.0,
+     -2.0
+    ],
+    "facing_y_degrees": 360
+   },
+   {
+    "id": "stall_062_customer",
+    "position": [
+     2.0,
+     0.0,
+     -8.0
+    ],
+    "facing_y_degrees": 270
+   },
+   {
+    "id": "stall_063_customer",
+    "position": [
+     2.0,
+     0.0,
+     -15.0
+    ],
+    "facing_y_degrees": 270
+   },
+   {
+    "id": "stall_064_customer",
+    "position": [
+     2.0,
+     0.0,
+     -22.0
+    ],
+    "facing_y_degrees": 270
+   },
+   {
+    "id": "stall_065_customer",
+    "position": [
+     7.0,
+     0.0,
+     2.0
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_066_customer",
+    "position": [
+     13.0,
+     0.0,
+     2.0
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_067_customer",
+    "position": [
+     19.0,
+     0.0,
+     2.0
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_068_customer",
+    "position": [
+     25.0,
+     0.0,
+     2.0
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_069_customer",
+    "position": [
+     31.0,
+     0.0,
+     2.0
+    ],
+    "facing_y_degrees": 180
+   },
+   {
+    "id": "stall_070_customer",
+    "position": [
+     2.0,
+     0.0,
+     8.0
+    ],
+    "facing_y_degrees": 270
+   },
+   {
+    "id": "stall_071_customer",
+    "position": [
+     2.0,
+     0.0,
+     15.0
+    ],
+    "facing_y_degrees": 270
+   },
+   {
+    "id": "stall_072_customer",
+    "position": [
+     2.0,
+     0.0,
+     22.0
+    ],
+    "facing_y_degrees": 270
+   }
+  ],
+  "lights": [
+   {
+    "name": "light_1",
+    "position": [
+     -37,
+     7.99,
+     -31
+    ],
+    "emissive_mesh": "light_1"
+   },
+   {
+    "name": "light_2",
+    "position": [
+     -37,
+     7.99,
+     -16
+    ],
+    "emissive_mesh": "light_2"
+   },
+   {
+    "name": "light_3",
+    "position": [
+     -37,
+     7.99,
+     0
+    ],
+    "emissive_mesh": "light_3"
+   },
+   {
+    "name": "light_4",
+    "position": [
+     -37,
+     7.99,
+     16
+    ],
+    "emissive_mesh": "light_4"
+   },
+   {
+    "name": "light_5",
+    "position": [
+     -37,
+     7.99,
+     31
+    ],
+    "emissive_mesh": "light_5"
+   },
+   {
+    "name": "light_6",
+    "position": [
+     -20,
+     7.99,
+     -31
+    ],
+    "emissive_mesh": "light_6"
+   },
+   {
+    "name": "light_7",
+    "position": [
+     -20,
+     7.99,
+     -16
+    ],
+    "emissive_mesh": "light_7"
+   },
+   {
+    "name": "light_8",
+    "position": [
+     -20,
+     7.99,
+     0
+    ],
+    "emissive_mesh": "light_8"
+   },
+   {
+    "name": "light_9",
+    "position": [
+     -20,
+     7.99,
+     16
+    ],
+    "emissive_mesh": "light_9"
+   },
+   {
+    "name": "light_10",
+    "position": [
+     -20,
+     7.99,
+     31
+    ],
+    "emissive_mesh": "light_10"
+   },
+   {
+    "name": "light_11",
+    "position": [
+     0,
+     7.99,
+     -31
+    ],
+    "emissive_mesh": "light_11"
+   },
+   {
+    "name": "light_12",
+    "position": [
+     0,
+     7.99,
+     -16
+    ],
+    "emissive_mesh": "light_12"
+   },
+   {
+    "name": "light_13",
+    "position": [
+     0,
+     7.99,
+     16
+    ],
+    "emissive_mesh": "light_13"
+   },
+   {
+    "name": "light_14",
+    "position": [
+     0,
+     7.99,
+     31
+    ],
+    "emissive_mesh": "light_14"
+   },
+   {
+    "name": "light_15",
+    "position": [
+     20,
+     7.99,
+     -31
+    ],
+    "emissive_mesh": "light_15"
+   },
+   {
+    "name": "light_16",
+    "position": [
+     20,
+     7.99,
+     -16
+    ],
+    "emissive_mesh": "light_16"
+   },
+   {
+    "name": "light_17",
+    "position": [
+     20,
+     7.99,
+     0
+    ],
+    "emissive_mesh": "light_17"
+   },
+   {
+    "name": "light_18",
+    "position": [
+     20,
+     7.99,
+     16
+    ],
+    "emissive_mesh": "light_18"
+   },
+   {
+    "name": "light_19",
+    "position": [
+     20,
+     7.99,
+     31
+    ],
+    "emissive_mesh": "light_19"
+   },
+   {
+    "name": "light_20",
+    "position": [
+     37,
+     7.99,
+     -31
+    ],
+    "emissive_mesh": "light_20"
+   },
+   {
+    "name": "light_21",
+    "position": [
+     37,
+     7.99,
+     -16
+    ],
+    "emissive_mesh": "light_21"
+   },
+   {
+    "name": "light_22",
+    "position": [
+     37,
+     7.99,
+     0
+    ],
+    "emissive_mesh": "light_22"
+   },
+   {
+    "name": "light_23",
+    "position": [
+     37,
+     7.99,
+     16
+    ],
+    "emissive_mesh": "light_23"
+   },
+   {
+    "name": "light_24",
+    "position": [
+     37,
+     7.99,
+     31
+    ],
+    "emissive_mesh": "light_24"
+   }
+  ]
+ },
+ "walk_routes": {
+  "north_south": [
+   [
+    0,
+    0,
+    -47.0
+   ],
+   [
+    0,
+    0,
+    -45.0
+   ],
+   [
+    0,
+    0,
+    -43.0
+   ],
+   [
+    0,
+    0,
+    -41.0
+   ],
+   [
+    0,
+    0,
+    -39.0
+   ],
+   [
+    0,
+    0,
+    -37.0
+   ],
+   [
+    0,
+    0,
+    -35.0
+   ],
+   [
+    0,
+    0,
+    -33.0
+   ],
+   [
+    0,
+    0,
+    -31.0
+   ],
+   [
+    0,
+    0,
+    -29.0
+   ],
+   [
+    0,
+    0,
+    -27.0
+   ],
+   [
+    0,
+    0,
+    -25.0
+   ],
+   [
+    0,
+    0,
+    -23.0
+   ],
+   [
+    0,
+    0,
+    -21.0
+   ],
+   [
+    0,
+    0,
+    -19.0
+   ],
+   [
+    0,
+    0,
+    -17.0
+   ],
+   [
+    0,
+    0,
+    -15.0
+   ],
+   [
+    0,
+    0,
+    -13.0
+   ],
+   [
+    0,
+    0,
+    -11.0
+   ],
+   [
+    0,
+    0,
+    -9.0
+   ],
+   [
+    0,
+    0,
+    -7.0
+   ],
+   [
+    0,
+    0,
+    -5.0
+   ],
+   [
+    0,
+    0,
+    -3.0
+   ],
+   [
+    0,
+    0,
+    -1.0
+   ],
+   [
+    0,
+    0,
+    1.0
+   ],
+   [
+    0,
+    0,
+    3.0
+   ],
+   [
+    0,
+    0,
+    5.0
+   ],
+   [
+    0,
+    0,
+    7.0
+   ],
+   [
+    0,
+    0,
+    9.0
+   ],
+   [
+    0,
+    0,
+    11.0
+   ],
+   [
+    0,
+    0,
+    13.0
+   ],
+   [
+    0,
+    0,
+    15.0
+   ],
+   [
+    0,
+    0,
+    17.0
+   ],
+   [
+    0,
+    0,
+    19.0
+   ],
+   [
+    0,
+    0,
+    21.0
+   ],
+   [
+    0,
+    0,
+    23.0
+   ],
+   [
+    0,
+    0,
+    25.0
+   ],
+   [
+    0,
+    0,
+    27.0
+   ],
+   [
+    0,
+    0,
+    29.0
+   ],
+   [
+    0,
+    0,
+    31.0
+   ],
+   [
+    0,
+    0,
+    33.0
+   ],
+   [
+    0,
+    0,
+    35.0
+   ],
+   [
+    0,
+    0,
+    37.0
+   ],
+   [
+    0,
+    0,
+    39.0
+   ],
+   [
+    0,
+    0,
+    41.0
+   ],
+   [
+    0,
+    0,
+    43.0
+   ],
+   [
+    0,
+    0,
+    45.0
+   ],
+   [
+    0,
+    0,
+    47.0
+   ]
+  ],
+  "west_east": [
+   [
+    -54.5,
+    0,
+    0
+   ],
+   [
+    -52.518181818181816,
+    0,
+    0
+   ],
+   [
+    -50.53636363636364,
+    0,
+    0
+   ],
+   [
+    -48.554545454545455,
+    0,
+    0
+   ],
+   [
+    -46.57272727272727,
+    0,
+    0
+   ],
+   [
+    -44.59090909090909,
+    0,
+    0
+   ],
+   [
+    -42.60909090909091,
+    0,
+    0
+   ],
+   [
+    -40.627272727272725,
+    0,
+    0
+   ],
+   [
+    -38.64545454545454,
+    0,
+    0
+   ],
+   [
+    -36.663636363636364,
+    0,
+    0
+   ],
+   [
+    -34.68181818181818,
+    0,
+    0
+   ],
+   [
+    -32.7,
+    0,
+    0
+   ],
+   [
+    -30.71818181818182,
+    0,
+    0
+   ],
+   [
+    -28.736363636363635,
+    0,
+    0
+   ],
+   [
+    -26.754545454545454,
+    0,
+    0
+   ],
+   [
+    -24.77272727272727,
+    0,
+    0
+   ],
+   [
+    -22.79090909090909,
+    0,
+    0
+   ],
+   [
+    -20.809090909090905,
+    0,
+    0
+   ],
+   [
+    -18.827272727272728,
+    0,
+    0
+   ],
+   [
+    -16.845454545454544,
+    0,
+    0
+   ],
+   [
+    -14.86363636363636,
+    0,
+    0
+   ],
+   [
+    -12.881818181818183,
+    0,
+    0
+   ],
+   [
+    -10.899999999999999,
+    0,
+    0
+   ],
+   [
+    -8.918181818181814,
+    0,
+    0
+   ],
+   [
+    -6.936363636363637,
+    0,
+    0
+   ],
+   [
+    -4.954545454545453,
+    0,
+    0
+   ],
+   [
+    -2.972727272727269,
+    0,
+    0
+   ],
+   [
+    -0.990909090909085,
+    0,
+    0
+   ],
+   [
+    0.9909090909090921,
+    0,
+    0
+   ],
+   [
+    2.972727272727276,
+    0,
+    0
+   ],
+   [
+    4.95454545454546,
+    0,
+    0
+   ],
+   [
+    6.936363636363637,
+    0,
+    0
+   ],
+   [
+    8.918181818181822,
+    0,
+    0
+   ],
+   [
+    10.900000000000006,
+    0,
+    0
+   ],
+   [
+    12.88181818181819,
+    0,
+    0
+   ],
+   [
+    14.863636363636374,
+    0,
+    0
+   ],
+   [
+    16.845454545454544,
+    0,
+    0
+   ],
+   [
+    18.827272727272728,
+    0,
+    0
+   ],
+   [
+    20.809090909090912,
+    0,
+    0
+   ],
+   [
+    22.790909090909096,
+    0,
+    0
+   ],
+   [
+    24.77272727272728,
+    0,
+    0
+   ],
+   [
+    26.754545454545465,
+    0,
+    0
+   ],
+   [
+    28.736363636363635,
+    0,
+    0
+   ],
+   [
+    30.71818181818182,
+    0,
+    0
+   ],
+   [
+    32.7,
+    0,
+    0
+   ],
+   [
+    34.68181818181819,
+    0,
+    0
+   ],
+   [
+    36.66363636363637,
+    0,
+    0
+   ],
+   [
+    38.645454545454555,
+    0,
+    0
+   ],
+   [
+    40.627272727272725,
+    0,
+    0
+   ],
+   [
+    42.60909090909091,
+    0,
+    0
+   ],
+   [
+    44.59090909090909,
+    0,
+    0
+   ],
+   [
+    46.57272727272728,
+    0,
+    0
+   ],
+   [
+    48.55454545454546,
+    0,
+    0
+   ],
+   [
+    50.536363636363646,
+    0,
+    0
+   ],
+   [
+    52.51818181818183,
+    0,
+    0
+   ],
+   [
+    54.5,
+    0,
+    0
+   ]
+  ],
+  "gallery_loop": [
+   [
+    -41.5,
+    4.8,
+    -34.5
+   ],
+   [
+    41.5,
+    4.8,
+    -34.5
+   ],
+   [
+    41.5,
+    4.8,
+    34.5
+   ],
+   [
+    -41.5,
+    4.8,
+    34.5
+   ],
+   [
+    -41.5,
+    4.8,
+    -34.5
+   ]
+  ],
+  "stairs": [
+   {
+    "node": "stair_-1_-1",
+    "start": [
+     -37.5,
+     0,
+     -22
+    ],
+    "end": [
+     -37.5,
+     4.8,
+     -33
+    ],
+    "width_m": 2.2,
+    "riser_m": 0.15,
+    "steps": 32,
+    "run_m": 0.34375
+   },
+   {
+    "node": "stair_-1_1",
+    "start": [
+     -37.5,
+     0,
+     22
+    ],
+    "end": [
+     -37.5,
+     4.8,
+     33
+    ],
+    "width_m": 2.2,
+    "riser_m": 0.15,
+    "steps": 32,
+    "run_m": 0.34375
+   },
+   {
+    "node": "stair_1_-1",
+    "start": [
+     37.5,
+     0,
+     -22
+    ],
+    "end": [
+     37.5,
+     4.8,
+     -33
+    ],
+    "width_m": 2.2,
+    "riser_m": 0.15,
+    "steps": 32,
+    "run_m": 0.34375
+   },
+   {
+    "node": "stair_1_1",
+    "start": [
+     37.5,
+     0,
+     22
+    ],
+    "end": [
+     37.5,
+     4.8,
+     33
+    ],
+    "width_m": 2.2,
+    "riser_m": 0.15,
+    "steps": 32,
+    "run_m": 0.34375
+   }
+  ]
+ },
+ "reference_note": "Simplified gameplay layout informed by photographs and plan; generic stalls, not surveyed tenancy positions."
+}

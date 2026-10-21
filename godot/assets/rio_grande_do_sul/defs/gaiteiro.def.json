@@ -1,0 +1,13 @@
+{
+ "id": "gaiteiro",
+ "type": "Musician",
+ "name": "Gaiteiro",
+ "model": "res://assets/rio_grande_do_sul/musicians/gaiteiro_gaucho.glb",
+ "sound": {
+  "station": "gaita_solo",
+  "fallback": "gaita"
+ },
+ "tags": [
+  "gaucho"
+ ]
+}

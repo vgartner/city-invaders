@@ -1,0 +1,100 @@
+{
+  "bicicletario_cinco_bicicletas": {
+    "shape": "BoxShape3D",
+    "size_m": [
+      3.4,
+      1.0534,
+      1.786
+    ],
+    "position_m": [
+      0.0,
+      0.5267,
+      0.0
+    ],
+    "note": "Caixa inicial ampla; refine se bloquear passagem. Cont\u00eainer: separar a tampa se articulada."
+  },
+  "chafariz_imperial": {
+    "shape": "BoxShape3D",
+    "size_m": [
+      2.1,
+      2.04,
+      2.1
+    ],
+    "position_m": [
+      0.0,
+      1.02,
+      0.0
+    ],
+    "note": "Caixa inicial ampla; refine se bloquear passagem. Cont\u00eainer: separar a tampa se articulada."
+  },
+  "conteiner_1000l_laranja": {
+    "shape": "BoxShape3D",
+    "size_m": [
+      1.36,
+      1.3809,
+      1.0
+    ],
+    "position_m": [
+      0.0,
+      0.6904,
+      -0.0
+    ],
+    "note": "Caixa inicial ampla; refine se bloquear passagem. Cont\u00eainer: separar a tampa se articulada."
+  },
+  "lixeira_poste": {
+    "shape": "BoxShape3D",
+    "size_m": [
+      0.4,
+      1.24,
+      0.4
+    ],
+    "position_m": [
+      0.0,
+      0.62,
+      0.0
+    ],
+    "note": "Caixa inicial ampla; refine se bloquear passagem. Cont\u00eainer: separar a tampa se articulada."
+  },
+  "orelhao": {
+    "shape": "BoxShape3D",
+    "size_m": [
+      0.8598,
+      2.1799,
+      0.528
+    ],
+    "position_m": [
+      0.0,
+      1.0899,
+      0.1858
+    ],
+    "note": "Caixa inicial ampla; refine se bloquear passagem. Cont\u00eainer: separar a tampa se articulada."
+  },
+  "poste_historico_tres_globos": {
+    "shape": "BoxShape3D",
+    "size_m": [
+      1.6,
+      4.09,
+      0.5
+    ],
+    "position_m": [
+      0.0,
+      2.045,
+      0.0
+    ],
+    "note": "Caixa inicial ampla; refine se bloquear passagem. Cont\u00eainer: separar a tampa se articulada."
+  },
+  "relogio_coluna": {
+    "shape": "BoxShape3D",
+    "size_m": [
+      0.82,
+      3.39,
+      0.6
+    ],
+    "position_m": [
+      0.0,
+      1.695,
+      0.0
+    ],
+    "note": "Caixa inicial ampla; refine se bloquear passagem. Cont\u00eainer: separar a tampa se articulada."
+  }
+}

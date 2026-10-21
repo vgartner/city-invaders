@@ -1,0 +1,12 @@
+{
+ "id": "bus_shelter",
+ "type": "BusStop",
+ "name": "Parada de ônibus",
+ "model": "res://assets/common/props/bus_shelter/bus_shelter_porto_alegre.glb",
+ "prop": "bus_stop",
+ "faces": {
+  "front": "+z",
+  "towards": "street",
+  "gap": 1.3
+ }
+}

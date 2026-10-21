@@ -1,0 +1,184 @@
+{
+  "canvas": [
+    1110,
+    690
+  ],
+  "coordinate_origin": "top-left",
+  "home": {
+    "apps": [
+      {
+        "id": "gps",
+        "rect": [
+          110,
+          184,
+          140,
+          174
+        ]
+      },
+      {
+        "id": "radio",
+        "rect": [
+          360,
+          184,
+          140,
+          174
+        ]
+      },
+      {
+        "id": "bah",
+        "rect": [
+          610,
+          184,
+          140,
+          174
+        ]
+      },
+      {
+        "id": "camera",
+        "rect": [
+          860,
+          184,
+          140,
+          174
+        ]
+      },
+      {
+        "id": "rastreador",
+        "rect": [
+          110,
+          404,
+          140,
+          174
+        ]
+      },
+      {
+        "id": "pecas",
+        "rect": [
+          360,
+          404,
+          140,
+          174
+        ]
+      },
+      {
+        "id": "mensagens_defesa_civil",
+        "rect": [
+          610,
+          404,
+          140,
+          174
+        ]
+      },
+      {
+        "id": "configuracoes",
+        "rect": [
+          860,
+          404,
+          140,
+          174
+        ]
+      }
+    ],
+    "clock_rect": [
+      42,
+      30,
+      78,
+      24
+    ],
+    "battery_rect": [
+      1003,
+      32,
+      59,
+      16
+    ]
+  },
+  "gps": {
+    "map_rect": [
+      33,
+      119,
+      757,
+      491
+    ],
+    "legend_dynamic_rect": [
+      830,
+      556,
+      230,
+      30
+    ]
+  },
+  "radio": {
+    "station_rect": [
+      62,
+      168,
+      720,
+      49
+    ],
+    "subtitle_rect": [
+      63,
+      222,
+      720,
+      29
+    ],
+    "band_rect": [
+      62,
+      304,
+      720,
+      29
+    ],
+    "play_button": [
+      510,
+      462,
+      90,
+      90
+    ],
+    "prev_button": [
+      401,
+      476,
+      62,
+      62
+    ],
+    "next_button": [
+      647,
+      476,
+      62,
+      62
+    ]
+  },
+  "bah": {
+    "conversation_rect": [
+      53,
+      210,
+      692,
+      338
+    ],
+    "question_list_rect": [
+      802,
+      186,
+      258,
+      328
+    ],
+    "input_rect": [
+      33,
+      583,
+      1045,
+      72
+    ]
+  },
+  "notification": {
+    "card_size": [
+      920,
+      136
+    ],
+    "canvas_position": [
+      95,
+      18
+    ],
+    "slide_from": [
+      95,
+      -145
+    ],
+    "duration_s": 0.28,
+    "easing": "cubic_out",
+    "note": "PNG is static; implement movement in game UI"
+  }
+}

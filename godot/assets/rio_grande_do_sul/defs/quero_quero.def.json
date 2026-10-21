@@ -1,0 +1,23 @@
+{
+ "id": "quero_quero",
+ "type": "Bird",
+ "name": "Quero-quero",
+ "models": [
+  "res://assets/rio_grande_do_sul/birds"
+ ],
+ "health": 30,
+ "pairs": 5,
+ "alarm_m": 8.0,
+ "charge_m": 4.0,
+ "peck": 4,
+ "peck_s": 1.5,
+ "run": 3.2,
+ "give_up_s": 8.0,
+ "patch_m": 14.0,
+ "cruise_m": 4.0,
+ "run_over_mps": 3.0,
+ "corpse_s": 12.0,
+ "tags": [
+  "gaucho"
+ ]
+}

@@ -1,0 +1,7 @@
+{
+ "id": "pistol",
+ "type": "Weapon",
+ "name": "Pistol",
+ "model": "res://assets/common/weapons/pistol/pistol_9mm_pickup.glb",
+ "stand": true
+}

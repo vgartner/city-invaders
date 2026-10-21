@@ -1,0 +1,9 @@
+{
+ "id": "footballers",
+ "type": "Footballer",
+ "name": "Football players",
+ "models": [
+  "res://assets/rio_grande_do_sul/sport/jogadores"
+ ],
+ "per_place": 6
+}

@@ -1,0 +1,6 @@
+{
+ "id": "ammo",
+ "type": "Ammo",
+ "name": "Ammunition box",
+ "model": "res://assets/common/pickups/ammo/ammo.glb"
+}

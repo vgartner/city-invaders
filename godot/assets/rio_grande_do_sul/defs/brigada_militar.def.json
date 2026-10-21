@@ -1,0 +1,8 @@
+{
+ "id": "brigada_militar",
+ "type": "Police",
+ "name": "Brigada Militar officer",
+ "models": [
+  "res://assets/rio_grande_do_sul/police"
+ ]
+}
