@@ -12,14 +12,21 @@ Made with [Godot 4.7](https://godotengine.org). Solo or online co-op.
 
 ## Quick start
 
+You need [Git LFS](https://git-lfs.com) (`brew install git-lfs`, then
+`git lfs install` once) and [Godot 4.7](https://godotengine.org). The models,
+textures, sounds and the Porto Alegre maps (~4 GB) come through Git LFS from the
+project's own server, `lfs.cityinvaders.vgdata.net` - no account needed.
+
 ```bash
-# 1. maps are generated, not stored in git: build one (docs/MAP_PIPELINE.md)
-#    or put the files from a release into godot/city/
-tools/.venv/bin/python tools/map/building_photo.py rebuild gasometro
-# 2. import and play
+git clone https://github.com/vgartner/city-invaders.git
+cd city-invaders
+# import once (a few minutes), then play
 cd godot && godot --headless --path . --import && cd ..
 ./run-godot.sh
 ```
+
+To rebuild a map from its OpenStreetMap data and photos, see
+[docs/MAP_PIPELINE.md](docs/MAP_PIPELINE.md).
 
 ## Documentation
 
