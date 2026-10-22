@@ -41,6 +41,10 @@ SIDEWALK_M = 3.0
 WATER_Y = -1.4               # water surface below street level (quay height)
 CURB_M = 0.15
 LAMP_SPACING_M = 25.0
+# paths across lawns and parks: default widths (OSM "width" wins), and the
+# surfaces that are not drawn as paving
+PATH_WIDTH_M = {"footway": 2.0, "path": 1.6, "cycleway": 2.5, "steps": 2.0, "bridleway": 2.0}
+UNPAVED = {"grass", "dirt", "ground", "earth", "mud", "sand", "unpaved", "grass_paver", "woodchips"}
 LAMP_MIN_GAP_M = 14.0          # no two street lamps closer (the two kerbs of a street are ~10-15 m apart)
 LAMP_MIN_WALK_M2 = 40.0        # sidewalk scraps smaller than this get no lamp
 RAMP_M = 0.35               # collision ramp width replacing the curb step
@@ -1334,6 +1338,30 @@ def main():
                     lamps.append((q.x, q.y))
     for park in parks:
         batch.poly(pbr("grass"), list(park.exterior.coords), 0.03, tile("grass")[0])
+    # the paved paths across lawns and parks (footways, cycleways, steps; not the
+    # sidewalks along streets, drawn above, nor dirt or grass tracks): the Orla's
+    # lamps stood in plain grass, the walks they light not drawn. Just above the
+    # parks' grass
+    strips = []
+    for el in osm:
+        t = el.get("tags", {})
+        if el["type"] != "way" or t.get("highway") not in PATH_WIDTH_M or len(el.get("geometry", [])) < 2:
+            continue
+        if t.get("footway") in ("sidewalk", "crossing") or t.get("cycleway") == "crossing" \
+                or t.get("surface", "paved") in UNPAVED or t.get("area") == "yes":
+            continue
+        try:
+            w = float(str(t.get("width", "")).split()[0].replace(",", ".")) if t.get("width") else PATH_WIDTH_M[t["highway"]]
+        except ValueError:
+            w = PATH_WIDTH_M[t["highway"]]
+        strips.append(LineString([proj(q["lat"], q["lon"]) for q in el["geometry"]]).buffer(max(w, 1.2) / 2, cap_style=2))
+    if strips:
+        walks = unary_union(strips).intersection(area).difference(asphalt_area).difference(pedestrian) \
+            .difference(sidewalks0).difference(footprint.buffer(0.1))
+        for piece in parts_of(walks):
+            if piece.area > 1.0:
+                batch.polygon(pbr("paving"), piece, 0.045, tile("paving")[0])
+        print("paths across lawns and parks: %.0f m2" % walks.area)
 
     # ---- water (lake/river shore): surface below the quay, quay wall, and a
     # collision parapet so nobody walks off the edge -------------------------
@@ -1992,6 +2020,7 @@ def _street_props(osm, proj, area, footprint, sidewalks, parks, asphalt_area, pe
     raised = prep(sidewalks)          # curb height; promenades and squares are at street level
     moved = dropped = 0
     phones = []
+    osm_lamps = []
     wall_line = footprint.buffer(0.9, join_style=2).boundary if not footprint.is_empty else None
     for el in osm:
         kind = next((v for (k, val), v in kinds.items() if el.get("tags", {}).get(k) == val), None)
@@ -2026,6 +2055,12 @@ def _street_props(osm, proj, area, footprint, sidewalks, parks, asphalt_area, pe
                     pt = q
                 moved += 1
             yaw = None
+            if kind == "lamp":
+                # OSM's own street lamps (the Orla maps every one) keep the same
+                # gap as the generated ones
+                if any(math.hypot(pt.x - a, pt.y - b) < LAMP_MIN_GAP_M for a, b in osm_lamps):
+                    continue
+                osm_lamps.append((pt.x, pt.y))
             if kind == "orelhao":
                 # one every 40 m at most (OSM maps every booth of a row), and on a
                 # promenade or a square against the nearest front, its back to the
