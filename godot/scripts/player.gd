@@ -539,7 +539,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		_radio_next()
 	elif event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and vehicle:
 		_chase_yaw -= event.relative.x * MOUSE_SENSITIVITY      # look around the vehicle
-		_chase_pitch = clamp(_chase_pitch + event.relative.y * MOUSE_SENSITIVITY, -0.35, 0.9)
+		_chase_pitch = clamp(_chase_pitch + event.relative.y * MOUSE_SENSITIVITY,
+				-0.5 if vehicle and vehicle.kind == "harvester" else -0.35, 0.9)      # the harvester aims up at drones
 	elif event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		rotate_y(-event.relative.x * MOUSE_SENSITIVITY)
 		pitch = clamp(pitch - event.relative.y * MOUSE_SENSITIVITY, -1.5, 1.5)
@@ -886,9 +887,19 @@ func _vehicle_view(delta: float) -> void:
 		# orbit at the base distance; the mouse tilts it up over the roof or down behind
 		var base := Vector2(12.0 if big else 6.5, 4.5 if big else 2.6)
 		var elev: float = clamp(atan2(base.y, base.x) + _chase_pitch, 0.05, 1.35)
-		var want: Vector3 = vt.origin + yaw * Vector3(0, sin(elev), cos(elev)) * base.length()
+		var pivot: Vector3 = vt.origin + Vector3(0, 1.2, 0)
+		if vehicle.kind == "harvester":
+			# the grain gun aims through the screen centre: the camera looks past
+			# the cab, over its left shoulder by the auger, not at the machine's
+			# middle (the crosshair sat on the harvester and every cob landed
+			# just in front of it); the mouse raises the aim above the horizon too
+			pivot = vt.origin + Vector3(0, 5.5, 0) + yaw * Vector3(-1.6, 0, 0)
+			base = Vector2(11.0, 2.0)
+			elev = clamp(atan2(base.y, base.x) + _chase_pitch, -0.3, 1.2)
+		var want: Vector3 = pivot + yaw * Vector3(0, sin(elev), cos(elev)) * base.length() \
+				if vehicle.kind == "harvester" else vt.origin + yaw * Vector3(0, sin(elev), cos(elev)) * base.length()
 		_chase.global_position = _chase.global_position.lerp(want, min(1.0, delta * 5.0))
-		_chase.look_at(vt.origin + Vector3(0, 1.2, 0), Vector3.UP)
+		_chase.look_at(pivot, Vector3.UP)
 		var moved: Vector3 = vehicle.global_position - _veh_last
 		_veh_last = vehicle.global_position
 		_veh_kmh = lerp(_veh_kmh, moved.length() / max(delta, 1e-4) * 3.6, 0.1)

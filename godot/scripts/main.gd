@@ -1381,6 +1381,20 @@ func _storefront_floor(ceramic: bool) -> StandardMaterial3D:
 	return m
 
 
+## Server: a mech's missile arriving (enemy.gd _cannon): people near it hurt
+## or killed, then the burst on every peer.
+func cannon_land(from: Vector3, at: Vector3, normal: Vector3, wall: bool, radius: float) -> void:
+	if not multiplayer.is_server():
+		return
+	for pl in get_tree().get_nodes_in_group("players"):
+		if (pl as Node3D).global_position.distance_to(at) < radius:
+			pl.hurt.rpc_id(pl.get_multiplayer_authority(), 35, at)
+	for c in get_tree().get_nodes_in_group("civilians"):
+		if (c as Node3D).global_position.distance_to(at) < radius and c.has_method("apply_damage"):
+			c.apply_damage(200, null)
+	blast_fx.rpc(from, at, normal, wall)
+
+
 ## Every peer: a heavy shell bursting (the player's mech cannon): dust,
 ## sparks, a crater and rubble on a wall, shops nearby wrecked.
 @rpc("any_peer", "call_local", "reliable")

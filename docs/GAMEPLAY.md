@@ -103,8 +103,9 @@ A combine harvester from the interior, armoured with welded plates, waits on
 a street near the start of every phase. Its spinning reel shreds any robot it
 catches, and its driver takes a quarter of the damage.
 Its unloading auger is a corn cannon: click fires corn cobs where the
-crosshair points (a yellow ring marks where they land; the mouse tilts the
-camera to aim nearer or further).
+crosshair points (a yellow ring marks where they land). The camera looks
+over the cab's left shoulder, by the auger: the mouse turns the aim and
+raises or lowers it, up to drones in the sky.
 
 ## Studio (title screen)
 
@@ -376,9 +377,11 @@ reactor at the back doubles it; a trooper's head takes double, its legs 70%.
 
 ## The enemy
 
-- Mech cannon: every ~12 s a mech in a fight fires a heavy shell at its
-  target - a 4 m blast that kills people and hurts players (35); a wall in
-  the way gets a scorched crater and a pile of rubble on the ground below.
+- Mech cannon: every ~12 s a mech in a fight fires a missile at its target
+  - you see it coming (a smoke trail, the motor's glow, ~32 m/s) and it
+  bursts where you were when it was fired, so running off dodges it: a 4 m
+  blast that kills people and hurts players (35); a wall in the way gets a
+  scorched crater and a pile of rubble on the ground below.
 
 - URB-C4 Coletor: no gun; it runs down a civilian on their own (nobody
   within 8 m) and stows them in the glass capsule on its back (you see them

@@ -483,11 +483,16 @@ func _lone_civilian() -> Node3D:
 	return best
 
 
-## Mech cannon (server): now and then a heavy shell at its target - a
-## blast that kills people near it; a wall in the way takes the hit: a
-## scorched crater on the facade and a pile of rubble on the sidewalk.
+## Mech cannon (server): now and then a missile at its target. It flies
+## (CANNON_SPEED, a slight arc, a smoke trail you can see coming) to where
+## the target was when it fired - running off in time dodges it - and
+## bursts there: a blast that kills people near it; a wall in the way takes
+## the hit: a scorched crater on the facade and a pile of rubble. The burst
+## is the game's (main.cannon_land), so a mech shot down mid-flight still
+## has its missile land.
 const CANNON_EVERY := 12.0
 const CANNON_R := 4.0
+const CANNON_SPEED := 32.0      # m/s
 var _cannon_cd := 6.0
 
 
@@ -503,64 +508,143 @@ func _cannon(delta: float) -> void:
 	var hit := get_world_3d().direct_space_state.intersect_ray(q)
 	var at: Vector3 = hit.position if hit else aim
 	var wall: bool = not hit.is_empty() and hit.collider is StaticBody3D and absf((hit.normal as Vector3).y) < 0.5
-	cannon_fx.rpc(from, at, hit.normal if hit else Vector3.UP, wall)
-	for pl in get_tree().get_nodes_in_group("players"):
-		if (pl as Node3D).global_position.distance_to(at) < CANNON_R:
-			pl.hurt.rpc_id(pl.get_multiplayer_authority(), 35, at)
-	for c in get_tree().get_nodes_in_group("civilians"):
-		if (c as Node3D).global_position.distance_to(at) < CANNON_R and c.has_method("apply_damage"):
-			c.apply_damage(200, null)
-
-
-@rpc("authority", "call_local", "reliable")
-func cannon_fx(from: Vector3, at: Vector3, normal: Vector3, wall: bool) -> void:
-	Sfx.play_at("robot_death", at, 6.0, 120.0)
+	var flight: float = maxf(from.distance_to(at) / CANNON_SPEED, 0.2)
+	cannon_launch.rpc(from, at, flight)
 	var main := get_tree().current_scene
-	if main.get("props"):
-		main.props._sparks(at)
-	var tracer := MeshInstance3D.new()
-	var line := ImmediateMesh.new()
-	var lm := StandardMaterial3D.new()
-	lm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	lm.albedo_color = Color(1.0, 0.5, 0.2)
-	line.surface_begin(Mesh.PRIMITIVE_LINES, lm)
-	line.surface_add_vertex(from)
-	line.surface_add_vertex(at)
-	line.surface_end()
-	tracer.mesh = line
-	main.add_child(tracer)
-	main.get_tree().create_timer(0.15).timeout.connect(tracer.queue_free)
-	_dust(main, at)
-	if wall:
-		Rubble.crater(main, at, normal)
-		Rubble.pile(main, at, normal)
-	if main.has_method("wreck_shops"):
-		main.wreck_shops(at)
+	get_tree().create_timer(flight).timeout.connect(
+			main.cannon_land.bind(from, at, hit.normal if hit else Vector3.UP, wall, CANNON_R))
 
 
-func _dust(main: Node, at: Vector3) -> void:
-	var p := CPUParticles3D.new()
-	p.one_shot = true
-	p.explosiveness = 0.85
-	p.amount = 36
-	p.lifetime = 3.0
-	p.spread = 180.0
-	p.initial_velocity_min = 1.0
-	p.initial_velocity_max = 4.0
-	p.gravity = Vector3(0, 0.6, 0)
-	var m := SphereMesh.new()
-	m.radius = 0.7
-	m.height = 1.4
-	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.albedo_color = Color(0.55, 0.5, 0.45, 0.45)
-	m.material = mat
-	p.mesh = m
-	main.add_child(p)
-	p.global_position = at
-	p.emitting = true
-	main.get_tree().create_timer(4.0).timeout.connect(p.queue_free)
+## Every peer: the missile leaving the mech's arm and flying to `at`.
+@rpc("authority", "call_local", "reliable")
+func cannon_launch(from: Vector3, at: Vector3, flight: float) -> void:
+	Sfx.play_at("robot_fire", from, 4.0, 120.0)
+	var main := get_tree().current_scene
+	var m := Missile.new()
+	main.add_child(m)
+	m.fly(from, at, flight, fx_light(Color(1.0, 0.6, 0.25), 3.0, 5.0))     # the motor's glow (capped like every effect light)
+
+
+## A mech's missile, drawn on every peer: a grey body, a red nose, four fins,
+## the motor's glow and a smoke trail left hanging in the air behind it.
+class Missile extends Node3D:
+	var _from := Vector3.ZERO
+	var _to := Vector3.ZERO
+	var _t := 0.0
+	var _flight := 1.0
+	var _arc := 0.0
+	var _trail: CPUParticles3D
+	static var _parts: Array = []
+
+	static func _meshes() -> Array:
+		if not _parts.is_empty():
+			return _parts
+		var metal := StandardMaterial3D.new()
+		metal.albedo_color = Color(0.32, 0.34, 0.36)
+		metal.metallic = 0.7
+		metal.roughness = 0.35
+		var red := StandardMaterial3D.new()
+		red.albedo_color = Color(0.75, 0.12, 0.08)
+		red.emission_enabled = true
+		red.emission = Color(0.5, 0.05, 0.02)
+		var glow := StandardMaterial3D.new()
+		glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		glow.albedo_color = Color(1.0, 0.75, 0.3)
+		var body := CylinderMesh.new()
+		body.top_radius = 0.13
+		body.bottom_radius = 0.13
+		body.height = 1.1
+		body.radial_segments = 10
+		body.material = metal
+		var nose := CylinderMesh.new()
+		nose.top_radius = 0.0
+		nose.bottom_radius = 0.13
+		nose.height = 0.35
+		nose.radial_segments = 10
+		nose.material = red
+		var fin := BoxMesh.new()
+		fin.size = Vector3(0.03, 0.28, 0.3)
+		fin.material = metal
+		var flame := SphereMesh.new()
+		flame.radius = 0.16
+		flame.height = 0.5
+		flame.material = glow
+		_parts = [body, nose, fin, flame]
+		return _parts
+
+	func fly(from: Vector3, to: Vector3, flight: float, light: OmniLight3D) -> void:
+		_from = from
+		_to = to
+		_flight = flight
+		_arc = minf(from.distance_to(to) * 0.05, 3.0)
+		var p := _meshes()
+		# modelled along -Z (its front), like everything else in the game
+		var shape := Node3D.new()
+		shape.scale = Vector3.ONE * 1.4      # 2 m long: it reads at 30 m
+		add_child(shape)
+		for mesh_at in [[p[0], Vector3.ZERO, Vector3(-PI / 2, 0, 0)], [p[1], Vector3(0, 0, -0.72), Vector3(-PI / 2, 0, 0)],
+				[p[3], Vector3(0, 0, 0.62), Vector3(-PI / 2, 0, 0)]]:
+			var mi := MeshInstance3D.new()
+			mi.mesh = mesh_at[0]
+			mi.position = mesh_at[1]
+			mi.rotation = mesh_at[2]
+			mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			shape.add_child(mi)
+		for k in 4:
+			var f := MeshInstance3D.new()
+			f.mesh = p[2]
+			f.rotation = Vector3(0, 0, k * PI / 2)
+			f.position = Vector3(0, 0, 0.42) + Basis(Vector3.BACK, k * PI / 2) * Vector3(0, 0.16, 0)
+			f.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			shape.add_child(f)
+		if light:
+			light.position = Vector3(0, 0, 0.8)
+			add_child(light)
+		_trail = CPUParticles3D.new()
+		_trail.amount = 60
+		_trail.lifetime = 1.6
+		_trail.local_coords = false
+		_trail.spread = 8.0
+		_trail.direction = Vector3(0, 0, 1)
+		_trail.initial_velocity_min = 0.5
+		_trail.initial_velocity_max = 1.5
+		_trail.gravity = Vector3(0, 0.4, 0)
+		_trail.scale_amount_min = 0.6
+		_trail.scale_amount_max = 1.4
+		var puff := SphereMesh.new()
+		puff.radius = 0.18
+		puff.height = 0.36
+		var smoke := StandardMaterial3D.new()
+		smoke.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		smoke.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		smoke.albedo_color = Color(0.7, 0.68, 0.65, 0.35)
+		puff.material = smoke
+		_trail.mesh = puff
+		_trail.position = Vector3(0, 0, 0.75)
+		add_child(_trail)
+		_place(0.0)
+
+	func _place(u: float) -> void:
+		var pos := _from.lerp(_to, u) + Vector3(0, _arc * 4.0 * u * (1.0 - u), 0)
+		var ahead := _from.lerp(_to, minf(u + 0.02, 1.0)) + Vector3(0, _arc * 4.0 * minf(u + 0.02, 1.0) * (1.0 - minf(u + 0.02, 1.0)), 0)
+		global_position = pos
+		if ahead.distance_to(pos) > 0.01:
+			look_at(ahead, Vector3.UP if absf((ahead - pos).normalized().y) < 0.99 else Vector3.RIGHT)
+
+	func _process(delta: float) -> void:
+		_t += delta
+		var u := minf(_t / _flight, 1.0)
+		_place(u)
+		if u >= 1.0:
+			# the trail stays hanging a moment where the missile flew
+			var main := get_parent()
+			var at := _trail.global_position
+			remove_child(_trail)
+			main.add_child(_trail)
+			_trail.global_position = at
+			_trail.emitting = false
+			main.get_tree().create_timer(_trail.lifetime + 0.2).timeout.connect(_trail.queue_free)
+			queue_free()
 
 
 ## Perception and state machine (server only).
