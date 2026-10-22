@@ -44,6 +44,33 @@ The assistant reads them with `inbox`, or runs
 `tools/devagent/devagent_wait.py` in the background, which returns as soon as a
 message arrives, and answers on screen with `say`.
 
+Every F1 message also carries `view`, taken the moment F1 is pressed: the
+camera's position, its heading on the compass (`heading_deg`, 0 = north =
+-Z, 90 = east = +X; `compass` N/NE/E...), its pitch, what the crosshair is on
+(`aim`: distance, point, and a robot, person, vehicle, landmark or generated
+building with its OSM id and link) and a picture of the screen
+(`screenshot`, a 1280 px JPEG in `user://devagent/f1/`).
+
+## Developer keys
+
+Only with the DevAgent on (a player's game has none of them):
+
+| Key | |
+|---|---|
+| F1 | message to the assistant (above) |
+| F2 | design mode |
+| F3 | god mode on / off: no damage |
+| F5 | performance recording on / off |
+
+**F5** records every frame until pressed again: frame time, script and
+physics time, draw calls, objects and triangles drawn, people, robots and
+vehicles, where the player is and looks, and every hitch (over 60 ms) with
+what had just come into the scene. The file goes to
+`user://devagent/perf/rec_<time>.json` and a message to the F1 channel says
+where, with a summary - press it when the game feels slow, and the moment is
+kept for later. `tools/devagent/perf_report.py [file]` (the latest by
+default) prints the summary, a 2 s timeline and the worst frames.
+
 ## Tracing an object
 
 `tools/devagent/devagent_trace.py C80 --seconds 15` follows one pedestrian, robot or

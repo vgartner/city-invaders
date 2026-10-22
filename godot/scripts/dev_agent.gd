@@ -19,7 +19,10 @@ var _shot_seq := 0
 
 func _ready() -> void:
 	if not "--devagent" in OS.get_cmdline_user_args():
+		# off in a player's game: no frame work, and no F1 / F3 / F5 keys either
 		set_process(false)
+		set_process_input(false)
+		set_process_unhandled_key_input(false)
 		return
 	var port := int(OS.get_environment("DEVAGENT_PORT")) if OS.has_environment("DEVAGENT_PORT") else PORT
 	var err := _server.listen(port, "127.0.0.1")
@@ -32,6 +35,8 @@ func _ready() -> void:
 ## Hitches: every frame longer than HITCH_MS, with what the world held then.
 const HITCH_MS := 60.0
 var _hitches: Array = []
+var _hitch_total := 0          # hitches ever (the list keeps the last 200)
+var _hitch_seen := 0
 var _frame_t := 0
 
 
@@ -39,7 +44,10 @@ func _process(_delta: float) -> void:
 	var now := Time.get_ticks_usec()
 	if _frame_t > 0:
 		var ms := (now - _frame_t) / 1000.0
+		if _rec_on:
+			_rec_frame(ms)
 		if ms > HITCH_MS and _main() and _main().map_id != "":
+			_hitch_total += 1
 			var m := _main()
 			_hitches.append({"t": snappedf(Time.get_ticks_msec() / 1000.0, 0.1), "ms": snappedf(ms, 0.1),
 					"physics_ms": snappedf(Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0, 0.1),
@@ -835,7 +843,18 @@ func _build_chat() -> void:
 func _unhandled_key_input(event: InputEvent) -> void:
 	if not event.pressed or event.echo:
 		return
-	if event.physical_keycode == KEY_F1 and not _chat_layer.visible:
+	if _chat_layer.visible:
+		return
+	if event.physical_keycode == KEY_F3:
+		_toggle_god()
+		get_viewport().set_input_as_handled()
+		return
+	if event.physical_keycode == KEY_F5:
+		_toggle_rec()
+		get_viewport().set_input_as_handled()
+		return
+	if event.physical_keycode == KEY_F1:
+		_view = _view_snapshot()            # what the player looks at, before the panel covers it
 		_chat_layer.visible = true
 		_chat_mouse = Input.mouse_mode
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -875,12 +894,195 @@ func _send_chat(text: String) -> void:
 	if m and m.design_selections.size() > 1:
 		# several objects picked (Shift+click): all of them, as references
 		msg["selections"] = m.design_selections.map(func(e): return _sel_ref(e))
+	if not _view.is_empty():
+		msg["view"] = _view
+		_view = {}
 	_inbox.append(msg)
 	var f := FileAccess.open(INBOX, FileAccess.READ_WRITE if FileAccess.file_exists(INBOX) else FileAccess.WRITE)
 	f.seek_end()
 	f.store_line(JSON.stringify(msg))
 	f.close()
 	_m_say({"text": "(sent) " + text, "seconds": 5})
+
+
+## F1: where the player is looking when the message is started - the view's
+## heading on the compass (0 north = -Z, 90 east = +X), its pitch, what the
+## crosshair is on (a building with its OSM id, a robot, a person, a
+## vehicle, the ground) and a picture of the screen, so "this building here"
+## needs no guessing.
+var _view := {}
+const VIEW_DIR := "user://devagent/f1"
+func _view_snapshot() -> Dictionary:
+	var cam := get_viewport().get_camera_3d()
+	if cam == null:
+		return {}
+	var fwd := -cam.global_transform.basis.z
+	var heading := fposmod(rad_to_deg(atan2(fwd.x, -fwd.z)), 360.0)
+	var names := ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+	var out := {"camera": _v(cam.global_position), "heading_deg": snappedf(heading, 1.0),
+			"compass": names[int(round(heading / 45.0)) % 8], "pitch_deg": snappedf(rad_to_deg(asin(clampf(fwd.y, -1.0, 1.0))), 1.0)}
+	var q := PhysicsRayQueryParameters3D.create(cam.global_position, cam.global_position + fwd * 400.0, 1 | 2 | 16 | 32 | 64)
+	var pl := _player()
+	if pl:
+		q.exclude = [pl.get_rid()]
+	var hit := cam.get_world_3d().direct_space_state.intersect_ray(q)
+	if hit:
+		var aim := {"pos": _v(hit.position), "distance": snappedf(cam.global_position.distance_to(hit.position), 0.1),
+				"collider": String(hit.collider.name)}
+		var n: Node = hit.collider
+		while n and n != _main():
+			if n.is_in_group("robots"):
+				aim["robot"] = "%s %s" % [n.name, n.get("variant")]
+				break
+			if n.is_in_group("civilians"):
+				aim["person"] = String(n.name)
+				break
+			if n.get("kind") != null and n.has_method("shove"):
+				aim["vehicle"] = "%s %s" % [n.name, n.kind]
+				break
+			if n.has_meta("landmark"):
+				aim["landmark"] = String(n.get_meta("landmark").get("model", n.get_meta("landmark").get("id", "")))
+				break
+			n = n.get_parent()
+		var m := _main()
+		if not aim.has("robot") and not aim.has("person") and not aim.has("vehicle") and m:
+			var b := _building_near(m.map_id, hit.position)
+			if not b.is_empty():
+				aim["building"] = {"osm": b.get("id", ""), "name": b.get("name", ""), "height": b.get("height", 0),
+						"link": "https://www.openstreetmap.org/" + str(b.get("id", ""))}
+		out["aim"] = aim
+	var img := get_viewport().get_texture().get_image()
+	if img:
+		img.resize(1280, int(1280.0 * img.get_height() / img.get_width()), Image.INTERPOLATE_BILINEAR)
+		DirAccess.make_dir_recursive_absolute(VIEW_DIR)
+		var path := VIEW_DIR.path_join("f1_%d.jpg" % Time.get_unix_time_from_system())
+		img.save_jpg(path, 0.85)
+		out["screenshot"] = ProjectSettings.globalize_path(path)
+	return out
+
+
+## The generated building at (or within 2.5 m of) a point - from the map's
+## <city>.buildings.json, so it works in play too (the map editor's index only
+## exists in design mode).
+var _bld_map := ""
+var _bld: Array = []
+func _building_near(map_id: String, p: Vector3) -> Dictionary:
+	if map_id != _bld_map:
+		_bld_map = map_id
+		var path := "res://city/%s.buildings.json" % map_id
+		_bld = JSON.parse_string(FileAccess.get_file_as_string(path)) if FileAccess.file_exists(path) else []
+	var pt := Vector2(p.x, p.z)
+	var best := {}
+	var best_d := 2.5
+	for b in _bld:
+		var poly := PackedVector2Array()
+		for q in b["ring"]:
+			poly.append(Vector2(q[0], q[1]))
+		if Geometry2D.is_point_in_polygon(pt, poly):
+			return b
+		for i in poly.size():
+			var d := Geometry2D.get_closest_point_to_segment(pt, poly[i], poly[(i + 1) % poly.size()]).distance_to(pt)
+			if d < best_d:
+				best_d = d
+				best = b
+	return best
+
+
+## F3: god mode on and off (no damage) - for playing while developing.
+func _toggle_god() -> void:
+	var pl := _player()
+	if pl == null:
+		return
+	var on := not bool(pl.get_meta("god", false))
+	pl.set_meta("god", on)
+	if on:
+		pl.health = maxi(pl.health, 100)
+	_m_say({"text": "God mode %s (F3)" % ("ON - no damage" if on else "OFF"), "seconds": 4})
+
+
+## F5: record what every frame costs until F5 again - frame time, script and
+## physics time, what is drawn, people and robots, where the player is and
+## looks, and every hitch with what had just come in. The file goes to
+## user://devagent/perf/ and a message to the F1 channel says where, with a
+## summary (tools/devagent/perf_report.py reads it).
+var _rec_on := false
+var _rec_rows: Array = []
+var _rec_start := 0
+var _rec_hitch0 := 0
+var _rec_label: Label
+const PERF_DIR := "user://devagent/perf"
+func _toggle_rec() -> void:
+	if not _rec_on:
+		_rec_on = true
+		_rec_rows = []
+		_rec_start = Time.get_ticks_msec()
+		_rec_hitch0 = _hitches.size()
+		_hitch_seen = _hitch_total
+		if _rec_label == null:
+			var layer := CanvasLayer.new()
+			layer.layer = 62
+			add_child(layer)
+			_rec_label = Label.new()
+			_rec_label.text = "● REC performance (F5 stops)"
+			_rec_label.position = Vector2(20, 40)
+			_rec_label.add_theme_font_size_override("font_size", 20)
+			_rec_label.add_theme_color_override("font_color", Color(1, 0.25, 0.2))
+			_rec_label.add_theme_constant_override("outline_size", 6)
+			_rec_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+			layer.add_child(_rec_label)
+		_rec_label.visible = true
+		return
+	_rec_on = false
+	_rec_label.visible = false
+	var ms: Array = _rec_rows.map(func(r): return r[1])
+	if ms.size() < 2:
+		return
+	ms.sort()
+	var total := 0.0
+	for v in ms:
+		total += v
+	var qf := func(f: float) -> float: return snappedf(ms[mini(ms.size() - 1, int(ms.size() * f))], 0.1)
+	var hitches: Array = _hitches.slice(maxi(0, _hitches.size() - (_hitch_total - _hitch_seen)))
+	var summary := {"seconds": snappedf(total / 1000.0, 0.1), "frames": ms.size(), "avg_fps": snappedf(ms.size() / (total / 1000.0), 0.1),
+			"median_ms": qf.call(0.5), "p95_ms": qf.call(0.95), "p99_ms": qf.call(0.99), "max_ms": snappedf(ms[-1], 0.1),
+			"over_33ms": ms.filter(func(v): return v > 33.4).size(), "over_100ms": ms.filter(func(v): return v > 100.0).size(),
+			"hitches": hitches.size(), "map": _main().map_id if _main() else ""}
+	DirAccess.make_dir_recursive_absolute(PERF_DIR)
+	var path := PERF_DIR.path_join("rec_%d.json" % Time.get_unix_time_from_system())
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	f.store_string(JSON.stringify({"summary": summary, "hitches": hitches,
+			"columns": ["t", "frame_ms", "process_ms", "physics_ms", "draw_calls", "objects", "primitives",
+					"civilians", "robots", "vehicles", "x", "z", "heading_deg", "fps_setting_scale"],
+			"rows": _rec_rows}))
+	f.close()
+	var line := "%.0f s, %.0f fps avg, median %.1f ms, p99 %.1f ms, worst %.0f ms, %d frames over 100 ms" % [
+			summary["seconds"], summary["avg_fps"], summary["median_ms"], summary["p99_ms"], summary["max_ms"], summary["over_100ms"]]
+	_m_say({"text": "Performance recorded (%s) - sent to Claude" % line, "seconds": 8})
+	var msg := {"text": "(F5 performance recording) " + line, "time": Time.get_datetime_string_from_system(),
+			"map": summary["map"], "perf_log": ProjectSettings.globalize_path(path), "summary": summary}
+	var pl := _player()
+	if pl:
+		msg["player"] = _v(pl.global_position)
+	_inbox.append(msg)
+	var fi := FileAccess.open(INBOX, FileAccess.READ_WRITE if FileAccess.file_exists(INBOX) else FileAccess.WRITE)
+	fi.seek_end()
+	fi.store_line(JSON.stringify(msg))
+	fi.close()
+
+
+func _rec_frame(ms: float) -> void:
+	var m := _main()
+	var P := Performance
+	var cam := get_viewport().get_camera_3d()
+	var pos := cam.global_position if cam else Vector3.ZERO
+	var fwd := -cam.global_transform.basis.z if cam else Vector3.FORWARD
+	_rec_rows.append([snappedf((Time.get_ticks_msec() - _rec_start) / 1000.0, 0.001), snappedf(ms, 0.01),
+			snappedf(P.get_monitor(P.TIME_PROCESS) * 1000.0, 0.01), snappedf(P.get_monitor(P.TIME_PHYSICS_PROCESS) * 1000.0, 0.01),
+			int(P.get_monitor(P.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)), int(P.get_monitor(P.RENDER_TOTAL_OBJECTS_IN_FRAME)),
+			int(P.get_monitor(P.RENDER_TOTAL_PRIMITIVES_IN_FRAME)),
+			m.civilians_root.get_child_count() if m else 0, m.enemies_root.get_child_count() if m else 0,
+			m.traffic_root.get_child_count() if m else 0, snappedf(pos.x, 0.1), snappedf(pos.z, 0.1),
+			snappedf(fposmod(rad_to_deg(atan2(fwd.x, -fwd.z)), 360.0), 1.0), snappedf(get_viewport().scaling_3d_scale, 0.01)])
 
 
 func _m_inbox(p: Dictionary):
