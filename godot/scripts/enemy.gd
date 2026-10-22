@@ -57,6 +57,8 @@ var _retarget_cd := 1.0
 var _stuck_time := 0.0
 var _detour := Vector3.ZERO
 var _detour_left := 0.0
+var _unsticks := 0              # sidesteps in a row at about the same spot
+var _unstick_at := Vector3.INF
 var killed_by_player := false
 var killer_peer := 0            # the player who destroyed it (score)   # robots the police take down don't count for the goal
 var dropping := false          # server: being lowered from a dropship, no AI until it lands
@@ -318,12 +320,30 @@ func _physics_process(delta: float) -> void:
 		_stuck_time += delta
 		if _stuck_time > 0.8:
 			_stuck_time = 0.0
+			# a parked car or truck in the way (the navmesh doesn't know vehicles):
+			# a robot just shoves it aside
+			for i in get_slide_collision_count():
+				var other := get_slide_collision(i).get_collider()
+				if other and other.has_method("shove") and other.get("driver_peer") == 0:
+					other.shove(move.normalized() * 3.0)
 			var side := Vector3(-move.z, 0, move.x).normalized() * (1 if randf() < 0.5 else -1)
 			_detour = (side - move.normalized() * 0.5).normalized()
 			_detour_left = 0.6
 			_repath_cd = 0.0
+			_unsticks = _unsticks + 1 if _unstick_at != Vector3.INF and _unstick_at.distance_to(global_position) < 3.0 else 1
+			_unstick_at = global_position
 			if state == State.PATROL:
 				_pick_patrol_goal()
+			elif _unsticks >= 3:
+				# the same squeeze again and again (a gap between a wall, a tree and
+				# a truck): a searching robot gives up that spot, a chasing one goes
+				# well round before it tries the path again
+				_unsticks = 0
+				if state == State.SEARCH:
+					state = State.PATROL
+					_pick_patrol_goal()
+				else:
+					_detour_left = 1.6
 	else:
 		_stuck_time = 0.0
 	# face what matters: the target when engaging, else the walking direction
