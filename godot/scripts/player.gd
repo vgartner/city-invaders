@@ -218,7 +218,6 @@ func _ready() -> void:
 	set_process_unhandled_input(mine)
 	if mine:
 		_build_hud()
-		_tablet_hint()
 		_show_weapon()
 		# the field tablet, held like a view model (framed for the 43-degree lens)
 		_tablet = preload("res://scripts/tablet.gd").new()
@@ -323,16 +322,39 @@ func _place_tick(delta: float) -> void:
 		show_place(here)
 
 
-## First thing in a round: how to open the tablet (map, radio, Bah) - again
-## after a while if it was never opened.
+## A line just under the crosshair, where the player is looking (a banner at
+## the top went unseen): how to open the tablet, until it has been opened once
+## (ever - Settings.tablet_used); and, with robot parts enough to trade or the
+## pockets full, where a repair shop is - 10 s a minute until one is used.
 var _tablet_opened := false
-func _tablet_hint() -> void:
-	var main := get_tree().current_scene
-	for wait in [3.0, 45.0]:
-		await get_tree().create_timer(wait).timeout
-		if _tablet_opened or not is_inside_tree() or not main.has_method("_announce"):
-			return
-		main._announce("PRESS %s TO OPEN THE TABLET: the map (GPS), the radio and Bah, your assistant" % Settings.key_label("tablet"))
+var _hint: Label
+var _shop_used := false
+var _shop_hint_t := 50.0
+func _hint_tick(delta: float) -> void:
+	if _hint == null:
+		return
+	var text := ""
+	var calm := not dead and not design and vehicle == null and not (_tablet and _tablet.visible) and _shop_panel == null
+	if calm and not Settings.tablet_used:
+		text = "Press %s - the tablet: map (GPS), radio and Bah, your assistant" % Settings.key_label("tablet")
+	elif calm and not _shop_used and not _near_shop and (_can_trade() or parts_total() >= parts_cap()):
+		_shop_hint_t += delta
+		if fmod(_shop_hint_t, 60.0) < 10.0:
+			text = "You have robot parts to trade: open the tablet (%s) and find a REPAIR SHOP on the GPS" % Settings.key_label("tablet")
+	_hint.text = text
+	_hint.visible = text != ""
+
+
+## Something in the repair shop's list the parts in the pockets would buy.
+func _can_trade() -> bool:
+	for item in SHOP:
+		var ok := true
+		for k in item[1]:
+			if int(parts.get(k, 0)) < int(item[1][k]):
+				ok = false
+		if ok:
+			return true
+	return false
 
 
 func _build_hud() -> void:
@@ -359,6 +381,19 @@ func _build_hud() -> void:
 	_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_toast.modulate.a = 0.0
 	layer.add_child(_toast)
+	_hint = Label.new()
+	_hint.set_anchors_preset(Control.PRESET_CENTER)
+	_hint.anchor_top = 0.56
+	_hint.anchor_bottom = 0.56
+	_hint.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_hint.add_theme_font_size_override("font_size", 24)
+	_hint.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
+	_hint.add_theme_constant_override("outline_size", 8)
+	_hint.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hint.visible = false
+	layer.add_child(_hint)
 	_hit_marker = Label.new()
 	_hit_marker.text = "●"
 	_hit_marker.add_theme_font_size_override("font_size", 40)
@@ -396,6 +431,7 @@ func _process(delta: float) -> void:
 	if is_multiplayer_authority():
 		_vehicle_view(delta)
 		_shop_tick(delta)
+		_hint_tick(delta)
 		_place_tick(delta)
 		_route_tick(delta)
 		# the corner map: the car's GPS while driving; on foot only through the
@@ -448,6 +484,9 @@ func _tablet_input(event: InputEvent) -> bool:
 		elif not vehicle and not dead and not design:
 			_tablet.open()
 			_tablet_opened = true
+			if not Settings.tablet_used:
+				Settings.tablet_used = true
+				Settings.save()
 		return true
 	return _tablet.visible and _tablet.key(event)
 
@@ -942,6 +981,7 @@ func _shop_tick(delta: float) -> void:
 
 
 func _open_shop() -> void:
+	_shop_used = true
 	_shop_panel = PanelContainer.new()
 	_shop_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	var box := VBoxContainer.new()

@@ -54,6 +54,8 @@ var ssao := true
 ## easy / medium / hard (difficulty.gd); the host's applies to the round
 var difficulty := "medium"
 var player_name := "Player"
+## the tablet was opened once: the hint under the crosshair is not shown again
+var tablet_used := false
 
 
 func _ready() -> void:
@@ -78,6 +80,7 @@ func _ready() -> void:
 		if not graphics in GRAPHICS:
 			graphics = "medium"
 		player_name = str(cfg.get_value("player", "name", player_name))
+		tablet_used = bool(cfg.get_value("help", "tablet_used", false))
 	_apply_mute()
 
 
@@ -93,6 +96,7 @@ func save() -> void:
 	cfg.set_value("video", "ssao", ssao)
 	cfg.set_value("game", "difficulty", difficulty)
 	cfg.set_value("player", "name", player_name)
+	cfg.set_value("help", "tablet_used", tablet_used)
 	cfg.save(PATH)
 
 

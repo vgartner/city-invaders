@@ -291,7 +291,7 @@ Weapons and ammo lie on the streets.
 
 ## The field tablet
 
-T raises the tablet (put away with T). Its screen is drawn with the
+T raises the tablet (put away with T). Until it has been opened once, a line under the crosshair says so; and with robot parts enough to trade (or full pockets) the same line, 10 s a minute, sends you to the tablet's GPS for a repair shop, until you have used one. Its screen is drawn with the
 tablet's own art (`gadgets/tablet/ui/`: the pampa wallpaper, the app
 screens, the map pictograms). The home screen holds eight apps - 1-8, or the
 arrows and Enter: GPS (the street map around you with robots, Coletores,
