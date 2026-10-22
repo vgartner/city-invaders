@@ -41,6 +41,8 @@ SIDEWALK_M = 3.0
 WATER_Y = -1.4               # water surface below street level (quay height)
 CURB_M = 0.15
 LAMP_SPACING_M = 25.0
+LAMP_MIN_GAP_M = 14.0          # no two street lamps closer (the two kerbs of a street are ~10-15 m apart)
+LAMP_MIN_WALK_M2 = 40.0        # sidewalk scraps smaller than this get no lamp
 RAMP_M = 0.35               # collision ramp width replacing the curb step
 
 
@@ -1283,6 +1285,7 @@ def main():
     col_key = "collision"
     images.setdefault(col_key, Image.new("RGB", (4, 4), (128, 128, 128)))
     lamps, curb_lines = [], []
+    near_kerb = prep(carriageway.buffer(1.5)) if carriageway is not None and not carriageway.is_empty else prep(box(0, 0, 0, 0))
     for part in parts_of(sidewalks):
         if part.area < 1:
             continue
@@ -1297,12 +1300,17 @@ def main():
         for inset in parts_of(part.buffer(-RAMP_M + 0.05, join_style=2)):
             col.polygon(col_key, inset, CURB_M, 1.0)
         curb_lines.append(ring)
-        # lamps 0.5 m in from the curb
+        # lamps 0.5 m in from the curb - on the street side only (the ring also
+        # runs along the fronts, round corner scraps and islands: half the lamps
+        # of a map stood within 8 m of another); spacing evened out below
+        if part.area < LAMP_MIN_WALK_M2:
+            continue
         for inset in parts_of(part.buffer(-0.5)):
             line = inset.exterior
-            for dd in np.arange(LAMP_SPACING_M / 2, line.length, LAMP_SPACING_M):
+            for dd in np.arange(LAMP_SPACING_M / 2, line.length, LAMP_SPACING_M / 5):
                 q = line.interpolate(dd)
-                lamps.append((q.x, q.y))
+                if near_kerb.contains(q):
+                    lamps.append((q.x, q.y))
     for park in parks:
         batch.poly(pbr("grass"), list(park.exterior.coords), 0.03, tile("grass")[0])
 
@@ -2012,8 +2020,14 @@ def _street_props(osm, proj, area, footprint, sidewalks, parks, asphalt_area, pe
                 phones.append((pt.x, pt.y))
             add(kind, pt.x, pt.y, CURB_M if raised.contains(pt) else 0.0, yaw=yaw, r=1.0)
     print(f"OSM street furniture on the road: {moved} moved to the sidewalk, {dropped} dropped")
+    # one lamp every LAMP_SPACING_M along a kerb at most, OSM's own street
+    # lamps (placed above) counted too
+    lit = [(p["pos"][0], -p["pos"][2]) for p in props if p["type"] == "lamp"]
     for x, y in lamps:
-        add("lamp", x, y, r=0.5)
+        if any(math.hypot(x - a, y - b) < LAMP_MIN_GAP_M for a, b in lit):
+            continue
+        if add("lamp", x, y, r=0.5):
+            lit.append((x, y))
 
     on_sidewalk = prep(sidewalks.buffer(-0.3))
     hydrants = []

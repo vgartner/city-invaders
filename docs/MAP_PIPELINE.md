@@ -180,7 +180,7 @@ it to know which OSM building is where (map editor, DevAgent `selection`).
   the map border (all streets are still drawn). Where the loops cover less
   than a quarter of the map the traffic stays as it was - the map's bounds
   should then be widened to the next road loop out
-- props from OSM nodes plus generated lamps, trees where OSM has them,
+- props from OSM nodes plus generated lamps (on the kerb side of sidewalks only, at least 14 m apart, OSM's own lamps counted), trees where OSM has them,
   street name signs at corners, stalls and the tram on promenades
 - the road graph for traffic, crowd points for pedestrians, a spawn point
 
