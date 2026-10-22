@@ -811,12 +811,33 @@ def main():
     # lanes. Hand-made models keep their footprint.
     carriageway = _carriageway(osm, proj)
     cw_prep = prep(carriageway)
-    clipped, kept = 0, []
+    clipped, dropped, kept = 0, 0, []
+    kerb_zone = prep(carriageway.buffer(1.5, join_style=2))
+
+    def anonymous(t):
+        # nothing but "a building" (or one under construction) and where the
+        # outline came from: no name, address, shop, description, history - a
+        # newsstand becomes the banca model, a part of a landmark stays
+        return all(k.startswith("@") or k == "source" or (k == "building" and v in ("yes", "construction"))
+                   for k, v in t.items())
+
     for poly, h, t in buildings:
+        if t.get("@id") not in models and poly.area < 60.0 and anonymous(t) \
+                and kerb_zone.intersects(poly) and not cw_prep.intersects(poly):
+            # a small structure on the kerb itself, no room left for the sidewalk
+            # (a 17 m2 block on the Rua Demétrio Ribeiro's curve; parking huts):
+            # it goes, like the small ones standing in the lanes below
+            dropped += 1
+            continue
         if t.get("@id") not in models and cw_prep.intersects(poly):
             cut = poly.difference(carriageway.buffer(0.3, join_style=2))
             cut = max(parts_of(cut), key=lambda g: g.area) if not cut.is_empty else None
             if cut is None or cut.area < 0.4 * poly.area or cut.area < 12.0:
+                if poly.area < 60.0 and anonymous(t):
+                    # a small structure standing in the lanes (parking huts mapped
+                    # across the street line): it goes
+                    dropped += 1
+                    continue
                 kept.append((poly, h, t))            # mostly in the street: the street map is off, leave it
                 continue
             if cut.area < poly.area - 0.5:
@@ -824,7 +845,7 @@ def main():
             poly = cut
         kept.append((poly, h, t))
     buildings = kept
-    print("buildings cut back to the kerb:", clipped)
+    print("buildings cut back to the kerb:", clipped, "- small ones in the lanes or on the kerb left out:", dropped)
     # ---- places: what OSM says a spot is (godot/assets/place_kinds.json) ----
     kinds_file = Path(__file__).resolve().parents[2] / "godot" / "assets" / "place_kinds.json"
     rules = {k: v for k, v in json.loads(kinds_file.read_text()).items() if not k.startswith("_")} \

@@ -133,7 +133,7 @@ it to know which OSM building is where (map editor, DevAgent `selection`).
 
 - buildings from OSM ways and multipolygons, heights from `height` /
   `building:levels` (untagged: two storeys downtown, one for a house or a
-  garage; a kiosk or newsstand, or anything under 15 m², is 3 m), eroded and de-overlapped; each wall gets its photo, a
+  garage; a kiosk or newsstand, or anything under 15 m², is 3 m); a footprint reaching into the lanes is cut back to the kerb, and a small one (under 60 m²) with nothing but `building=yes` in OSM - no name, address, shop or description - that stands in the lanes or on the kerb, leaving no room for the sidewalk, is left out (parking huts; newsstands become the banca model instead), eroded and de-overlapped; each wall gets its photo, a
   neighbouring wall's photo (short walls) or a tinted procedural facade
 - solid infill between buildings so there are no see-through slits (never
   over a photographed facade or into a landmark)
