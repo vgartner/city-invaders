@@ -895,7 +895,49 @@ func drive_input(throttle: float, steer: float, handbrake: float) -> void:
 
 ## Server: arcade handling - speed-dependent steering, coasting, braking,
 ## reverse; bumps stop it, people and robots in the way are run over.
+## Harvester (server): the reel and its blades in front cut into whatever
+## robot stands against them - driven slowly or standing still too (only a
+## hit at speed hurt before): REEL_DPS a second, five bites a second, sparks
+## and the clang of metal each time.
+const REEL_DPS := 150.0
+var _reel_cd := 0.0
+func _reel_tick(delta: float) -> void:
+	_reel_cd -= delta
+	if _reel_cd > 0.0:
+		return
+	_reel_cd = 0.2
+	var main := get_tree().current_scene
+	var front: float = _box_centre.z - _box.size.z / 2.0           # the header's edge (front is -Z)
+	var half_w: float = _box.size.x / 2.0 + 0.3
+	var driver := main.players_root.get_node_or_null(str(driver_peer)) as Node3D
+	var bite := int(REEL_DPS * 0.2)
+	for e in main.enemies_root.get_children():
+		if e.get("variant") == "swarm":
+			for i in e.positions.size():
+				var lp: Vector3 = to_local(e.positions[i])
+				if (e.alive_mask >> i) & 1 == 1 and lp.z > front - 2.0 and lp.z < front + 1.5 and absf(lp.x) < half_w and lp.y < 3.0:
+					e.hit_unit(i, 9999, driver)
+			continue
+		if not e.has_method("is_alive") or not e.is_alive():
+			continue
+		var l := to_local((e as Node3D).global_position)
+		if l.z > front - 2.0 and l.z < front + 1.5 and absf(l.x) < half_w and l.y < 3.0:
+			e.apply_damage(bite, driver)
+			reel_bite.rpc((e as Node3D).global_position + Vector3(0, 1.0, 0))
+
+
+## Every peer: sparks and the clang of the blades on a robot.
+@rpc("authority", "call_local", "unreliable")
+func reel_bite(at: Vector3) -> void:
+	Sfx.play_at("robot_hit", at, 2.0, 50.0)
+	var main := get_tree().current_scene
+	if main.get("props"):
+		main.props._sparks(at)
+
+
 func _drive(delta: float) -> void:
+	if kind == "harvester":
+		_reel_tick(delta)
 	var spec: Array = DRIVE.get(kind, DRIVE["car"])
 	var top: float = spec[0]
 	var acc: float = spec[1]

@@ -102,7 +102,9 @@ you takes the shot.
 
 A combine harvester from the interior, armoured with welded plates, waits on
 a street near the start of every phase. Its spinning reel shreds any robot it
-catches, and its driver takes a quarter of the damage.
+runs into, and any robot or swarm drone standing against the blades in
+front is cut too, 150 a second, even with the harvester standing still;
+its driver takes a quarter of the damage.
 Its unloading auger is a corn cannon: click fires corn cobs where the
 crosshair points (a yellow ring marks where they land). The camera looks
 over the cab's left shoulder, by the auger: the mouse turns the aim and
