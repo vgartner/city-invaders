@@ -122,6 +122,13 @@ func captured_fx() -> void:
 	tw.tween_callback(queue_free)
 
 
+## About when a downed drone hits the street: it breaks into its parts.
+func _crash_shatter() -> void:
+	if is_inside_tree():
+		Wreck.shatter(self, Vector3.ZERO, 8.0)
+		Sfx.play_at("prop_break", global_position, 0.0, 50.0)
+
+
 func apply_damage(amount: int, attacker: Node3D = null) -> void:
 	if not multiplayer.is_server() or health <= 0:
 		return
@@ -268,10 +275,9 @@ func _process(delta: float) -> void:
 			if _anim and _anim.has_animation("crash"):
 				_anim.play("crash", 0.05)
 			# about when it hits the street: it breaks into its parts
-			get_tree().create_timer(1.3).timeout.connect(func():
-				if is_inside_tree():
-					Wreck.shatter(self, Vector3.ZERO, 8.0)
-					Sfx.play_at("prop_break", global_position, 0.0, 50.0))
+			# a method of the drone, not a lambda holding it: lassoed and gone
+			# before then, the timer just lets go
+			get_tree().create_timer(1.3).timeout.connect(_crash_shatter)
 		elif _anim and _anim.has_animation("damaged"):
 			_anim.play("damaged", 0.05)
 			_anim.queue("hover")

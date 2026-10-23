@@ -492,7 +492,9 @@ func _drop_parts(e) -> void:
 				+ Vector3(randf_range(-1.5, 1.5), 0, randf_range(-1.5, 1.5)))
 		var pk := _spawn_pickup(k, at, false)
 		if pk:
-			get_tree().create_timer(40.0).timeout.connect(func(): if is_instance_valid(pk): pk.queue_free())
+			# bound to the pickup itself: taken before then, the timer just lets go
+			# (a lambda holding it reported "Lambda capture was freed")
+			get_tree().create_timer(40.0).timeout.connect(pk.queue_free)
 
 
 func _on_robot_killed(e) -> void:
@@ -503,7 +505,7 @@ func _on_robot_killed(e) -> void:
 		var at := NavigationServer3D.map_get_closest_point(map, (e as Node3D).global_position + Vector3(2.0, 0, 0))
 		var pk := _spawn_pickup("canhao", at, false)
 		if pk:
-			get_tree().create_timer(90.0).timeout.connect(func(): if is_instance_valid(pk): pk.queue_free())
+			get_tree().create_timer(90.0).timeout.connect(pk.queue_free)
 	if e.get("variant") == "mech":
 		_phase_mechs += 1
 	if e.get("commander") and e.killed_by_player:
@@ -3593,9 +3595,13 @@ func _place_antenna() -> void:
 		_antennas.append(a)
 		# nobody found it from the air: after a while a civilian reports it
 		if multiplayer.is_server():
+			# a weak reference: an antenna brought down (or a new round) before
+			# then is simply gone, no "Lambda capture was freed"
+			var wa: WeakRef = weakref(a)
 			get_tree().create_timer(360.0 + 60.0 * _antennas.size()).timeout.connect(func():
-				if is_instance_valid(a) and a.is_alive() and not a.spotted:
-					a.mark_spotted.rpc())
+				var ant: Node = wa.get_ref()
+				if ant and ant.is_alive() and not ant.spotted:
+					ant.mark_spotted.rpc())
 	if _antennas.is_empty():
 		return
 	director.reinforce = Difficulty.get_value("antenna_reinforce")
