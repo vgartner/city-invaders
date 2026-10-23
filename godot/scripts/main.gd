@@ -2011,10 +2011,7 @@ func _spawn_ship_node(data: Variant) -> Node:
 	var s: Node3D = Dropship.new()
 	s.name = "S%d" % data["id"]
 	s.kind = data.get("kind", "drop")
-	if multiplayer.is_server() and s.kind == "transport":
-		s.on_stop = func(i: int) -> bool: return _transport_stop(s, i, data)
-		s.set_meta("container", data.get("container", ""))
-	elif multiplayer.is_server() and s.kind == "mother" and data.get("bring", false):
+	if multiplayer.is_server() and s.kind == "mother" and data.get("bring", false):
 		s.carry = get_node_or_null(NodePath(data["container"]))
 		s.carry_down = true
 		s.on_stop = func(_i: int) -> bool: return true
@@ -5254,64 +5251,31 @@ func _free_container(at: Vector3) -> Node3D:
 	return best
 
 
-## Server: a Coletor caught someone - the spot where it waits for the
-## transport ship (sent now), or INF when there is no container to fill (it
-## then runs for the map edge as before).
-func transport_meet(collector: Node3D) -> Vector3:
+## Server: a Coletor caught someone - it carries them on foot to the nearest
+## people container with room (the spot beside it it walks to; INF when there
+## is none - it then runs for the map edge as before). No ship comes for each
+## captive: the mothership only comes for a full container, so the players
+## have the time it fills to open it, or to bring a Coletor down on its way.
+func container_meet(collector: Node3D) -> Vector3:
 	var target := _free_container(collector.global_position)
 	if target == null:
 		return Vector3.INF
-	var zone: Array = _drop_zone(collector.global_position, 25.0, 80.0, get_tree().get_nodes_in_group("players"))
-	if zone.is_empty():
-		return Vector3.INF
-	var c_hover := _sky_hover(target.global_position)
-	# two Coletores caught someone at once: two transports for the same
-	# container hovered in the same spot, one inside the other - each next one
-	# waits beside it, a little higher
-	var path := str(target.get_path())
-	var k := ships_root.get_children().filter(func(sh): return sh.get_meta("container", "") == path).size()
-	var over: Vector3 = target.global_position
-	if k > 0:
-		over += Vector3(cos(k * 2.1), 0, sin(k * 2.1)) * 7.0
-		c_hover = (c_hover if c_hover > 0 else Dropship.HOVER_Y) + 4.0 * k
-	var cruise: float = max(Dropship.CRUISE_Y, city_top + 15.0)
-	var dir := Vector3(zone[0].x, 0, zone[0].z).normalized()
-	if dir == Vector3.ZERO:
-		dir = Vector3.FORWARD
-	var start: Vector3 = Vector3(zone[0].x, 0, zone[0].z) + dir * (map_reach() + 60.0)
-	start.y = cruise
-	_ship_seq += 1
-	ship_spawner.spawn({"id": _ship_seq, "pos": start, "kind": "transport", "cruise": cruise,
-			"stops": [[zone[0], zone[1], 3.0], [over, c_hover if c_hover > 0 else Dropship.HOVER_Y, 3.0]],
-			"collector": str(collector.get_path()), "container": str(target.get_path())})
-	return zone[0]
+	collector.set_meta("container", str(target.get_path()))
+	var side: Vector3 = collector.global_position - target.global_position
+	side.y = 0
+	side = side.normalized() * 2.8 if side.length() > 0.1 else Vector3.BACK * 2.8
+	return NavigationServer3D.map_get_closest_point(get_world_3d().navigation_map, target.global_position + side)
 
 
-## Server: the transport over its stop - 0 takes the captive from the Coletor
-## waiting below (false: not there yet, it hovers on), 1 lets them down into
-## the container.
-func _transport_stop(s: Node3D, i: int, data: Dictionary) -> bool:
-	if i == 0:
-		var col := get_node_or_null(NodePath(data["collector"]))
-		if col == null or not col.is_alive() or not col.has_captive():
-			s.stops.resize(1)            # brought down, they ran: nothing to deliver
-			return true
-		if Vector2(col.global_position.x - s.position.x, col.global_position.z - s.position.z).length() > 14.0:
-			return false
-		s.set_meta("captive", col.hand_over())
-		return true
-	if not s.has_meta("captive"):
-		return true
-	var cont := get_node_or_null(NodePath(data["container"]))
-	if cont == null or cont.full():
-		cont = _free_container(s.position)
-	if cont == null:
-		civ_killed += 1                  # nowhere to put them: taken away
-		_phase_civ_lost += 1
-		return true
-	cont.add_person.rpc(int(s.get_meta("captive")))
-	s.remove_meta("captive")
-	_announce("A TRANSPORT PUT SOMEONE IN A PEOPLE CONTAINER (%d / %d)" % [cont.people.size(), cont.capacity])
+## Server: a Coletor reached its container - the captive goes in (a full
+## one calls the mothership). False when it is full or being lifted by now:
+## the Coletor is sent to another one (container_meet again).
+func container_deliver(collector: Node3D) -> bool:
+	var cont := get_node_or_null(NodePath(collector.get_meta("container", "")))
+	if cont == null or cont.full() or cont.lifting:
+		return false
+	cont.add_person.rpc(collector.hand_over())
+	_announce("A COLETOR PUT SOMEONE IN A PEOPLE CONTAINER (%d / %d) - open it (E) before it is full" % [cont.people.size(), cont.capacity])
 	if cont.full():
 		_call_mothership(cont)
 	return true

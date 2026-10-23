@@ -19,9 +19,9 @@ part of the city. Solo or online co-op.
 5. Protect the people - this is part of every phase, not a side job: every
    two lost add a robot to the goal (and on hard, losing 30% loses the
    phase). The **Coletores** (URB-C4, no gun) are the robots that take them:
-   one grabs a lone person into the glass capsule on its back and waits for
-   a transport ship to carry them to a **people container**. Bring a
-   Coletor down before the ship comes and the person runs free (+250);
+   one grabs a lone person into the glass capsule on its back and carries
+   them on foot to a **people container**. Bring a Coletor down on its way
+   and the person runs free (+250);
    open a container (E) to let everyone out (+100 each); three containers
    taken by the mothership and the round starts over. When a player asks
    what a phase needs, the Coletores and the containers belong in the
@@ -385,11 +385,11 @@ reactor at the back doubles it; a trooper's head takes double, its legs 70%.
 
 - URB-C4 Coletor: no gun; it runs down a civilian on their own (nobody
   within 8 m) and stows them in the glass capsule on its back (you see them
-  in it, as a grey figure). It carries them to an open spot 25-80 m off and waits there for a
-  transport ship, which takes them up its beam and down into a **people
-  container**. Bring it down before the ship arrives
-  and they run free (+250). With no container on the map it makes for a
-  map edge instead. 1 / 1 / 2 on the prowl by difficulty.
+  in it, as a grey figure). It carries them on foot to the nearest **people
+  container** with room and puts them in, then goes hunting again; no ship
+  comes for each captive, only the mothership for a full container. Bring
+  it down on its way and they run free (+250). With no container on the map
+  it makes for a map edge instead. 1 / 1 / 2 on the prowl by difficulty.
 - People containers (2 / 2 / 3 by difficulty, seen through the information
   glasses): the mothership brings each one at the start and sets it down on
   a square or wide pavement as far from every player as the map allows

@@ -358,9 +358,10 @@ func _physics_process(delta: float) -> void:
 
 
 ## URB-C4 Coletor (server): find a civilian on their own, grab them (1.5 s),
-## and carry them to an open spot where a transport ship takes them up its
-## beam to a people container (main.transport_meet); with no container on
-## the map it runs for the nearest map edge instead (they are lost there).
+## and carry them on foot to the nearest people container with room and put
+## them in (main.container_meet / container_deliver); the mothership only
+## comes for a full container. With no container on the map it runs for the
+## nearest map edge instead (they are lost there).
 ## Brought down, it drops them alive. The captive shows in its capsule.
 var _captive: Node3D
 var _to_edge := false
@@ -435,8 +436,15 @@ func _collect_think(delta: float) -> void:
 		var left := Vector2(global_position.x - _escape.x, global_position.z - _escape.z).length()
 		if not _to_edge:
 			if left < 3.0:
-				_wants_to_move = false      # waiting under the transport
-				_play("idle", 0.3)
+				var b := get_parent().get_parent()
+				if b.container_deliver(self):
+					_v["clips"]["run"] = "run"      # the capsule is empty: back to hunting
+					return
+				# filled up or lifted while it walked: the next container, or the edge
+				_escape = b.container_meet(self)
+				_to_edge = _escape == Vector3.INF
+				if _to_edge:
+					_escape = b.edge_point_near(global_position)
 			else:
 				_go_to(_escape, true)
 			return
@@ -473,13 +481,13 @@ func _collect_think(delta: float) -> void:
 		_one_shot_left = 1.5
 		show_captive.rpc(_captive.model_idx)
 		var b := get_parent().get_parent()
-		_escape = b.transport_meet(self) if b.has_method("transport_meet") else Vector3.INF
+		_escape = b.container_meet(self) if b.has_method("container_meet") else Vector3.INF
 		_to_edge = _escape == Vector3.INF
 		if _to_edge:
 			_escape = b.edge_point_near(global_position) if b.has_method("edge_point_near") else global_position
 		if b.has_method("_announce"):
 			b._announce("A COLETOR HAS TAKEN A CIVILIAN - bring it down before %s!" % (
-					"it reaches the edge" if _to_edge else "the transport ship picks them up"))
+					"it reaches the edge" if _to_edge else "it puts them in a people container"))
 	else:
 		_go_to(_prey.global_position, true)
 
