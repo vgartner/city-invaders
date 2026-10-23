@@ -116,6 +116,43 @@ print(d.call("errors"))                                    # anything broken?
 d.call("screenshot", width=800, hud=False)
 ```
 
+## Autoplay: a bot that plays
+
+`autoplay` hands the local player to a bot (`godot/scripts/autoplay.gd`) that
+plays the way a person does - through the same keys (`Settings.virtual`) and
+by turning the body and head - for a set time, while the F5 recorder runs:
+
+```bash
+DEVAGENT_PORT=24691 tools/devagent/devagent.py autoplay minutes=10 seed=7
+DEVAGENT_PORT=24691 tools/devagent/devagent.py autoplay          # what it is doing now
+DEVAGENT_PORT=24691 tools/devagent/devagent.py autoplay on=false # stop early
+```
+
+Parameters: `minutes` (10), `seed` (7: the same choices each run), `god`
+(true: it doesn't die), `armed` (true: pistol, machine gun, two of each grenade).
+
+What it does, in this order: fights any robot in sight within 45 m (picks the
+weapon for the target and the range; throws a Bergamota at a group or a mech
+and a Porongo at drones, 9-20 m away), goes for healing when hurt, frees the
+people in a container within 120 m, trades at a shop when it has the parts,
+takes a car now and then (drives to a far point and gets out), picks up what
+it can take, or runs to a random far point. It runs, turns on the spot for a
+sharp turn and walks the last metres to a goal.
+
+When it can't get on, it says where: no progress for 1.5 s logs a `stuck`
+event with what is in front of it, and it steps aside, then gives the goal up,
+then hops onto the nearest walkable point. Also `unreachable` (no navmesh path),
+`slow_goal` (far longer than the path says), `pickup_not_taken` (stood on it,
+still there), `car_stuck` (a car that doesn't move: backs out, gives up after
+three) and `fell` (below the ground).
+
+At the end it writes `user://devagent/autoplay/run_<time>.json` (the counts,
+the events, the script errors, the recording's path) and an inbox message.
+`tools/bench/autoplay_report.py` reads the latest run: the frame time per
+activity, a heatmap of the fps in 50 m cells (`--cell`), the slowest cells
+with what was drawn there, the worst frames, and the map problems grouped by
+place with a teleport line for each. Run it with the player's own game closed.
+
 ## A second instance for tests
 
 To test without touching the game someone is playing (for example a paused

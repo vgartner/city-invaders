@@ -46,6 +46,8 @@ func _process(_delta: float) -> void:
 		var ms := (now - _frame_t) / 1000.0
 		if _rec_on:
 			_rec_frame(ms)
+		if _autoplay and _autoplay.done:
+			_autoplay_finish()
 		if ms > HITCH_MS and _main() and _main().map_id != "":
 			_hitch_total += 1
 			var m := _main()
@@ -1052,7 +1054,7 @@ func _toggle_rec() -> void:
 	var f := FileAccess.open(path, FileAccess.WRITE)
 	f.store_string(JSON.stringify({"summary": summary, "hitches": hitches,
 			"columns": ["t", "frame_ms", "process_ms", "physics_ms", "draw_calls", "objects", "primitives",
-					"civilians", "robots", "vehicles", "x", "z", "heading_deg", "fps_setting_scale"],
+					"civilians", "robots", "vehicles", "x", "z", "heading_deg", "fps_setting_scale", "activity"],
 			"rows": _rec_rows}))
 	f.close()
 	var line := "%.0f s, %.0f fps avg, median %.1f ms, p99 %.1f ms, worst %.0f ms, %d frames over 100 ms" % [
@@ -1082,7 +1084,84 @@ func _rec_frame(ms: float) -> void:
 			int(P.get_monitor(P.RENDER_TOTAL_PRIMITIVES_IN_FRAME)),
 			m.civilians_root.get_child_count() if m else 0, m.enemies_root.get_child_count() if m else 0,
 			m.traffic_root.get_child_count() if m else 0, snappedf(pos.x, 0.1), snappedf(pos.z, 0.1),
-			snappedf(fposmod(rad_to_deg(atan2(fwd.x, -fwd.z)), 360.0), 1.0), snappedf(get_viewport().scaling_3d_scale, 0.01)])
+			snappedf(fposmod(rad_to_deg(atan2(fwd.x, -fwd.z)), 360.0), 1.0), snappedf(get_viewport().scaling_3d_scale, 0.01),
+			_autoplay.activity if _autoplay else ""])
+
+
+## Autoplay (autoplay.gd): the local player plays by itself for `minutes`,
+## with the F5 recording on and every frame tagged with what it was doing;
+## at the end the run (counts, stuck spots, unreachable pickups, falls, the
+## recording's path) goes to user://devagent/autoplay/ and a message to the
+## F1 channel says where. tools/bench/autoplay_report.py reads both.
+const Autoplay := preload("res://scripts/autoplay.gd")
+var _autoplay: Node
+var _auto_errors0 := 0
+func _m_autoplay(p: Dictionary):
+	var pl := _player()
+	if pl == null:
+		return {"error": "no round"}
+	if not bool(p.get("on", true)):
+		if _autoplay:
+			_autoplay.stop()
+		return {"autoplay": false}
+	if _autoplay and not _autoplay.done:
+		return {"autoplay": "already on", "activity": _autoplay.activity, "t": _autoplay._t}
+	_autoplay = Autoplay.new()
+	_autoplay.process_mode = Node.PROCESS_MODE_PAUSABLE
+	_autoplay.player = pl
+	_autoplay.seconds = float(p.get("minutes", 10)) * 60.0
+	_autoplay.rng.seed = int(p.get("seed", 7))
+	if bool(p.get("god", true)):
+		pl.set_meta("god", true)
+	if bool(p.get("armed", true)):
+		for w in ["pistol", "machinegun"]:
+			pl.give(w)
+		for g in ["bergamota", "porongo"]:
+			pl.grenades[g] = 2          # so it throws some
+	_auto_errors0 = _errors_seen()
+	_main().add_child(_autoplay)
+	if not _rec_on:
+		_toggle_rec()
+	return {"autoplay": true, "seconds": _autoplay.seconds}
+
+
+func _errors_seen() -> int:
+	var r: Dictionary = _m_errors({})
+	return r.get("errors", []).size()
+
+
+func _autoplay_finish() -> void:
+	var ap := _autoplay
+	_autoplay = null
+	if _rec_on:
+		_toggle_rec()                      # writes the recording and its message
+	var rec_path := ""
+	for i in range(_inbox.size() - 1, -1, -1):
+		if _inbox[i].has("perf_log"):
+			rec_path = _inbox[i]["perf_log"]
+			break
+	var errs: Array = _m_errors({}).get("errors", [])
+	var out := {"map": _main().map_id if _main() else "", "seconds": snappedf(ap._t, 0.1), "counts": ap.counts,
+			"events": ap.events, "recording": rec_path, "script_errors": errs.slice(_auto_errors0).filter(
+				func(e): return not "timeout waiting for fence" in str(e))}
+	DirAccess.make_dir_recursive_absolute("user://devagent/autoplay")
+	var path := "user://devagent/autoplay/run_%d.json" % Time.get_unix_time_from_system()
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	f.store_string(JSON.stringify(out))
+	f.close()
+	var stuck: int = ap.events.filter(func(e): return e["kind"] == "stuck").size()
+	var msg := {"text": "(autoplay finished) %.0f s: %d robots, %d pickups, %d drives, %d grenades, %d containers, %d trades, %d stuck, %d unreachable" % [
+			ap._t, ap.counts["robots_shot"], ap.counts["pickups"], ap.counts["drives"], ap.counts["grenades"],
+			ap.counts["containers"], ap.counts["trades"], stuck,
+			ap.events.filter(func(e): return e["kind"] == "unreachable").size()],
+			"time": Time.get_datetime_string_from_system(), "map": out["map"],
+			"autoplay_log": ProjectSettings.globalize_path(path), "perf_log": rec_path}
+	_inbox.append(msg)
+	var fi := FileAccess.open(INBOX, FileAccess.READ_WRITE if FileAccess.file_exists(INBOX) else FileAccess.WRITE)
+	fi.seek_end()
+	fi.store_line(JSON.stringify(msg))
+	fi.close()
+	ap.queue_free()
 
 
 func _m_inbox(p: Dictionary):

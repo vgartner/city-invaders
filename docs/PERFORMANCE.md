@@ -266,3 +266,12 @@ simplified to 2 cells (24,000 polygons in the Centro down to 12,900).
 | drive a car | 28-43, 72-260 | 51, 28 ms, 12 |
 
 A frame of 100-300 ms still shows once or twice a stretch, in a fight.
+
+## Autoplay runs (October 2026)
+
+A fixed route measures the same streets every time; `autoplay` (docs/DEVAGENT.md)
+lets a bot play for 10 minutes and goes where a player would - fights, pickups,
+cars, shops - with the F5 recorder on. `tools/bench/autoplay_report.py` then
+shows the fps per activity and a 50 m heatmap of the map, so a slow corner
+shows up even when no route passes it. The same seed makes the same choices,
+so two builds can be compared by run (the traffic and the robots still differ).
