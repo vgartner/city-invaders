@@ -38,11 +38,22 @@ var _sidestep := 0.0
 var _side_dir := 1.0
 var _stucks_here := 0
 var _reverse := 0.0                     # backing out of a wall in a car
+var _rev_still := 0.0                   # backing into something too: pull forward instead
+var _pull := 0.0
+var _queue := 0.0                       # behind a stopped vehicle this long
+var _overtake := 0.0                    # passing it in the other lane
+var _ahead_cd := 0.0
+var _ahead := false
+var _box: BoxShape3D                    # the look ahead for a vehicle in the way
+var _hp_seen := -1.0                    # the target's health when it last went down
+var _no_hit := 0.0                      # shooting this long without hurting it
+var _press := false                     # missing from here: go in close
 var _car_stucks := 0
 var _best_goal_d := INF                 # nearest it has come to the goal
 var _goal_left := 0.0                   # time allowed to reach the goal
 var _bad: Dictionary = {}               # pickups / spots it could not reach (instance id -> true)
 var _drive_left := 0.0
+var drive_every := 70.0                 # seconds between drives, on average
 var _drive_cd := 40.0
 var _drive_goal := Vector3.INF
 var _grenade_cd := 0.0
@@ -149,7 +160,7 @@ func _think() -> void:
 	if _drive_cd <= 0.0:
 		var car := _free_car(70.0)
 		if car:
-			_drive_cd = rng.randf_range(50.0, 90.0)
+			_drive_cd = rng.randf_range(0.7, 1.3) * drive_every
 			_set_goal(car.global_position, "car", car)
 			return
 	var pk := _nearest_pickup(func(k): return player.can_take(k))
@@ -359,8 +370,18 @@ func _fight(delta: float) -> void:
 	var at := _target.global_position + Vector3(0, 1.1 if _target.get("variant") != "mech" else 2.4, 0)
 	var d := at.distance_to(player.global_position)
 	var err := _face(at, 1.0, delta)
-	# close in when far or with a blade; else hold the ground and shoot
-	if d > 28.0 or (player.WEAPONS[player.weapon].get("melee", false) and d > 2.0) or player.WEAPONS[player.weapon].get("unarmed", false):
+	# missing at range (a moving Coletor, a drone up high): after 5 s without
+	# a hit, go in close
+	var hp: float = float(_target.get("health")) if _target.get("health") != null else -1.0
+	if hp != _hp_seen:
+		_hp_seen = hp
+		_no_hit = 0.0
+		_press = false
+	else:
+		_no_hit += delta
+		if _no_hit > 5.0:
+			_press = true
+	if d > 28.0 or (_press and d > 7.0) or (player.WEAPONS[player.weapon].get("melee", false) and d > 2.0) or player.WEAPONS[player.weapon].get("unarmed", false):
 		Settings.virtual["forward"] = true
 		Settings.virtual["run"] = true
 		_check_stuck(delta)
@@ -416,60 +437,173 @@ func _drive(delta: float) -> void:
 		player._use_vehicle()           # out
 		return
 	var here := car.global_position
-	if _drive_goal == Vector3.INF or Vector2(_drive_goal.x - here.x, _drive_goal.z - here.z).length() < 6.0:
-		var map: RID = car.get_world_3d().navigation_map
-		for k in 12:
-			var p := NavigationServer3D.map_get_random_point(map, 1, false)
-			if p.distance_to(here) > 90.0 and _main().in_bounds(p, 15.0):
-				_drive_goal = p
-				_path = NavigationServer3D.map_get_path(map, here, p, true)
-				_pi = 1
-				break
-	while _pi < _path.size() - 1 and Vector2(_path[_pi].x - here.x, _path[_pi].z - here.z).length() < 5.0:
+	# along the streets, the way the traffic goes (the walkers' navmesh would
+	# take it over pavements and through the parks): the nearest street, then
+	# a random turn at each crossing
+	if _drive_goal == Vector3.INF:
+		_road_start(here)
+	elif _pi >= _path.size() - 1 and Vector2(_path[_path.size() - 1].x - here.x, _path[_path.size() - 1].z - here.z).length() < 5.0:
+		_road_next()
+	# aim at a point some way ahead, not the one under the bonnet: no zigzag
+	while _pi < _path.size() - 1 and Vector2(_path[_pi].x - here.x, _path[_pi].z - here.z).length() < 7.0:
 		_pi += 1
 	if _path.size() < 2:
-		_drive_goal = Vector3.INF
+		_drive_left = 0.0               # no streets here: get out
 		return
 	var next := _path[min(_pi, _path.size() - 1)]
 	var fwd := -car.global_transform.basis.z
 	var to := Vector3(next.x - here.x, 0, next.z - here.z).normalized()
+	if _overtake > 0.0:
+		_overtake -= delta
+		next += to.cross(Vector3.UP) * -3.4         # the other lane
+		to = Vector3(next.x - here.x, 0, next.z - here.z).normalized()
 	var turn := fwd.signed_angle_to(to, Vector3.UP)
-	Settings.virtual["forward"] = true
-	Settings.virtual.erase("back")
-	Settings.virtual.erase("left")
-	Settings.virtual.erase("right")
-	if turn > 0.12:
-		Settings.virtual["left"] = true
-	elif turn < -0.12:
-		Settings.virtual["right"] = true
-	if absf(turn) > 1.4:
-		Settings.virtual.erase("forward")
-		Settings.virtual["back"] = true     # a hard turn: back and round
-	# a wall: back out a bit and pick another way
+	var speed: float = float(car.get("_speed"))
+	_ahead_cd -= delta
+	if _ahead_cd <= 0.0:
+		_ahead_cd = 0.2
+		_ahead = _vehicle_ahead(car)
+	for k in ["forward", "back", "left", "right"]:
+		Settings.virtual.erase(k)
 	if _reverse > 0.0:
+		# backing out: the wheels turned away from the way it wants, so the nose comes round to it
 		_reverse -= delta
-		Settings.virtual.erase("forward")
 		Settings.virtual["back"] = true
-		Settings.virtual.erase("left" if turn > 0.0 else "right")
-		Settings.virtual["right" if turn > 0.0 else "left"] = true      # backing, the wheels the other way
+		if absf(turn) > 0.15:
+			Settings.virtual["right" if turn > 0.0 else "left"] = true
+		_rev_still = _rev_still + delta if absf(speed) < 0.3 else 0.0
+		if _rev_still > 0.8:
+			_reverse = 0.0              # no room behind either: forward, full lock, then back again
+			_pull = 1.2
+		if _reverse <= 0.0 or absf(turn) < 0.3:
+			_reverse = 0.0
+		_still = 0.0
 		return
-	var speed: float = absf(float(car.get("_speed")))
-	if speed < 0.5:
+	if _pull > 0.0:
+		_pull -= delta
+		Settings.virtual["forward"] = true
+		Settings.virtual["left" if turn > 0.0 else "right"] = true
+		_rev_still = 0.0
+		return
+	if absf(turn) > 1.3:
+		_reverse = 2.0                  # the street is behind: back and round (a three-point turn)
+		return
+	# steer in short taps on a gentle bend, a full lock only on a sharp one
+	var lock := absf(turn) > 0.35 or fmod(_t * 5.0, 1.0) < absf(turn) / 0.35
+	if absf(turn) > 0.05 and lock:
+		Settings.virtual["left" if turn > 0.0 else "right"] = true
+	# slow for the corners, keep to town speed on the straight
+	var limit := 6.0 if absf(turn) > 0.5 else (10.0 if absf(turn) > 0.2 else 15.0)
+	if _ahead:
+		# a car or bus in front: wait behind it, and pass it once it has stood a while (a bus stop, a jam)
+		limit = 0.0
+		_queue += delta
+		_still = 0.0
+		if _queue > 2.5 and _overtake <= 0.0:
+			_overtake = 5.0
+			_queue = 0.0
+	else:
+		_queue = 0.0
+	if speed < limit:
+		Settings.virtual["forward"] = true
+	elif speed > limit + 3.0:
+		Settings.virtual["back"] = true # brake
+	# a wall: back out, and find the street again
+	if absf(speed) < 0.5:
 		_still += delta
-		if _still > 2.5:
+		if _still > 2.0:
 			_still = 0.0
 			_car_stucks += 1
 			_event("car_stuck", "%s at %s" % [car.kind, _v(here)])
 			if _car_stucks >= 3:
 				_car_stucks = 0
-				_drive_left = 0.0       # give up on this car
+				_drive_left = 0.0       # give up on this car, and don't come back for it
+				_bad[car.get_instance_id()] = true
 			else:
-				_reverse = 1.5
+				_reverse = 2.0
 				_drive_goal = Vector3.INF
 	else:
 		_still = 0.0
 		if speed > 4.0:
 			_car_stucks = 0
+
+
+func _vehicle_ahead(car: Node3D) -> bool:
+	if _box == null:
+		_box = BoxShape3D.new()
+		_box.size = Vector3(2.0, 1.4, 5.0)
+	var q := PhysicsShapeQueryParameters3D.new()
+	q.shape = _box
+	var fwd := -car.global_transform.basis.z
+	var half: float = float(car.get("_length")) / 2.0 if car.get("_length") else 2.3
+	q.transform = Transform3D(car.global_transform.basis, car.global_position + fwd * (half + 3.0) + Vector3(0, 0.8, 0))
+	q.collision_mask = 16
+	q.exclude = [car.get_rid()]
+	return not car.get_world_3d().direct_space_state.intersect_shape(q, 1).is_empty()
+
+
+var _road_node := -1
+
+
+## Onto the nearest street, heading the way it may be driven that is nearer the car's nose.
+func _road_start(here: Vector3) -> void:
+	var g: Dictionary = _main().road_graph
+	var best := INF
+	var pick := [-1, true]
+	var fwd: Vector3 = -player.vehicle.global_transform.basis.z
+	for i in g.get("edges", []).size():
+		var e: Dictionary = g["edges"][i]
+		var pts: Array = e["pts"]
+		for k in range(1, pts.size()):
+			var a := Vector2(pts[k - 1][0], pts[k - 1][1])
+			var b := Vector2(pts[k][0], pts[k][1])
+			var d := Geometry2D.get_closest_point_to_segment(Vector2(here.x, here.z), a, b).distance_to(Vector2(here.x, here.z))
+			if d < best:
+				best = d
+				var along := Vector2(fwd.x, fwd.z).dot(b - a) >= 0.0
+				pick = [i, true if e["oneway"] else along]
+	_drive_goal = here
+	if pick[0] < 0:
+		_path = PackedVector3Array()
+		return
+	_road_follow(pick[0], pick[1])
+
+
+func _road_next() -> void:
+	var g: Dictionary = _main().road_graph
+	var options: Array = g["out"].get(_road_node, [])
+	if options.is_empty():
+		_drive_goal = Vector3.INF       # a dead end at the map's edge: the nearest street again
+		_path = PackedVector3Array()
+		return
+	var o: Array = options[rng.randi() % options.size()]
+	_road_follow(o[0], o[1])
+
+
+func _road_follow(edge: int, forward: bool) -> void:
+	var e: Dictionary = _main().road_graph["edges"][edge]
+	var pts: Array = e["pts"].duplicate()
+	if not forward:
+		pts.reverse()
+	_road_node = int(e["b"]) if forward else int(e["a"])
+	var off := 0.9 if e["oneway"] else 1.7    # the right-hand lane, as the traffic keeps
+	_path = PackedVector3Array()
+	var y: float = player.vehicle.global_position.y
+	for k in pts.size():
+		var p := Vector3(pts[k][0], y, pts[k][1])
+		var n: int = mini(k + 1, pts.size() - 1)
+		var dir := (Vector3(pts[n][0], y, pts[n][1]) - p).normalized() if n != k \
+				else (p - Vector3(pts[k - 1][0], y, pts[k - 1][1])).normalized()
+		_path.append(p + dir.cross(Vector3.UP) * off)
+	# start from the point ahead of the car, not the street's far beginning
+	_pi = 1
+	var here: Vector3 = player.vehicle.global_position
+	var bd := INF
+	for k in _path.size():
+		var d := Vector2(_path[k].x - here.x, _path[k].z - here.z).length()
+		if d < bd:
+			bd = d
+			_pi = mini(k + 1, _path.size() - 1)
 
 
 # ---- helpers -----------------------------------------------------------------

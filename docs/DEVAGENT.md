@@ -129,7 +129,8 @@ DEVAGENT_PORT=24691 tools/devagent/devagent.py autoplay on=false # stop early
 ```
 
 Parameters: `minutes` (10), `seed` (7: the same choices each run), `god`
-(true: it doesn't die), `armed` (true: pistol, machine gun, two of each grenade).
+(true: it doesn't die), `armed` (true: pistol, machine gun, two of each grenade),
+`drive_every` (70: seconds between drives; `drive_every=3` for a driving test).
 
 What it does, in this order: fights any robot in sight within 45 m (picks the
 weapon for the target and the range; throws a Bergamota at a group or a mech
@@ -137,14 +138,19 @@ and a Porongo at drones, 9-20 m away), goes for healing when hurt, frees the
 people in a container within 120 m, trades at a shop when it has the parts,
 takes a car now and then (drives to a far point and gets out), picks up what
 it can take, or runs to a random far point. It runs, turns on the spot for a
-sharp turn and walks the last metres to a goal.
+sharp turn and walks the last metres to a goal. A robot it has shot at for 5 s
+without a hit, it goes in close to. It drives along the traffic's streets
+(`road_graph`, in the right-hand lane, a random turn at each crossing), slows
+for the corners, waits behind a vehicle in front and passes it in the other
+lane when it stands still (a bus at its stop), backs out of a wall turning
+round and pulls forward when there is no room behind.
 
 When it can't get on, it says where: no progress for 1.5 s logs a `stuck`
 event with what is in front of it, and it steps aside, then gives the goal up,
 then hops onto the nearest walkable point. Also `unreachable` (no navmesh path),
 `slow_goal` (far longer than the path says), `pickup_not_taken` (stood on it,
 still there), `car_stuck` (a car that doesn't move: backs out, gives up after
-three) and `fell` (below the ground).
+three, and that car is not taken again) and `fell` (below the ground).
 
 At the end it writes `user://devagent/autoplay/run_<time>.json` (the counts,
 the events, the script errors, the recording's path) and an inbox message.

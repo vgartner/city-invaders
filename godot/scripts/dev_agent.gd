@@ -1111,6 +1111,9 @@ func _m_autoplay(p: Dictionary):
 	_autoplay.player = pl
 	_autoplay.seconds = float(p.get("minutes", 10)) * 60.0
 	_autoplay.rng.seed = int(p.get("seed", 7))
+	if p.has("drive_every"):            # a driving test: drive_every=5 takes cars almost all the time
+		_autoplay.drive_every = float(p["drive_every"])
+		_autoplay._drive_cd = minf(_autoplay._drive_cd, _autoplay.drive_every)
 	if bool(p.get("god", true)):
 		pl.set_meta("god", true)
 	if bool(p.get("armed", true)):
@@ -1143,7 +1146,8 @@ func _autoplay_finish() -> void:
 	var errs: Array = _m_errors({}).get("errors", [])
 	var out := {"map": _main().map_id if _main() else "", "seconds": snappedf(ap._t, 0.1), "counts": ap.counts,
 			"events": ap.events, "recording": rec_path, "script_errors": errs.slice(_auto_errors0).filter(
-				func(e): return not "timeout waiting for fence" in str(e))}
+				# Metal fence timeouts and a tester's own eval errors are not the game's
+				func(e): return not "timeout waiting for fence" in str(e) and not "core/math/expression.cpp" in str(e))}
 	DirAccess.make_dir_recursive_absolute("user://devagent/autoplay")
 	var path := "user://devagent/autoplay/run_%d.json" % Time.get_unix_time_from_system()
 	var f := FileAccess.open(path, FileAccess.WRITE)
