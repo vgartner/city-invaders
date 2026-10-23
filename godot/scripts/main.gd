@@ -2013,6 +2013,7 @@ func _spawn_ship_node(data: Variant) -> Node:
 	s.kind = data.get("kind", "drop")
 	if multiplayer.is_server() and s.kind == "transport":
 		s.on_stop = func(i: int) -> bool: return _transport_stop(s, i, data)
+		s.set_meta("container", data.get("container", ""))
 	elif multiplayer.is_server() and s.kind == "mother" and data.get("bring", false):
 		s.carry = get_node_or_null(NodePath(data["container"]))
 		s.carry_down = true
@@ -5264,6 +5265,15 @@ func transport_meet(collector: Node3D) -> Vector3:
 	if zone.is_empty():
 		return Vector3.INF
 	var c_hover := _sky_hover(target.global_position)
+	# two Coletores caught someone at once: two transports for the same
+	# container hovered in the same spot, one inside the other - each next one
+	# waits beside it, a little higher
+	var path := str(target.get_path())
+	var k := ships_root.get_children().filter(func(sh): return sh.get_meta("container", "") == path).size()
+	var over: Vector3 = target.global_position
+	if k > 0:
+		over += Vector3(cos(k * 2.1), 0, sin(k * 2.1)) * 7.0
+		c_hover = (c_hover if c_hover > 0 else Dropship.HOVER_Y) + 4.0 * k
 	var cruise: float = max(Dropship.CRUISE_Y, city_top + 15.0)
 	var dir := Vector3(zone[0].x, 0, zone[0].z).normalized()
 	if dir == Vector3.ZERO:
@@ -5272,7 +5282,7 @@ func transport_meet(collector: Node3D) -> Vector3:
 	start.y = cruise
 	_ship_seq += 1
 	ship_spawner.spawn({"id": _ship_seq, "pos": start, "kind": "transport", "cruise": cruise,
-			"stops": [[zone[0], zone[1], 3.0], [target.global_position, c_hover if c_hover > 0 else Dropship.HOVER_Y, 3.0]],
+			"stops": [[zone[0], zone[1], 3.0], [over, c_hover if c_hover > 0 else Dropship.HOVER_Y, 3.0]],
 			"collector": str(collector.get_path()), "container": str(target.get_path())})
 	return zone[0]
 
