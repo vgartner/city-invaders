@@ -16,6 +16,7 @@ read the same definitions.
    "Booster":  {"extends": "Item", "category": "booster", "effect": {"adrenaline": 12}},
    "Ammo":     {"extends": "Item", "category": "ammo",    "effect": {"ammo": true}},
    "Weapon":   {"extends": "Item", "category": "weapon"},
+   "Grenade":  {"extends": "Item", "category": "grenade"},
    "Part":     {"extends": "Item", "category": "part",    "effect": {"part": true}}}
   ```
 

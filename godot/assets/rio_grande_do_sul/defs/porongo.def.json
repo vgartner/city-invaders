@@ -1,0 +1,23 @@
+{
+ "id": "porongo",
+ "type": "Grenade",
+ "name": "Porongo EMP",
+ "model": "res://assets/rio_grande_do_sul/weapons/grenades/porongo_emp_pickup.glb",
+ "hand": "res://assets/rio_grande_do_sul/weapons/grenades/porongo_emp_hand.glb",
+ "scale": 2.2,
+ "stand": true,
+ "glow": [
+  0.35,
+  0.8,
+  1.0
+ ],
+ "effect": {
+  "emp_m": 9.0,
+  "fuse_s": 1.6,
+  "stun_s": 6.0
+ },
+ "tags": [
+  "gaucho",
+  "resistance"
+ ]
+}

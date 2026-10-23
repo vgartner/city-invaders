@@ -128,6 +128,12 @@ var exit_open := false
 var civ_dead := 0
 var _spawn_shield := 0.0
 var armor := 0                 # the pala: absorbs part of every hit
+## the resistance's grenades (definitions bergamota / porongo): how many of
+## each, which one Q throws (Z switches)
+const GRENADE_MAX := 4
+var grenades := {"bergamota": 0, "porongo": 0}
+var grenade := "bergamota"
+var _grenade_cd := 0.0
 var _adrenaline := 0.0         # Fruki: faster running and reloading while > 0
 var vehicle: Node3D            # the car / bike this player is driving (local player)
 var score := 0
@@ -422,6 +428,7 @@ func _build_hud() -> void:
 
 func _process(delta: float) -> void:
 	_spawn_shield = max(0.0, _spawn_shield - delta)
+	_grenade_cd = max(0.0, _grenade_cd - delta)
 	_adrenaline = max(0.0, _adrenaline - delta)
 	_score_flash_t -= delta
 	_muzzle.light_energy = max(0.0, _muzzle.light_energy - delta * 40.0)
@@ -446,6 +453,10 @@ func _process(delta: float) -> void:
 				"laco": Settings.key_label("weapon_5"), "espeto": Settings.key_label("weapon_6"),
 				"canhao": Settings.key_label("weapon_7")}
 		var slots := "   ".join(owned.map(func(w): return ("[%s %s]" if w == weapon else "%s %s") % [keys.get(w, ""), WEAPONS[w]["label"]]))
+		if grenades.values().any(func(n): return n > 0):
+			var gk := Settings.key_label("grenade")
+			slots += "   ·   %s %s" % [gk, "  ".join(["bergamota", "porongo"].map(func(g): return ("[%s %d]" if g == grenade else "%s %d") % [
+					"Bergamota" if g == "bergamota" else "Porongo", grenades[g]]))]
 		if parts.values().any(func(n): return n > 0) or has_bag:
 			slots += "   ·   PARTS  circuit %d  core %d  lens %d  module %d  (%d/%d%s)" % [parts["circuit"], parts["core"],
 					parts["lens"], parts["module"], parts_total(), parts_cap(), " mala" if has_bag else ""]
@@ -620,6 +631,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			_switch("espeto")
 		elif Settings.is_event(event, "weapon_7"):
 			_switch("canhao")
+		elif Settings.is_event(event, "grenade"):
+			_throw_grenade()
+		elif Settings.is_event(event, "grenade_switch"):
+			grenade = "porongo" if grenade == "bergamota" else "bergamota"
+			_toast_text("%s  (%d)" % [Entities.get_def(grenade).get("name", grenade), grenades[grenade]])
 	elif event is InputEventMouseButton and event.pressed and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED \
 			and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
 		var i := owned.find(weapon)
@@ -958,6 +974,7 @@ const SHOP := [
 	["Build a drone", {"module": 1, "circuit": 3}, "drone"],
 	["Reinforced pala (armour)", {"circuit": 3}, "pala"],
 	["Ammunition", {"circuit": 2}, "ammo"],
+	["Porongo EMP grenade (built round a URB core)", {"core": 1, "circuit": 1}, "porongo"],
 ]
 var _near_shop := false
 var _shop_cd := 0.0
@@ -1047,6 +1064,8 @@ func _buy(offer: Array) -> void:
 		"ammo":
 			for w in owned:
 				_reserves[w] = min(WEAPONS[w]["reserve_max"], _reserves[w] + AMMO_PICKUP.get(w, 24))
+		"porongo":
+			grenades["porongo"] = mini(GRENADE_MAX, grenades["porongo"] + 1)
 	Sfx.play("pickup", -4.0)
 	_close_shop()
 	_open_shop()                      # refreshed counts
@@ -1803,7 +1822,29 @@ func can_take(kind: String) -> bool:
 			return not kind in owned or _reserves[kind] < WEAPONS[kind]["reserve_max"]
 		"laco":
 			return not "laco" in owned
+		"bergamota", "porongo":
+			return grenades[kind] < GRENADE_MAX
 	return false
+
+
+## Q: the grenade picked (Z) goes out along the view, in an arc; the server
+## throws it on every peer (main.throw_grenade).
+func _throw_grenade() -> void:
+	if dead or design or vehicle or (_tablet and _tablet.visible) or _grenade_cd > 0.0:
+		return
+	if grenades[grenade] <= 0:
+		var other := "porongo" if grenade == "bergamota" else "bergamota"
+		if grenades[other] > 0:
+			grenade = other
+		else:
+			_toast_text("No grenades - Bergamotas and Porongos lie about the city")
+			return
+	grenades[grenade] -= 1
+	_grenade_cd = 0.8
+	var fwd := -camera.global_transform.basis.z
+	var origin := camera.global_position + fwd * 0.6 + camera.global_transform.basis.x * 0.25 - Vector3(0, 0.15, 0)
+	get_tree().current_scene.throw_grenade.rpc_id(1, grenade, origin, fwd)
+	Sfx.play("reload", -10.0)
 
 
 ## Item granted by the server (pickup touched or director drop).
@@ -1853,6 +1894,10 @@ func give(kind: String) -> void:
 			for w in owned:
 				var amount: int = AMMO_PICKUP.get(w, 24)
 				_reserves[w] = min(WEAPONS[w]["reserve_max"], _reserves[w] + amount)
+		"bergamota", "porongo":
+			grenades[kind] = mini(GRENADE_MAX, grenades[kind] + 2)
+			if grenades[grenade] == 0:
+				grenade = kind
 		"laco":
 			if not "laco" in owned:
 				owned.append("laco")

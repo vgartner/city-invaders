@@ -54,7 +54,8 @@ const TRAFFIC := 16
 ## pickups per map, by role (the collection's roles.json picks the object:
 ## churrasco, chimarrão, Fruki... in Rio Grande do Sul) or by id
 const PICKUP_COUNTS := {"pistol": 8, "espeto": 4, "healing_big": 7, "healing_small": 9, "armour": 3, "booster": 5,
-		"ammo": 12, "machinegun": 4, "revolver": 3, "shotgun": 3, "laco": 2, "mala_garupa": 2, "oculos": 1, "bateria": 2}
+		"ammo": 12, "machinegun": 4, "revolver": 3, "shotgun": 3, "laco": 2, "mala_garupa": 2, "oculos": 1, "bateria": 2,
+		"bergamota": 4, "porongo": 3}
 ## the collection whose roles a map uses (all bundled maps are Porto Alegre)
 var collection := "rio_grande_do_sul"
 const Entities := preload("res://scripts/entities.gd")
@@ -1381,6 +1382,115 @@ func _storefront_floor(ceramic: bool) -> StandardMaterial3D:
 	return m
 
 
+## The resistance's grenades (grenade.gd; definitions bergamota / porongo).
+## Server: a player threw one - every peer throws its copy from the same start.
+const Grenade := preload("res://scripts/grenade.gd")
+@rpc("any_peer", "call_local", "reliable")
+func throw_grenade(kind: String, origin: Vector3, dir: Vector3) -> void:
+	if not multiplayer.is_server():
+		return
+	var peer := multiplayer.get_remote_sender_id()
+	grenade_thrown.rpc(kind, origin, dir.normalized() * 11.0 + Vector3(0, 2.5, 0), peer if peer != 0 else 1)
+
+
+@rpc("authority", "call_local", "reliable")
+func grenade_thrown(kind: String, origin: Vector3, vel: Vector3, peer: int) -> void:
+	var g := Grenade.new()
+	g.kind = kind
+	g.thrower_peer = peer
+	add_child(g)
+	g.global_position = origin
+	g.linear_velocity = vel
+
+
+## Server: a grenade's fuse ran out. Bergamota de Aço: a blast (effect
+## blast_m) that hurts robots by how near they are, brings drones and swarm
+## drones down, and people (friendly fire) and players too. Porongo: an EMP
+## (effect emp_m) - robots stand dead still and do not shoot for stun_s (a
+## mech half that), drones and swarm drones drop.
+func grenade_burst(kind: String, at: Vector3, peer: int) -> void:
+	if not multiplayer.is_server():
+		return
+	var d: Dictionary = Entities.get_def(kind).get("effect", {})
+	var by: Node3D = players_root.get_node_or_null(str(peer))
+	if kind == "porongo":
+		var r := float(d.get("emp_m", 9.0))
+		for e in enemies_root.get_children():
+			if e.get("variant") == "swarm":
+				for i in e.positions.size():
+					if (e.alive_mask >> i) & 1 == 1 and e.positions[i].distance_to(at) < r:
+						e.hit_unit(i, 9999, by)
+				continue
+			if not e.has_method("is_alive") or not e.is_alive() or (e as Node3D).global_position.distance_to(at) > r:
+				continue
+			if e.get("variant") == "drone":
+				e.apply_damage(9999, by)
+			elif e.has_method("emp"):
+				e.emp(float(d.get("stun_s", 6.0)) * (0.5 if e.get("variant") == "mech" else 1.0))
+		emp_fx.rpc(at, r)
+		return
+	var r := float(d.get("blast_m", 6.0))
+	for e in enemies_root.get_children():
+		if e.get("variant") == "swarm":
+			for i in e.positions.size():
+				if (e.alive_mask >> i) & 1 == 1 and e.positions[i].distance_to(at) < r:
+					e.hit_unit(i, 9999, by)
+			continue
+		if not e.has_method("is_alive") or not e.is_alive():
+			continue
+		var dist := (e as Node3D).global_position.distance_to(at)
+		if dist < r:
+			e.apply_damage(9999 if e.get("variant") == "drone" else int(40.0 + 160.0 * (1.0 - dist / r)), by)
+		if e.has_method("heard"):
+			e.heard(at)
+	if Settings.friendly_fire:
+		for c in civilians_root.get_children():
+			var dist := (c as Node3D).global_position.distance_to(at)
+			if dist < r * 0.8 and c.has_method("apply_damage"):
+				c.apply_damage(int(120.0 * (1.0 - dist / r)), by)
+	for pl in players_root.get_children():
+		var dist := (pl as Node3D).global_position.distance_to(at)
+		if dist < r:
+			pl.hurt.rpc_id(pl.get_multiplayer_authority(), int(60.0 * (1.0 - dist / r)), at)
+	for c in get_tree().get_nodes_in_group("civilians"):
+		c.heard(at)
+	blast_fx.rpc(at, at, Vector3.UP, false)
+
+
+## Every peer: the Porongo's pulse - a blue flash and a ring of light
+## spreading over the ground.
+@rpc("authority", "call_local", "reliable")
+func emp_fx(at: Vector3, r: float) -> void:
+	Sfx.play_at("robot_hit", at, 6.0, 90.0)
+	Sfx.play_at("robot_fire", at, 2.0, 90.0)
+	var flash := Enemy.fx_light(Color(0.35, 0.75, 1.0), 12.0, r * 1.6)
+	if flash:
+		add_child(flash)
+		flash.global_position = at + Vector3(0, 1.0, 0)
+		var tw := flash.create_tween()
+		tw.tween_property(flash, "light_energy", 0.0, 0.7)
+		tw.tween_callback(flash.queue_free)
+	var shell := MeshInstance3D.new()
+	var sm := SphereMesh.new()
+	sm.radius = 1.0
+	sm.height = 2.0
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.albedo_color = Color(0.4, 0.8, 1.0, 0.45)
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	sm.material = mat
+	shell.mesh = sm
+	shell.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(shell)
+	shell.global_position = at
+	shell.scale = Vector3.ONE * 0.3
+	var st := shell.create_tween().set_parallel()
+	st.tween_property(shell, "scale", Vector3.ONE * r, 0.45).set_ease(Tween.EASE_OUT)
+	st.tween_property(mat, "albedo_color:a", 0.0, 0.6)
+	st.chain().tween_callback(shell.queue_free)
+
+
 ## Server: a mech's missile arriving (enemy.gd _cannon): people near it hurt
 ## or killed, then the burst on every peer.
 func cannon_land(from: Vector3, at: Vector3, normal: Vector3, wall: bool, radius: float) -> void:
@@ -1404,6 +1514,13 @@ func blast_fx(from: Vector3, at: Vector3, normal: Vector3, wall: bool) -> void:
 	Sfx.play_at("robot_death", at, 6.0, 120.0)
 	if props:
 		props._sparks(at)
+	var flash := Enemy.fx_light(Color(1.0, 0.6, 0.25), 14.0, 12.0)      # the burst lights the street a moment
+	if flash:
+		add_child(flash)
+		flash.global_position = at + Vector3(0, 1.0, 0)
+		var ft := flash.create_tween()
+		ft.tween_property(flash, "light_energy", 0.0, 0.35)
+		ft.tween_callback(flash.queue_free)
 	for b in get_tree().get_nodes_in_group("pigeons"):
 		if b.quero and (b as Node3D).global_position.distance_to(at) < 6.0:
 			b.apply_damage(999)                # the blast: every peer, its own birds

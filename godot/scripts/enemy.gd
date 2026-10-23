@@ -280,6 +280,13 @@ func _physics_process(delta: float) -> void:
 	_lod_t = 0.0
 	if not is_on_floor():
 		velocity.y -= 9.8 * delta
+	if _emp_left > 0.0:
+		# the Porongo's pulse: its circuits out, it stands dead still, no shooting
+		_emp_left -= delta
+		velocity.x = 0
+		velocity.z = 0
+		move_and_slide()
+		return
 	if _lasso_left > 0.0:
 		_lasso_left -= delta
 		if variant != "mech":
@@ -1031,6 +1038,30 @@ func is_alive() -> bool:
 ## on the shooter and alerts the robots around it.
 ## Server: caught in a laço for `seconds` (a mech is only slowed).
 var _lasso_left := 0.0
+var _emp_left := 0.0
+
+
+## Server: a Porongo's pulse reached it: it stands dead still for `seconds`.
+func emp(seconds: float) -> void:
+	if not multiplayer.is_server() or health <= 0:
+		return
+	_emp_left = maxf(_emp_left, seconds)
+	_wants_to_move = false
+	emp_hit_fx.rpc(seconds)
+
+
+## Every peer: blue sparks crawling over it while its circuits are out.
+@rpc("authority", "call_local", "reliable")
+func emp_hit_fx(seconds: float) -> void:
+	var l := fx_light(Color(0.35, 0.75, 1.0), 2.5, 3.0)
+	if l == null:
+		return
+	add_child(l)
+	l.position = Vector3(0, _v.get("height", 2.0) * 0.6, 0)
+	var tw := l.create_tween().set_loops(int(seconds / 0.25))
+	tw.tween_property(l, "light_energy", 0.3, 0.12)
+	tw.tween_property(l, "light_energy", 2.5, 0.13)
+	get_tree().create_timer(seconds).timeout.connect(l.queue_free)
 func lassoed(seconds: float) -> void:
 	if not multiplayer.is_server() or health <= 0:
 		return

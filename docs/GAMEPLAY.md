@@ -75,6 +75,7 @@ over bicycles, motorbikes and horses (their riders are thrown off).
 | Mouse, left button | look, shoot; wheel switches weapons |
 | 1 2 3 4 | pistol, machine gun, .38 revolver, 12-gauge shotgun |
 | 5 6 7 | laço, espeto, mech cannon (once you have them) |
+| Q / Z | throw a grenade / switch between Bergamota and Porongo |
 | T | the tablet (GPS, radio, Bah, TchêTube, parts) |
 | O | information glasses on / off (once you have them) |
 | R | reload |
@@ -208,6 +209,21 @@ Needs an internet connection; everything else works without it.
 | 12-gauge side-by-side | 2 | 9 pellets per shell, deadly up close |
 
 Weapons and ammo lie on the streets.
+
+### Grenades of the resistance
+
+Two kinds (type `Grenade`, their own group in the editor's palette), up to 4
+of each; one found on the street gives 2. **Q** throws the one picked
+(**Z** switches) along your view in an arc - about 15 m looking straight,
+further looking up; it bounces and rolls, its light blinking faster as the
+fuse runs down.
+
+| Grenade | Fuse | Effect |
+|---|---|---|
+| **Bergamota de Aço** - a segmented steel ball painted orange, a pull ring | 2.2 s | a 6 m blast: robots hurt by how near (up to 200), drones and swarm drones brought down, people (with friendly fire) and players hurt too |
+| **Porongo EMP** - a porongo bound in metal round a recovered URB core | 1.6 s | a blue 9 m pulse: robots stand dead still and do not shoot for 6 s (a mech 3 s), drones and swarm drones drop |
+
+A repair shop builds a Porongo for a core and a circuit.
 
 ## Pickups
 

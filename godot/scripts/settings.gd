@@ -20,6 +20,8 @@ const ACTIONS := {
 	"weapon_5": ["Laço", KEY_5],
 	"weapon_6": ["Espeto", KEY_6],
 	"weapon_7": ["Mech cannon", KEY_7],
+	"grenade": ["Throw a grenade", KEY_Q],
+	"grenade_switch": ["Switch grenade (Bergamota / Porongo)", KEY_Z],
 	"mute": ["Sound on / off", KEY_M],
 	"design": ["Design mode (freeze + fly)", KEY_F2],
 	"use": ["Enter / leave vehicle", KEY_E],

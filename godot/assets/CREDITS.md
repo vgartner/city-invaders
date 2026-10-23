@@ -2,6 +2,7 @@
 
 | Asset | Source | Licence |
 |---|---|---|
+| Grenades of the resistance (`assets/rio_grande_do_sul/weapons/grenades/*`): Bergamota de Aço, Porongo EMP (pickup and hand models) | Made for City Invaders (generated with Blender, sources kept with the delivery) | CC0 |
 | Street props and plants (`assets/common/props/*`): fire hydrant, street lamp, trash can, trash bag, concrete barriers, benches, street seating, planters, manhole cover, covered car, barrel, crates, potted plant, shrubs, fern, weed | [Poly Haven](https://polyhaven.com) | CC0 |
 | Materials (`assets/materials/*`): Asphalt031, Bricks059, PavingStones138, Concrete034, Facade001/006/017/018A, PaintedPlaster017, RoofingTiles013A, Bark014, LeafSet024, Grass004 | [ambientCG](https://ambientcg.com) | CC0 |
 | Sound effects (`assets/audio/*`): Sci-Fi Sounds, Impact Sounds | [Kenney](https://kenney.nl) | CC0 |

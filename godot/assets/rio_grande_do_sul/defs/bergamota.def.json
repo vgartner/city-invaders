@@ -1,0 +1,17 @@
+{
+ "id": "bergamota",
+ "type": "Grenade",
+ "name": "Bergamota de Aço",
+ "model": "res://assets/rio_grande_do_sul/weapons/grenades/bergamota_aco_pickup.glb",
+ "hand": "res://assets/rio_grande_do_sul/weapons/grenades/bergamota_aco_hand.glb",
+ "scale": 2.2,
+ "stand": true,
+ "effect": {
+  "blast_m": 6.0,
+  "fuse_s": 2.2
+ },
+ "tags": [
+  "gaucho",
+  "resistance"
+ ]
+}

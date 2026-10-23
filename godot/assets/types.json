@@ -200,5 +200,14 @@
   "spawn": "lawn",
   "health": 30,
   "react": "defend"
+ },
+ "Grenade": {
+  "extends": "Item",
+  "category": "grenade",
+  "glow": [
+   1.0,
+   0.55,
+   0.15
+  ]
  }
 }

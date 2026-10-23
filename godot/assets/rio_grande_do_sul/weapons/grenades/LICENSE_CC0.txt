@@ -1,0 +1,10 @@
+CC0 1.0 Universal
+
+Original geometry, procedural texture artwork and generator source in this
+package are dedicated to the public domain under CC0 1.0 Universal.
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Created for City Invaders. No manufacturer logos, photographic textures,
+third-party scans or pre-existing character meshes are included.
+Software used to author and validate the files retains its own licenses
+and is not redistributed as part of this asset license.
