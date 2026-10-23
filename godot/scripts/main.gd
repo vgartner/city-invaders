@@ -482,13 +482,20 @@ func award(peer: int, points: int, reason: String) -> void:
 const DROPS := {"trooper": ["circuit"], "mech": ["core", "circuit", "circuit"], "drone": ["lens"],
 		"collector": ["module", "circuit"]}
 func _drop_parts(e) -> void:
+	# after the robot has come apart (enemy.gd: a trooper bursts 0.35 s after it
+	# falls, a mech once it has toppled), not the moment it dies
 	var kind: String = e.get("variant") if e.get("variant") else "trooper"
+	get_tree().create_timer(1.7 if kind == "mech" else 0.45).timeout.connect(
+			_drop_parts_at.bind(kind, (e as Node3D).global_position))
+
+
+func _drop_parts_at(kind: String, where: Vector3) -> void:
 	var list: Array = DROPS.get(kind, []).duplicate()
 	if kind == "trooper" and randf() < 0.5:
 		list.append("circuit")
 	var map := get_world_3d().navigation_map
 	for k in list:
-		var at := NavigationServer3D.map_get_closest_point(map, (e as Node3D).global_position
+		var at := NavigationServer3D.map_get_closest_point(map, where
 				+ Vector3(randf_range(-1.5, 1.5), 0, randf_range(-1.5, 1.5)))
 		var pk := _spawn_pickup(k, at, false)
 		if pk:
@@ -500,12 +507,9 @@ func _drop_parts(e) -> void:
 func _on_robot_killed(e) -> void:
 	_drop_parts(e)
 	if e.get("variant") == "mech":
-		# a downed mech leaves its arm cannon: a heavy weapon for whoever gets there
-		var map := get_world_3d().navigation_map
-		var at := NavigationServer3D.map_get_closest_point(map, (e as Node3D).global_position + Vector3(2.0, 0, 0))
-		var pk := _spawn_pickup("canhao", at, false)
-		if pk:
-			get_tree().create_timer(90.0).timeout.connect(pk.queue_free)
+		# a downed mech leaves its arm cannon: a heavy weapon for whoever gets
+		# there - once it has toppled and come apart
+		get_tree().create_timer(1.7).timeout.connect(_drop_cannon_at.bind((e as Node3D).global_position))
 	if e.get("variant") == "mech":
 		_phase_mechs += 1
 	if e.get("commander") and e.killed_by_player:
@@ -1491,6 +1495,35 @@ func emp_fx(at: Vector3, r: float) -> void:
 	st.tween_property(shell, "scale", Vector3.ONE * r, 0.45).set_ease(Tween.EASE_OUT)
 	st.tween_property(mat, "albedo_color:a", 0.0, 0.6)
 	st.chain().tween_callback(shell.queue_free)
+
+
+func _drop_cannon_at(where: Vector3) -> void:
+	var at := NavigationServer3D.map_get_closest_point(get_world_3d().navigation_map, where + Vector3(2.0, 0, 0))
+	var pk := _spawn_pickup("canhao", at, false)
+	if pk:
+		get_tree().create_timer(90.0).timeout.connect(pk.queue_free)
+
+
+## Every peer: a missile flying from `from` to `at` (the mech's cannon and the
+## player's, once picked up - enemy.gd Missile).
+@rpc("authority", "call_local", "reliable")
+func missile_fx(from: Vector3, at: Vector3, flight: float) -> void:
+	Sfx.play_at("robot_fire", from, 4.0, 120.0)
+	var m := Enemy.Missile.new()
+	add_child(m)
+	m.fly(from, at, flight, Enemy.fx_light(Color(1.0, 0.6, 0.25), 3.0, 5.0))
+
+
+## Server: the player's mech cannon round arriving - a blast that hurts the
+## robots round it (player.gd server_shoot), then the burst on every peer.
+func player_cannon_land(origin: Vector3, at: Vector3, normal: Vector3, wall: bool, r: float, dmg: int, peer: int) -> void:
+	var by := players_root.get_node_or_null(str(peer))
+	for e in enemies_root.get_children():
+		if e is Node3D and (e as Node3D).global_position.distance_to(at) < r + 1.0 and e.has_method("apply_damage"):
+			e.apply_damage(dmg, by)
+	blast_fx.rpc(origin, at, normal, wall)
+	for e in enemies_root.get_children():
+		e.heard(origin)
 
 
 ## Server: a mech's missile arriving (enemy.gd _cannon): people near it hurt

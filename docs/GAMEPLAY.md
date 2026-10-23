@@ -341,8 +341,10 @@ shop), O on / off: robots and drones nearby are bracketed with their distance
 (through walls), a Coletor carrying someone in orange, antennas within 260 m,
 parts on the ground. They run 150 s on a charge; a drone battery refills them.
 
-A downed mech drops its **arm cannon** (key 7 once picked up): three heavy
-shells a magazine that burst where they land, hitting every robot around,
+A robot comes apart first and then its parts fall to the ground (a mech
+once it has toppled). A downed mech drops its **arm cannon** (key 7 once picked up): three
+missiles a magazine - you see each fly to where you aimed, like the
+mech's own - that burst where they land, hitting every robot around,
 leaving craters on walls and wrecking the shops nearby.
 
 The pockets hold 4 parts; a **mala de garupa** (the striped gaúcho saddle
@@ -379,7 +381,7 @@ round); all values are in `scripts/difficulty.gd`.
 
 | | Easy (as the game first played) | Medium (default) | Hard |
 |---|---|---|---|
-| Trooper / mech / drone / commander health | 60 / 360 / 30 / 900 | 100 / 700 / 45 / 1500 | 140 / 1100 / 60 / 2200 |
+| Trooper / mech / drone / commander health | 60 / 470 / 30 / 900 | 100 / 910 / 45 / 1500 | 140 / 1430 / 60 / 2200 |
 | Damage per hit (trooper / mech) | 5 / 10 | 8 / 14 | 11 / 18 |
 | Time between their shots, best accuracy, sight | 1.8 s, 60%, 35 m | 1.4 s, 80%, 40 m | 1.1 s, 90%, 50 m |
 | Robots at once per player, rest between waves | 8, 25 s | 12, 18 s | 16, 12 s |
@@ -396,7 +398,7 @@ reactor at the back doubles it; a trooper's head takes double, its legs 70%.
 ## The enemy
 
 - Mech cannon: every ~12 s a mech in a fight fires a missile at its target
-  - you see it coming (a smoke trail, the motor's glow, ~32 m/s) and it
+  - you see it coming (a smoke trail, the motor's glow, ~45 m/s) and it
   bursts where you were when it was fired, so running off dodges it: a 4 m
   blast that kills people and hurts players (35); a wall in the way gets a
   scorched crater and a pile of rubble on the ground below.

@@ -9,7 +9,7 @@ const NAMES := {"easy": "EASY", "medium": "MEDIUM", "hard": "HARD"}
 
 const TABLE := {
 	"easy": {
-		"trooper_hp": 60, "mech_hp": 360, "drone_hp": 30, "commander_hp": 900,
+		"trooper_hp": 60, "mech_hp": 470, "drone_hp": 30, "commander_hp": 900,
 		"trooper_dmg": 5, "mech_dmg": 10, "fire_interval": 1.8, "aim_max": 0.6, "sight": 35.0,
 		"enemies_per_player": 8, "relax_s": 25.0, "antenna_reinforce": 0.8,
 		"goals": {"gasometro": 20, "centro": 25, "mercado": 30}, "goal_scale": 0.8,
@@ -21,7 +21,7 @@ const TABLE := {
 		"containers": 2, "container_cap": 10,
 	},
 	"medium": {
-		"trooper_hp": 100, "mech_hp": 700, "drone_hp": 45, "commander_hp": 1500,
+		"trooper_hp": 100, "mech_hp": 910, "drone_hp": 45, "commander_hp": 1500,
 		"trooper_dmg": 8, "mech_dmg": 14, "fire_interval": 1.4, "aim_max": 0.8, "sight": 40.0,
 		"enemies_per_player": 12, "relax_s": 18.0, "antenna_reinforce": 0.6,
 		"goals": {"gasometro": 30, "centro": 35, "mercado": 40}, "goal_scale": 1.2,
@@ -33,7 +33,7 @@ const TABLE := {
 		"containers": 2, "container_cap": 8,
 	},
 	"hard": {
-		"trooper_hp": 140, "mech_hp": 1100, "drone_hp": 60, "commander_hp": 2200,
+		"trooper_hp": 140, "mech_hp": 1430, "drone_hp": 60, "commander_hp": 2200,
 		"trooper_dmg": 11, "mech_dmg": 18, "fire_interval": 1.1, "aim_max": 0.9, "sight": 50.0,
 		"enemies_per_player": 16, "relax_s": 12.0, "antenna_reinforce": 0.45,
 		"goals": {"gasometro": 40, "centro": 45, "mercado": 55}, "goal_scale": 1.6,

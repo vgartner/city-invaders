@@ -1,5 +1,6 @@
 extends CharacterBody3D
 const Pigeon := preload("res://scripts/pigeon.gd")
+const EnemyScript := preload("res://scripts/enemy.gd")
 ## First-person player. The owning peer simulates movement; position, yaw,
 ## health and death are replicated to everyone else. Shots are resolved on
 ## the server (hitscan) so enemy damage stays authoritative. Weapons: pistol
@@ -1713,16 +1714,17 @@ func server_shoot(origin: Vector3, dir: Vector3, w: String = "pistol") -> void:
 			Sfx.play_at("robot_hit", hit.position, -2.0)
 		return                              # a blow makes no noise for the robots to hear
 	if WEAPONS.get(w, {}).has("blast"):
-		# the mech cannon's shell bursts where it lands: robots around take it too
+		# the mech cannon's missile flies there (seen by everyone) and bursts
+		# where it lands: robots around take it too
 		var at: Vector3 = hit.position if hit else origin + dir * 150.0
 		var r: float = WEAPONS[w]["blast"]
-		for e in get_tree().current_scene.enemies_root.get_children():
-			if e is Node3D and (e as Node3D).global_position.distance_to(at) < r + 1.0 and e.has_method("apply_damage"):
-				e.apply_damage(dmg, self)
 		var wall: bool = not hit.is_empty() and hit.collider is StaticBody3D and absf((hit.normal as Vector3).y) < 0.5
-		get_tree().current_scene.blast_fx.rpc(origin, at, hit.normal if hit else Vector3.UP, wall)
-		for e in get_tree().current_scene.enemies_root.get_children():
-			e.heard(origin)
+		var main := get_tree().current_scene
+		var muzzle: Vector3 = origin + dir * 1.2 + Vector3(0, -0.3, 0)
+		var flight: float = maxf(muzzle.distance_to(at) / EnemyScript.CANNON_SPEED, 0.1)
+		main.missile_fx.rpc(muzzle, at, flight)
+		get_tree().create_timer(flight).timeout.connect(main.player_cannon_land.bind(
+				origin, at, hit.normal if hit else Vector3.UP, wall, r, dmg, get_multiplayer_authority()))
 		return
 	if hit and hit.collider.has_method("hit_scale"):
 		dmg = maxi(1, int(round(dmg * hit.collider.hit_scale(hit.position, origin))))     # weak points

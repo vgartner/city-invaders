@@ -527,7 +527,7 @@ func _lone_civilian() -> Node3D:
 ## has its missile land.
 const CANNON_EVERY := 12.0
 const CANNON_R := 4.0
-const CANNON_SPEED := 32.0      # m/s
+const CANNON_SPEED := 45.0      # m/s (32 seemed slow)
 var _cannon_cd := 6.0
 
 
