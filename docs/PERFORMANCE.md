@@ -275,3 +275,13 @@ cars, shops - with the F5 recorder on. `tools/bench/autoplay_report.py` then
 shows the fps per activity and a 50 m heatmap of the map, so a slow corner
 shows up even when no route passes it. The same seed makes the same choices,
 so two builds can be compared by run (the traffic and the robots still differ).
+
+Autoplay measurement limits: `frame_ms` records elapsed frame intervals.
+`process_ms` and `physics_ms` are sampled engine monitors and can repeat
+across multiple recorded frames; they are not per-function script timings,
+and must not be added or treated as synchronous costs of a specific row.
+The recorder does not capture usable GPU timings. Empty `last_added` entries
+mean the hitch cause is unknown, not that no work happened. Profile CPU/GPU
+separately before choosing an optimization. Compare runs at matching saved
+conditions, distinguish initial warm-up, and inspect final position holds
+and `combat_stalled` events before treating a run as continuous exploration.

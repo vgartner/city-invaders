@@ -20,7 +20,7 @@ var seconds := 600.0
 var rng := RandomNumberGenerator.new()
 var activity := "start"                 # read by the DevAgent's F5 recorder per frame
 var events: Array = []                  # stuck spots, unreachable pickups, falls, deaths
-var counts := {"robots_shot": 0, "pickups": 0, "grenades": 0, "drives": 0, "containers": 0, "trades": 0}
+var counts := {"robots_shot": 0, "pickups": 0, "grenades": 0, "drives": 0, "containers": 0, "trades": 0, "shots": 0}
 var done := false
 
 var _t := 0.0
@@ -47,6 +47,11 @@ var _ahead := false
 var _box: BoxShape3D                    # the look ahead for a vehicle in the way
 var _hp_seen := -1.0                    # the target's health when it last went down
 var _no_hit := 0.0                      # shooting this long without hurting it
+var _watched_target := 0
+var _blocked_targets: Dictionary = {}   # temporarily skip enemies that took no damage
+var _combat_shots_start := 0
+var _observed_weapon := ""
+var _observed_mag := 0
 var _press := false                     # missing from here: go in close
 var _car_stucks := 0
 var _best_goal_d := INF                 # nearest it has come to the goal
@@ -76,6 +81,7 @@ func stop() -> void:
 func _physics_process(delta: float) -> void:
 	if done or not is_instance_valid(player):
 		return
+	_observe_shots()
 	_t += delta
 	if _t >= seconds:
 		stop()
@@ -341,6 +347,10 @@ func _robot_in_sight(r: float) -> Node3D:
 	for e in _main().enemies_root.get_children():
 		if e.get("variant") == "swarm" or not e.has_method("is_alive") or not e.is_alive():
 			continue
+		var id: int = e.get_instance_id()
+		if float(_blocked_targets.get(id, 0.0)) > _t:
+			continue
+		_blocked_targets.erase(id)
 		var d := (e as Node3D).global_position.distance_to(player.global_position)
 		if d >= bd:
 			continue
@@ -363,7 +373,24 @@ func _pick_weapon(e: Node3D) -> void:
 			return
 
 
+func _observe_shots() -> void:
+	# Observe real ammunition consumption, rather than attempted trigger presses.
+	var weapon: String = player.weapon
+	var mag: int = player._mags.get(weapon, 0)
+	if weapon == _observed_weapon and mag < _observed_mag:
+		counts["shots"] += _observed_mag - mag
+	_observed_weapon = weapon
+	_observed_mag = mag
+
+
 func _fight(delta: float) -> void:
+	var id := _target.get_instance_id()
+	if id != _watched_target:
+		_watched_target = id
+		_hp_seen = -1.0
+		_no_hit = 0.0
+		_press = false
+		_combat_shots_start = counts["shots"]
 	activity = "fight"
 	Settings.virtual.erase("left")
 	Settings.virtual.erase("right")
@@ -381,6 +408,16 @@ func _fight(delta: float) -> void:
 		_no_hit += delta
 		if _no_hit > 5.0:
 			_press = true
+	if _no_hit >= 15.0:
+		_event("combat_stalled", "target=%s weapon=%s ammo=%d/%d hp=%.1f shots=%d no_damage=%.1fs" % [
+			_target.name, player.weapon, player.ammo, player.reserve, hp,
+			counts["shots"] - _combat_shots_start, _no_hit])
+		_blocked_targets[id] = _t + 30.0
+		_target = null
+		_watched_target = 0
+		_think_cd = 0.0
+		_release_all()
+		return
 	if d > 28.0 or (_press and d > 7.0) or (player.WEAPONS[player.weapon].get("melee", false) and d > 2.0) or player.WEAPONS[player.weapon].get("unarmed", false):
 		Settings.virtual["forward"] = true
 		Settings.virtual["run"] = true
@@ -389,7 +426,11 @@ func _fight(delta: float) -> void:
 		Settings.virtual.erase("forward")
 		Settings.virtual.erase("run")
 		_last_pos = player.global_position
-	if err < 0.06:
+	# Semi-auto weapons require a new trigger edge. Holding fire forever
+	# fires once, then stalls even with a full magazine after reloading.
+	var ready: bool = player._fire_cd <= 0.0 and player._reload_left <= 0.0
+	var automatic: bool = player.WEAPONS[player.weapon].get("auto", false)
+	if err < 0.06 and (automatic or (ready and not player._trigger_held)):
 		Settings.virtual["fire"] = true
 	else:
 		Settings.virtual.erase("fire")

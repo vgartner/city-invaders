@@ -36,6 +36,7 @@ There are no hand-made scenes: `main.tscn` only holds `main.gd`.
 | `settings.gd` | Autoload: key bindings, mute, friendly fire, steering sensitivity, player name (`user://settings.cfg`) |
 | `controls_menu.gd` | Key rebinding UI |
 | `sfx.gd` | Autoload: sound cues |
+| `autoplay.gd` | DevAgent-driven player bot: normal inputs, semi-auto trigger edges, shot counting and recovery from combat without damage |
 | `dev_agent.gd` | Autoload: JSON-RPC test interface (see [DEVAGENT.md](DEVAGENT.md)) |
 | `batcher.gd` | Draw-call batching: copies of a mesh become one MultiMesh per 64 m cell (see [PERFORMANCE.md](PERFORMANCE.md)) |
 | `model_library.gd` | Lists the `.glb` models of a folder |

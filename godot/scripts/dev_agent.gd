@@ -1096,6 +1096,7 @@ func _rec_frame(ms: float) -> void:
 const Autoplay := preload("res://scripts/autoplay.gd")
 var _autoplay: Node
 var _auto_errors0 := 0
+var _auto_config: Dictionary = {}
 func _m_autoplay(p: Dictionary):
 	var pl := _player()
 	if pl == null:
@@ -1121,6 +1122,14 @@ func _m_autoplay(p: Dictionary):
 			pl.give(w)
 		for g in ["bergamota", "porongo"]:
 			pl.grenades[g] = 2          # so it throws some
+	_auto_config = {
+		"seed": int(p.get("seed", 7)), "requested_seconds": _autoplay.seconds,
+		"god": bool(p.get("god", true)), "armed": bool(p.get("armed", true)),
+		"drive_every": _autoplay.drive_every,
+		"window_px": [get_window().size.x, get_window().size.y],
+		"viewport_px": [get_viewport().get_visible_rect().size.x, get_viewport().get_visible_rect().size.y],
+		"render_scale": get_viewport().scaling_3d_scale,
+		"max_fps": Engine.max_fps, "vsync_mode": DisplayServer.window_get_vsync_mode()}
 	_auto_errors0 = _errors_seen()
 	_main().add_child(_autoplay)
 	if not _rec_on:
@@ -1145,7 +1154,7 @@ func _autoplay_finish() -> void:
 			break
 	var errs: Array = _m_errors({}).get("errors", [])
 	var out := {"map": _main().map_id if _main() else "", "seconds": snappedf(ap._t, 0.1), "counts": ap.counts,
-			"events": ap.events, "recording": rec_path, "script_errors": errs.slice(_auto_errors0).filter(
+			"events": ap.events, "recording": rec_path, "conditions": _auto_config, "script_errors": errs.slice(_auto_errors0).filter(
 				# Metal fence timeouts and a tester's own eval errors are not the game's
 				func(e): return not "timeout waiting for fence" in str(e) and not "core/math/expression.cpp" in str(e))}
 	DirAccess.make_dir_recursive_absolute("user://devagent/autoplay")

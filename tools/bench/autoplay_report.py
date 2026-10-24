@@ -33,16 +33,48 @@ def fps(ms):
     return len(ms) / max(sum(ms) / 1000.0, 1e-6)
 
 
+def stationary_tail(rows, radius=0.6, minimum_s=15.0):
+    """Find a contiguous final position hold; combat holds are not always bugs."""
+    if len(rows) < 2:
+        return None
+    last = rows[-1]
+    start = len(rows) - 1
+    while start > 0:
+        previous = rows[start - 1]
+        if math.hypot(previous["x"] - last["x"], previous["z"] - last["z"]) > radius:
+            break
+        start -= 1
+    return start if last["t"] - rows[start]["t"] >= minimum_s else None
+
+
+def print_segment(label, rows):
+    if not rows:
+        return
+    ms = [row["frame_ms"] for row in rows]
+    print(f"  {label}: {sum(ms) / 1000:.1f} s, {fps(ms):.1f} fps, "
+          f"median {pct(ms, .5):.1f} ms, p99 {pct(ms, .99):.1f} ms, "
+          f"{sum(v > 100 for v in ms)} frames over 100 ms")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("run", nargs="?")
     ap.add_argument("--cell", type=float, default=50.0, help="heatmap cell size in metres")
     a = ap.parse_args()
+    if a.cell <= 0:
+        ap.error("--cell must be positive")
     path = a.run or max(glob.glob(os.path.join(RUN_DIR, "run_*.json")), key=os.path.getmtime)
     run = json.load(open(path))
     c = run["counts"]
     print(f"{path}\n{run['map']}: {run['seconds']:.0f} s - {c['robots_shot']} robots down, {c['pickups']} pickups, "
           f"{c['drives']} drives, {c['grenades']} grenades, {c['containers']} containers opened, {c['trades']} trades")
+
+    if "shots" in c:
+        print(f"shots fired (ammunition consumed): {c['shots']}")
+    if run.get("conditions"):
+        print("conditions: " + json.dumps(run["conditions"], sort_keys=True))
+    else:
+        print("conditions: not recorded in this older run")
 
     rows = []
     if run.get("recording") and os.path.exists(run["recording"]):
@@ -55,6 +87,14 @@ def main():
         print("(no recording found)")
 
     if rows:
+        print("\nMeasurement limits: process_ms and physics_ms are sampled engine monitors, "
+              "not per-function profiles or additive frame costs. GPU timing is not recorded.")
+        tail = stationary_tail(rows)
+        if tail is not None:
+            print(f"\nPosition stayed within 0.6 m of its final location from {rows[tail]['t']:.1f} s "
+                  "(may be intentional combat; inspect progress before comparing runs):")
+            print_segment("before final position hold", rows[:tail])
+            print_segment("final position hold", rows[tail:])
         print("\nper activity:   share    fps   median ms  p99 ms  worst ms")
         by = collections.defaultdict(list)
         for r in rows:
@@ -92,15 +132,15 @@ def main():
 
         print("\nworst frames:")
         for r in sorted(rows, key=lambda r: -r["frame_ms"])[:6]:
-            print(f"  {r['t']:6.1f}s {r['frame_ms']:7.1f} ms  script {r['process_ms']:.1f}  physics {r['physics_ms']:.1f}"
+            print(f"  {r['t']:6.1f}s {r['frame_ms']:7.1f} ms  process_monitor {r['process_ms']:.1f}  physics_monitor {r['physics_ms']:.1f}"
                   f"  at ({r['x']:.0f}, {r['z']:.0f}) {r.get('activity', '')}")
         if rec.get("hitches"):
             print("hitches (what had just come into the scene):")
             for h in sorted(rec["hitches"], key=lambda h: -h["ms"])[:5]:
-                print(f"  {h['ms']:.0f} ms: {', '.join(x.split('@')[0] for x in h['last_added'][-5:])}")
+                print(f"  {h['ms']:.0f} ms: {', '.join(x.split('@')[0] for x in h['last_added'][-5:]) or '(no recent additions captured; cause unknown)'}")
 
     ev = run.get("events", [])
-    print(f"\nmap problems ({len(ev)} events):")
+    print(f"\nnavigation and combat events ({len(ev)} events):")
     if not ev:
         print("  none")
     spots = collections.defaultdict(list)

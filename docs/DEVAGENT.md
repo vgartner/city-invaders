@@ -152,12 +152,40 @@ then hops onto the nearest walkable point. Also `unreachable` (no navmesh path),
 still there), `car_stuck` (a car that doesn't move: backs out, gives up after
 three, and that car is not taken again) and `fell` (below the ground).
 
+Semi-automatic weapons release and press the trigger between shots, including
+following a reload. `counts.shots` counts observed ammunition consumption.
+If one target takes no damage for 15 seconds, `combat_stalled` records its
+name, weapon, ammunition, health, shots and time without damage; the bot
+skips it for 30 seconds and resumes other goals. The timer resets when the
+target changes or its health changes.
+
 At the end it writes `user://devagent/autoplay/run_<time>.json` (the counts,
-the events, the script errors, the recording's path) and an inbox message.
+the events, the script errors, the recording's path and test conditions) and an inbox message.
 `tools/bench/autoplay_report.py` reads the latest run: the frame time per
 activity, a heatmap of the fps in 50 m cells (`--cell`), the slowest cells
 with what was drawn there, the worst frames, and the map problems grouped by
-place with a teleport line for each. Run it with the player's own game closed.
+place with a teleport line for each. New runs also save seed, requested duration,
+god/armed settings, drive interval, window/viewport sizes, render scale,
+frame cap and VSync mode. The report separates a final position hold of at
+least 15 seconds (within 0.6 m), so prolonged combat does not silently pass
+as map exploration. A hold can be intentional; check damage and shot progress.
+Run it with the player's own game closed.
+
+Report regression checks: `python3 -m unittest discover -s tools/bench -p test_autoplay_report.py`.
+For the trigger regression, isolate a durable stationary enemy in a solo
+DevAgent round, give the bot only a shotgun with reserve ammunition, and
+check that more than two rounds are consumed and enemy health falls across
+a reload. Then deliberately hold the player's fire cooldown above zero;
+within 15 seconds without damage, `combat_stalled` must be logged and the
+bot must resume another goal. Use an isolated test round, not a player's save.
+
+Verification on 2026-10-24: the isolated shotgun scenario consumed 10 rounds
+in 12 seconds across reloads and reduced target health; a forced no-fire
+scenario logged `combat_stalled` after 15 seconds without damage and resumed
+pickup movement. A subsequent five-minute Gasometro run completed with
+44 rounds consumed, 8 robots down, 4 pickups, 2 drives and no script errors.
+The previous prolonged combat hold did not recur. Navigation events and
+frame hitches still occurred; the different route is not an FPS A/B test.
 
 ## A second instance for tests
 
