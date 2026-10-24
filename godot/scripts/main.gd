@@ -828,7 +828,7 @@ func enter_map(id: String) -> void:
 ## Models that appear in the middle of a round (ships, every robot) are
 ## loaded with the map: the first one read from disk mid-fight was a
 ## 100-150 ms freeze. Kept referenced so they stay in memory.
-var _warm: Array = []
+var _warm: Dictionary = {}
 func _warm_models() -> void:
 	var paths: Array = [Dropship.MODEL]
 	for k in Dropship.MODELS:
@@ -837,18 +837,22 @@ func _warm_models() -> void:
 		paths.append(Enemy.VARIANTS[k]["model"])
 	for p in paths:
 		if ResourceLoader.exists(p) and not _warm.has(p):
-			_warm.append(load(p))
+			_warm[p] = load(p)
 	for p in _warm_people:
 		var r: Resource = ResourceLoader.load_threaded_get(p)
 		if r:
-			_warm.append(r)
+			_warm[p] = r
 	_warm_people = []
 
 
 ## Every pedestrian, officer, vendor and dog model (and the football shirts
 ## without crests, the shared gait's donors), requested on threads: a group
 ## of people coming in mid-round read up to five models from disk in one
-## frame - 100-340 ms freezes. Picked up (and kept) by _warm_models.
+## frame - 100-340 ms freezes. Also warm view models and the swarm: native
+## profiling measured 240-276 ms in a first weapon switch and 103 ms in the
+## first swarm's _ready. Keep the PackedScenes alive in _warm, keyed by path,
+## so later load() calls reuse resources. No model simplification is involved.
+## Picked up (and kept) by _warm_models.
 var _warm_people: PackedStringArray = []
 func _warm_people_request() -> void:
 	var want: PackedStringArray = []
@@ -859,6 +863,9 @@ func _warm_people_request() -> void:
 			want.append(plain)
 	for k in Civilian.PEOPLE_GAIT:
 		want.append(Civilian.PEOPLE_GAIT[k])
+	for path in Player.VIEW_MODELS.values():
+		want.append(path)
+	want.append(preload("res://scripts/swarm.gd").MODEL)
 	for p in want:
 		if not p in _warm_people and ResourceLoader.exists(p) \
 				and ResourceLoader.load_threaded_request(p, "", true) == OK:

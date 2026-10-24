@@ -1,6 +1,6 @@
 """Regression tests for separating final position holds from exploration."""
 import unittest
-from autoplay_report import stationary_tail
+from autoplay_report import stationary_tail, pipeline_changes
 
 
 def row(t, x=0, z=0):
@@ -24,6 +24,19 @@ class PositionHoldTests(unittest.TestCase):
     def test_empty_or_single_frame(self):
         self.assertIsNone(stationary_tail([]))
         self.assertIsNone(stationary_tail([row(0)]))
+
+
+class PipelineCounterTests(unittest.TestCase):
+    def test_neighbouring_counter_changes(self):
+        rows = [{"pipeline_draw": x} for x in [10, 10, 12, 12]]
+        self.assertEqual(pipeline_changes(rows, 1)["pipeline_draw"], 2)
+        self.assertEqual(pipeline_changes(rows, 2)["pipeline_draw"], 2)
+
+    def test_old_recordings_have_no_pipeline_fields(self):
+        self.assertEqual(pipeline_changes([row(0), row(20)], 0), {})
+
+    def test_counter_reset_is_not_a_negative_compilation(self):
+        self.assertEqual(pipeline_changes([{"pipeline_draw": 10}, {"pipeline_draw": 0}], 1)["pipeline_draw"], 0)
 
 
 if __name__ == "__main__":

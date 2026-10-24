@@ -187,6 +187,53 @@ pickup movement. A subsequent five-minute Gasometro run completed with
 The previous prolonged combat hold did not recur. Navigation events and
 frame hitches still occurred; the different route is not an FPS A/B test.
 
+## Native function profiling and hitch correlation
+
+F5 now enables the node-add history automatically, including deep PackedScene
+roots such as weapon view models. Every recorded row includes `engine_frame`
+and `tick_us`, plus cumulative pipeline compilation counters. Hitch records
+also retain recent RPC method names and start/end timestamps: arming a test,
+a screenshot or a large evaluation must not silently be blamed on gameplay.
+The first interval preceding record start is skipped. Raw hitch history can
+still include setup intervals: use the row window and command tags to select
+the actual measured portion.
+
+`perf` also reports engine-tracked static, texture and buffer allocation MiB,
+and pipeline counts. These are not resident OS memory measurements; on unified
+memory hardware they must not be added to the process footprint as separate
+RAM allocations. GPU milliseconds may still be unavailable on Metal.
+
+For function timings, use the engine's native debugger channel, not sampled
+`Performance` monitors. In a separate terminal at the repository root:
+
+```bash
+godot --headless --script "$PWD/tools/devagent/profiler_capture.gd" -- --port=6008 --output=/tmp/ci-profile.jsonl --control=/tmp/ci-profile.control
+```
+
+Start **one** test game with `DEVAGENT_PORT=24691 godot --path godot
+--remote-debug tcp://127.0.0.1:6008 --ignore-error-breaks -- --devagent`.
+After loading, write `start label` to `/tmp/ci-profile.control`; wait about
+half a second before the measured action. Write `stop label` afterwards.
+`memory` requests the native rendering resource inventory. `visual_start`
+and `visual_stop` control the renderer profiler where supported. `quit`
+ends the capture helper. The listener is loopback-only and rejects object
+instantiation when decoding Variants. Runtime debugger breaks are continued
+and their errors remain in the capture/console.
+
+Read it with `python3 tools/devagent/profile_report.py /tmp/ci-profile.jsonl`.
+`--label 'start label'` selects one capture and `--json /tmp/decoded.json`
+saves decoded frames. Function signature IDs restart on each capture;
+server/native-call and callback timings can overlap, so don't sum them as
+independent CPU costs. Correlate with F5's `engine_frame`, checking adjacent
+frames because the two hooks run at different points in the engine loop.
+The native frame payload parser targets the five-field Godot 4.7 layout and
+fails rather than guessing when it does not match. Capturing is optional;
+normal/release games do not open a debugger connection or run this helper.
+Do not hot-reload the DevAgent while its own RPC handler is executing;
+restart the isolated test process after instrumentation changes.
+
+Regression tests: `python3 -m unittest discover -s tools/devagent -p test_profile_report.py`.
+
 ## A second instance for tests
 
 To test without touching the game someone is playing (for example a paused

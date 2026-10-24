@@ -37,7 +37,7 @@ There are no hand-made scenes: `main.tscn` only holds `main.gd`.
 | `controls_menu.gd` | Key rebinding UI |
 | `sfx.gd` | Autoload: sound cues |
 | `autoplay.gd` | DevAgent-driven player bot: normal inputs, semi-auto trigger edges, shot counting and recovery from combat without damage |
-| `dev_agent.gd` | Autoload: JSON-RPC test interface (see [DEVAGENT.md](DEVAGENT.md)) |
+| `dev_agent.gd` | Autoload: JSON-RPC test interface and opt-in frame/pipeline/scene diagnostics (see [DEVAGENT.md](DEVAGENT.md)) |
 | `batcher.gd` | Draw-call batching: copies of a mesh become one MultiMesh per 64 m cell (see [PERFORMANCE.md](PERFORMANCE.md)) |
 | `model_library.gd` | Lists the `.glb` models of a folder |
 
@@ -89,3 +89,8 @@ nodes the game reads:
 
 `"_props"` in the same file places free-standing models (monuments, the
 farroupilha camp) with box colliders.
+
+Native profiler capture tools live in `tools/devagent/profiler_capture.gd` and
+`profile_report.py` (see DEVAGENT.md). Map preparation keeps model resources
+in a path-keyed `_warm` cache, including the weapon view models and swarm,
+so their first disk read is performed behind the loading screen.

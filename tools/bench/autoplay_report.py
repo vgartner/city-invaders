@@ -56,6 +56,17 @@ def print_segment(label, rows):
           f"{sum(v > 100 for v in ms)} frames over 100 ms")
 
 
+def pipeline_changes(rows, index):
+    """Counter increases near an interval, not a claim about its cause."""
+    changes = {}
+    for key in ("pipeline_canvas", "pipeline_mesh", "pipeline_surface", "pipeline_draw", "pipeline_specialization"):
+        if not rows or key not in rows[0]:
+            continue
+        changes[key] = sum(max(0, rows[j][key] - rows[j - 1][key])
+                           for j in range(max(1, index - 1), min(len(rows), index + 2)))
+    return changes
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("run", nargs="?")
@@ -130,10 +141,19 @@ def main():
                   f"  draws {avg('draw_calls'):5.0f}  {avg('primitives') / 1e6:4.2f}M prims  people {avg('civilians'):4.0f}"
                   f"  robots {avg('robots'):3.0f}  ({', '.join(k for k, _ in acts)})")
 
+        if "pipeline_draw" in rows[0]:
+            print("\nPipeline compilation counter increases during the recording:")
+            print("  " + ", ".join(f"{k.removeprefix('pipeline_')}={max(0, rows[-1][k] - rows[0][k])}"
+                  for k in rows[0] if k.startswith("pipeline_")))
+            print("  DRAW/SURFACE can stall rendering; SPECIALIZATION runs in the background. "
+                  "Nearby changes are correlation, not proof of causation.")
         print("\nworst frames:")
         for r in sorted(rows, key=lambda r: -r["frame_ms"])[:6]:
             print(f"  {r['t']:6.1f}s {r['frame_ms']:7.1f} ms  process_monitor {r['process_ms']:.1f}  physics_monitor {r['physics_ms']:.1f}"
                   f"  at ({r['x']:.0f}, {r['z']:.0f}) {r.get('activity', '')}")
+            changes = {k.removeprefix("pipeline_"): v for k, v in pipeline_changes(rows, rows.index(r)).items() if v}
+            if changes:
+                print(f"    pipeline increases within +/-1 recorded frame: {changes}")
         if rec.get("hitches"):
             print("hitches (what had just come into the scene):")
             for h in sorted(rec["hitches"], key=lambda h: -h["ms"])[:5]:

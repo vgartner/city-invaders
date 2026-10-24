@@ -285,3 +285,64 @@ mean the hitch cause is unknown, not that no work happened. Profile CPU/GPU
 separately before choosing an optimization. Compare runs at matching saved
 conditions, distinguish initial warm-up, and inspect final position holds
 and `combat_stalled` events before treating a run as continuous exploration.
+
+
+## Hitch investigation: native profiler (2026-10-24)
+
+A two-minute Gasometro autoplay with the native Godot debugger profiler
+identified first-use resource work inside `_show_weapon`: three pickup
+frames spent about 242-276 ms in the give/switch/show chain. Initial autoplay
+arming spent about 476 ms preparing two weapons (test setup, not ordinary
+frame cost). The first swarm spawn spent 103.6 ms in `_ready` under
+`main._swarms`, rather than a long walker path search. On a fixed camera,
+the first cannon view-model creation took 65.30 ms; repeated cached switches
+took 0.022-0.046 ms. These are native per-function timings, not the sampled
+process/physics monitor fields.
+
+The loading phase now requests every `Player.VIEW_MODELS` resource and the
+swarm model alongside the existing threaded people-model requests. `_warm`
+is keyed by resource path and retains strong references: comparing path
+strings against the previous resource array did not deduplicate by path.
+No geometry, texture resolution or gameplay population setting changes.
+This moves first-read cost behind the loading screen and retains these few
+resources earlier; it does not eliminate their memory use or guarantee every
+rendering pipeline is ready.
+
+In a fresh process, seven first weapon creations after map loading took
+0.455-1.124 ms (the same cannon 0.530 ms); an explicit eight-unit swarm probe
+took 0.984 ms. Swarm unit counts in the earlier uncontrolled encounter may
+differ; these are targeted probes, not a universal speedup ratio. A subsequent
+two-minute autoplay reported no script errors, 60.1 FPS and five frames over
+100 ms. Its route, prior test state, cache state and population differ from
+the exploratory run (55.7 FPS, twelve >100 ms), so those totals do **not**
+establish an overall FPS improvement. A live DevAgent self-reload experiment
+crashed the isolated test instance; it was discarded and accepted validation
+used a fresh process. Do not count that instrumentation experiment as a
+normal gameplay failure or omit it when reproducing the investigation.
+
+The F5 collector itself took at most 0.516 ms per `_rec_frame` in the native
+capture. In a fixed paused view (65 civilians, 23 robot nodes), 12-second
+A/B/A windows with the lightweight frame recorder gave median frame times
+15.3 / 15.2 / 15.2 ms, with F5 enabled only in B. This did not show a large
+recording penalty in that scene; it is not proof of zero overhead everywhere.
+
+Remaining hitches have multiple signatures. In the after-run, a ~306 ms
+frame coincided with two additional DRAW pipelines within a neighbouring
+recorded frame, while a ~296 ms frame had no nearby pipeline-counter change.
+There were 82 new DRAW pipelines during the capture. The renderer documents
+DRAW and SURFACE compilation as possible gameplay stutter sources;
+SPECIALIZATION is background work and must not be treated as the same thing:
+https://docs.godotengine.org/en/stable/classes/class_renderingserver.html#enum-renderingserver-renderinginfo
+No useful GPU time was returned on this Metal setup, so the remaining native
+renderer/OS waits are not conclusively attributed to GPU saturation.
+
+Memory is the next concrete lead, not an established cause for each hitch:
+engine-tracked textures were around 15,026 MiB (14.67 GiB), and a macOS
+sample reported a 17.1G process footprint. The 36 GiB machine had roughly
+22 GiB of system-wide swap in use. This is whole-system usage, not proof the
+game alone caused it. All 334 inspected Gasometro/horizon PNG imports used
+`compress/mode=0`; their estimated raw pixels+mips were only about 0.9 GiB,
+so map PNGs alone do not explain the full texture total. Inventory resources
+with the native `memory` request and test VRAM texture compression on a
+representative subset with visual comparison before any bulk conversion.
+Do not reduce models or all texture sizes based only on these totals.

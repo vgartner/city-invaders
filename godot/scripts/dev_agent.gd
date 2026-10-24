@@ -30,6 +30,7 @@ func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(SHOT_DIR)
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_build_chat()
+	_ensure_hitch_history()
 
 
 ## Hitches: every frame longer than HITCH_MS, with what the world held then.
@@ -38,6 +39,9 @@ var _hitches: Array = []
 var _hitch_total := 0          # hitches ever (the list keeps the last 200)
 var _hitch_seen := 0
 var _frame_t := 0
+var _rec_skip_first := false
+var _recent_commands: Array = []
+var _recent_scenes: Array = []
 
 
 func _process(_delta: float) -> void:
@@ -45,9 +49,10 @@ func _process(_delta: float) -> void:
 	if _frame_t > 0:
 		var ms := (now - _frame_t) / 1000.0
 		if _rec_on:
-			_rec_frame(ms)
-		if _autoplay and _autoplay.done:
-			_autoplay_finish()
+			if _rec_skip_first:
+				_rec_skip_first = false  # discard the interval preceding record start
+			else:
+				_rec_frame(ms)
 		if ms > HITCH_MS and _main() and _main().map_id != "":
 			_hitch_total += 1
 			var m := _main()
@@ -55,9 +60,14 @@ func _process(_delta: float) -> void:
 					"physics_ms": snappedf(Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0, 0.1),
 					"robots": m.enemies_root.get_child_count(), "civilians": m.civilians_root.get_child_count(),
 					"nodes": int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)),
-					"last_added": _last_added.slice(-6)})
+					"last_added": _last_added.slice(-6),
+					"engine_frame": Engine.get_process_frames(), "tick_us": now,
+					"pipelines": _pipeline_counts(), "recent_scenes": _recent_scenes.slice(-6),
+					"recent_commands": _recent_commands.filter(func(c): return c["end_us"] >= _frame_t).duplicate(true)})
 			if _hitches.size() > 200:
 				_hitches.pop_front()
+		if _autoplay and _autoplay.done:
+			_autoplay_finish()
 	_frame_t = now
 	if _recording:
 		_frames.append(now)
@@ -91,7 +101,12 @@ func _handle(p: StreamPeerTCP, line: String) -> void:
 	if not has_method("_m_" + method):
 		_reply(p, msg.get("id"), null, "unknown method: " + method)
 		return
+	var command := {"method": method, "start_us": Time.get_ticks_usec(), "end_us": 9223372036854775807}
+	_recent_commands.append(command)
+	if _recent_commands.size() > 16:
+		_recent_commands.pop_front()
 	var result = await call("_m_" + method, params)
+	command["end_us"] = Time.get_ticks_usec()
 	if typeof(result) == TYPE_DICTIONARY and result.has("__error"):
 		_reply(p, msg.get("id"), null, result["__error"])
 	else:
@@ -105,6 +120,15 @@ func _reply(p: StreamPeerTCP, id, result, error) -> void:
 	else:
 		out["result"] = result
 	p.put_data((JSON.stringify(out) + "\n").to_utf8_buffer())
+
+
+func _pipeline_counts() -> Dictionary:
+	return {
+		"canvas": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_PIPELINE_COMPILATIONS_CANVAS),
+		"mesh": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_PIPELINE_COMPILATIONS_MESH),
+		"surface": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_PIPELINE_COMPILATIONS_SURFACE),
+		"draw": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_PIPELINE_COMPILATIONS_DRAW),
+		"specialization": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_PIPELINE_COMPILATIONS_SPECIALIZATION)}
 
 
 # ---- helpers -----------------------------------------------------------------
@@ -160,6 +184,10 @@ func _m_perf(_p: Dictionary):
 		"primitives": P.get_monitor(P.RENDER_TOTAL_PRIMITIVES_IN_FRAME),
 		"nodes": P.get_monitor(P.OBJECT_NODE_COUNT),
 		"physics_bodies": P.get_monitor(P.PHYSICS_3D_ACTIVE_OBJECTS),
+		"static_memory_mb": OS.get_static_memory_usage() / 1048576.0,
+		"texture_memory_mb": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TEXTURE_MEM_USED) / 1048576.0,
+		"buffer_memory_mb": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_BUFFER_MEM_USED) / 1048576.0,
+		"pipelines": _pipeline_counts(),
 		"civilians": m.civilians_root.get_child_count() if m else 0,
 		"civilians_near": _near_count(m, 120.0),
 		"vehicles": m.traffic_root.get_child_count() if m else 0,
@@ -687,6 +715,11 @@ func _m_uncap(p: Dictionary):
 ## What entered the tree lately (by name / class), for the hitch log.
 var _last_added: Array = []
 func _on_node_added(n: Node) -> void:
+	# PackedScene roots include deep view models; sound spam must not hide them.
+	if n is Node3D and n.scene_file_path != "":
+		_recent_scenes.append({"path": n.scene_file_path, "tick_us": Time.get_ticks_usec()})
+		if _recent_scenes.size() > 12:
+			_recent_scenes.pop_front()
 	if n is Node3D and n.get_parent() and (n.get_parent() == _main() or n.get_parent().get_parent() == _main()):
 		var what := String(n.name).get_slice("@", 0).left(24)
 		if what == "" and n is MeshInstance3D and (n as MeshInstance3D).mesh:
@@ -696,11 +729,15 @@ func _on_node_added(n: Node) -> void:
 			_last_added.pop_front()
 
 
+func _ensure_hitch_history() -> void:
+	if not get_tree().node_added.is_connected(_on_node_added):
+		get_tree().node_added.connect(_on_node_added)
+
+
 func _m_hitches(p: Dictionary):
 	## The frames longer than 60 ms since the last call (cleared), with what
 	## the world held and what had just been added to it.
-	if not get_tree().node_added.is_connected(_on_node_added):
-		get_tree().node_added.connect(_on_node_added)
+	_ensure_hitch_history()
 	var out := _hitches.duplicate()
 	if p.get("clear", true):
 		_hitches.clear()
@@ -1015,6 +1052,8 @@ var _rec_label: Label
 const PERF_DIR := "user://devagent/perf"
 func _toggle_rec() -> void:
 	if not _rec_on:
+		_ensure_hitch_history()
+		_rec_skip_first = true
 		_rec_on = true
 		_rec_rows = []
 		_rec_start = Time.get_ticks_msec()
@@ -1054,7 +1093,7 @@ func _toggle_rec() -> void:
 	var f := FileAccess.open(path, FileAccess.WRITE)
 	f.store_string(JSON.stringify({"summary": summary, "hitches": hitches,
 			"columns": ["t", "frame_ms", "process_ms", "physics_ms", "draw_calls", "objects", "primitives",
-					"civilians", "robots", "vehicles", "x", "z", "heading_deg", "fps_setting_scale", "activity"],
+					"civilians", "robots", "vehicles", "x", "z", "heading_deg", "fps_setting_scale", "activity", "engine_frame", "tick_us", "pipeline_canvas", "pipeline_mesh", "pipeline_surface", "pipeline_draw", "pipeline_specialization"],
 			"rows": _rec_rows}))
 	f.close()
 	var line := "%.0f s, %.0f fps avg, median %.1f ms, p99 %.1f ms, worst %.0f ms, %d frames over 100 ms" % [
@@ -1085,7 +1124,12 @@ func _rec_frame(ms: float) -> void:
 			m.civilians_root.get_child_count() if m else 0, m.enemies_root.get_child_count() if m else 0,
 			m.traffic_root.get_child_count() if m else 0, snappedf(pos.x, 0.1), snappedf(pos.z, 0.1),
 			snappedf(fposmod(rad_to_deg(atan2(fwd.x, -fwd.z)), 360.0), 1.0), snappedf(get_viewport().scaling_3d_scale, 0.01),
-			_autoplay.activity if _autoplay else ""])
+			_autoplay.activity if _autoplay else "", Engine.get_process_frames(), Time.get_ticks_usec(),
+			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_PIPELINE_COMPILATIONS_CANVAS),
+			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_PIPELINE_COMPILATIONS_MESH),
+			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_PIPELINE_COMPILATIONS_SURFACE),
+			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_PIPELINE_COMPILATIONS_DRAW),
+			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_PIPELINE_COMPILATIONS_SPECIALIZATION)])
 
 
 ## Autoplay (autoplay.gd): the local player plays by itself for `minutes`,

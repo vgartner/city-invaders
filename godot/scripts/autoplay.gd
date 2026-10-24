@@ -428,9 +428,9 @@ func _fight(delta: float) -> void:
 		_last_pos = player.global_position
 	# Semi-auto weapons require a new trigger edge. Holding fire forever
 	# fires once, then stalls even with a full magazine after reloading.
-	var ready: bool = player._fire_cd <= 0.0 and player._reload_left <= 0.0
+	var trigger_ready: bool = player._fire_cd <= 0.0 and player._reload_left <= 0.0
 	var automatic: bool = player.WEAPONS[player.weapon].get("auto", false)
-	if err < 0.06 and (automatic or (ready and not player._trigger_held)):
+	if err < 0.06 and (automatic or (trigger_ready and not player._trigger_held)):
 		Settings.virtual["fire"] = true
 	else:
 		Settings.virtual.erase("fire")
