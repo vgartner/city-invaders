@@ -147,7 +147,15 @@ round and pulls forward when there is no room behind.
 
 When it can't get on, it says where: no progress for 1.5 s logs a `stuck`
 event with what is in front of it, and it steps aside, then gives the goal up,
-then hops onto the nearest walkable point. Also `unreachable` (no navmesh path),
+then searches for a walkable point where the player's full capsule is free
+of world, vehicle and pedestrian collisions. The last-resort hop is logged as
+`nav_recovery` (or `recovery_blocked` if no safe point is found within 8 m).
+This is test-bot recovery, not a change to manual player movement. Check these
+events before treating a run as uninterrupted walking. A failed shop is skipped
+by position for that run; shop markers share the main node, so a node-id
+blacklist cannot distinguish them. Selecting a new goal does not clear stuck
+attempts: only actual progress does. Once movement resumes, the activity tag
+returns from `stuck` to its current task. Also `unreachable` (no navmesh path),
 `slow_goal` (far longer than the path says), `pickup_not_taken` (stood on it,
 still there), `car_stuck` (a car that doesn't move: backs out, gives up after
 three, and that car is not taken again) and `fell` (below the ground).

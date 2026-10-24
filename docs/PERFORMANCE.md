@@ -417,3 +417,26 @@ godot --headless --path godot --script ../tools/bench/test_texture_sharing.gd
 The sharing test checks distinct payloads, procedural textures, unchanged
 geometry, identical payload reuse and weak cache lifetime. Native inventory
 packets above 64 KiB are now supported by the capture helper.
+
+
+## Autoplay recovery regression (2026-10-24)
+
+The earlier ground_brick hold near (110.7, 7.2, 187.3) exposed two bot errors:
+failed shops were marked by the shared Main node id but shop selection ignored
+that blacklist; selecting a new goal reset the best distance to INF, and the
+next tick treated the first distance sample as progress, resetting recovery.
+The bot now skips failed shop positions and preserves attempts across goal
+changes until real progress is observed. Last-resort placement checks the full
+player capsule against world, cars and pedestrians instead of blindly moving
+to a navmesh point. `nav_recovery` records the hop. Resumed movement also clears
+the stale `stuck` activity tag, which previously could misclassify later walking.
+These changes affect the DevAgent bot only; manual player movement is unchanged.
+
+A controlled before-run at that coordinate logged 11 stuck events in 21 s,
+repeatedly choosing the same shop. In the after-run it left the point following
+one sidestep, with one stuck event in 14.2 s and about 80 m displacement. These
+are separate physics runs, so that escape alone does not prove every recovery
+branch. A fault-injection test disabled only player physics for six seconds:
+the bot skipped the shop at the second attempt and logged a capsule-checked
+recovery at 4.8 s after the third attempt, from (110.7,7.2,187.3) to
+(111.5,7.6,189.2). Player physics was restored afterwards.

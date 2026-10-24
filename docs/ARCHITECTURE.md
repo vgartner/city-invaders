@@ -36,7 +36,7 @@ There are no hand-made scenes: `main.tscn` only holds `main.gd`.
 | `settings.gd` | Autoload: key bindings, mute, friendly fire, steering sensitivity, player name (`user://settings.cfg`) |
 | `controls_menu.gd` | Key rebinding UI |
 | `sfx.gd` | Autoload: sound cues |
-| `autoplay.gd` | DevAgent-driven player bot: normal inputs, semi-auto trigger edges, shot counting and recovery from combat without damage |
+| `autoplay.gd` | DevAgent-driven player bot: normal inputs, semi-auto trigger edges, shot counting, blocked-shop/capsule-safe recovery and recovery from combat without damage |
 | `dev_agent.gd` | Autoload: JSON-RPC test interface and opt-in frame/pipeline/scene diagnostics (see [DEVAGENT.md](DEVAGENT.md)) |
 | `batcher.gd` | Draw-call batching: copies of a mesh become one MultiMesh per 64 m cell (see [PERFORMANCE.md](PERFORMANCE.md)) |
 | `texture_sharing.gd` | Loading-time sharing of byte-identical imported texture payloads in retained scenes and live meshes; weak caches, no pixel or import changes |

@@ -56,6 +56,7 @@ var _press := false                     # missing from here: go in close
 var _car_stucks := 0
 var _best_goal_d := INF                 # nearest it has come to the goal
 var _goal_left := 0.0                   # time allowed to reach the goal
+var _bad_shops: Dictionary = {}         # shop position -> true (shops share the main node)
 var _bad: Dictionary = {}               # pickups / spots it could not reach (instance id -> true)
 var _drive_left := 0.0
 var drive_every := 70.0                 # seconds between drives, on average
@@ -136,8 +137,7 @@ func _think() -> void:
 	_goal_left -= 0.4
 	if _goal != Vector3.INF and _goal_left <= 0.0:
 		# walking round and round: the way there is longer than the navmesh says, or it can't get on it
-		if _goal_node:
-			_bad[_goal_node.get_instance_id()] = true
+		_mark_goal_bad()
 		_event("slow_goal", "%s at %s" % [_goal_kind, _v(_goal)])
 		_goal = Vector3.INF
 		_goal_kind = ""
@@ -158,6 +158,8 @@ func _think() -> void:
 	if player._can_trade() and main.props and not main.props.shops.is_empty():
 		var best := Vector3.INF
 		for at in main.props.shops:
+			if _bad_shops.has(at):
+				continue
 			if best == Vector3.INF or (at as Vector3).distance_to(player.global_position) < best.distance_to(player.global_position):
 				best = at
 		if best.distance_to(player.global_position) < 250.0:
@@ -191,7 +193,11 @@ func _set_goal(p: Vector3, kind: String, node: Node) -> void:
 	_best_goal_d = INF
 	_goal_left = p.distance_to(player.global_position) / 3.0 + 15.0      # it runs at ~6 m/s
 	_repath_cd = 0.0
-	activity = {"pickup": "pickup", "heal": "pickup", "container": "container", "shop": "shop", "car": "to_car"}.get(kind, "walk")
+	activity = _goal_activity()
+
+
+func _goal_activity() -> String:
+	return {"pickup": "pickup", "heal": "pickup", "container": "container", "shop": "shop", "car": "to_car"}.get(_goal_kind, "walk")
 
 
 func _nearest_pickup(ok: Callable) -> Node3D:
@@ -228,9 +234,8 @@ func _walk(delta: float) -> void:
 		_path = NavigationServer3D.map_get_path(map, player.global_position, _goal, true)
 		_pi = 1
 		if _path.size() < 2 or _path[_path.size() - 1].distance_to(_goal) > 2.5:
-			if _goal_node:
-				_bad[_goal_node.get_instance_id()] = true
-				_event("unreachable", "%s at %s" % [_goal_kind, _v(_goal)])
+			_mark_goal_bad()
+			_event("unreachable", "%s at %s" % [_goal_kind, _v(_goal)])
 			_goal = Vector3.INF
 			return
 	var here := player.global_position
@@ -303,11 +308,15 @@ func _check_stuck(delta: float) -> void:
 	# only getting nearer the goal clears the stucks: a step aside and back is no way out
 	var dg := Vector2(_goal.x - here.x, _goal.z - here.z).length() if _goal != Vector3.INF else 0.0
 	if dg < _best_goal_d - 2.0:
+		# A newly selected goal starts at INF: selecting it is not progress.
+		if is_finite(_best_goal_d):
+			_stucks_here = 0
 		_best_goal_d = dg
-		_stucks_here = 0
 	if Vector2(here.x - _last_pos.x, here.z - _last_pos.z).length() > 0.6:
 		_last_pos = here
 		_still = 0.0
+		if activity == "stuck" and _sidestep <= 0.0:
+			activity = "fight" if is_instance_valid(_target) else _goal_activity()
 		return
 	_still += delta
 	if _still < 1.5:
@@ -328,14 +337,60 @@ func _check_stuck(delta: float) -> void:
 		_side_dir = -_side_dir
 	elif _stucks_here == 2:
 		_repath_cd = 0.0
-		if _goal_node:
-			_bad[_goal_node.get_instance_id()] = true
+		_mark_goal_bad()
 		_goal = Vector3.INF             # another goal
 	else:
-		var map: RID = player.get_world_3d().navigation_map
-		var p := NavigationServer3D.map_get_closest_point(map, here + fwd * -1.5 + Vector3(rng.randf_range(-1, 1), 0, rng.randf_range(-1, 1)))
-		player.global_position = p + Vector3(0, 0.2, 0)      # hopped onto the walkable mesh
-		_stucks_here = 0
+		_recover_to_navmesh()
+
+
+func _mark_goal_bad() -> void:
+	if _goal_kind == "shop":
+		_bad_shops[_goal] = true
+	elif is_instance_valid(_goal_node):
+		_bad[_goal_node.get_instance_id()] = true
+
+
+## Last resort for the test bot only. A navmesh point can be too close to a
+## wall for the player's capsule even if a pedestrian route reaches it.
+func _recover_to_navmesh() -> void:
+	var collider: CollisionShape3D = null
+	for child in player.get_children():
+		if child is CollisionShape3D and not child.disabled:
+			collider = child
+			break
+	if collider == null:
+		return
+	var here := player.global_position
+	var map: RID = player.get_world_3d().navigation_map
+	var space := player.get_world_3d().direct_space_state
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = collider.shape
+	query.collision_mask = player.collision_mask
+	query.exclude = [player.get_rid()]
+	query.margin = 0.02
+	for radius in [2.0, 4.0, 8.0]:
+		for k in 8:
+			var angle := player.rotation.y + PI + k * TAU / 8.0
+			var sample: Vector3 = here + Vector3(sin(angle), 0, cos(angle)) * float(radius)
+			var point := NavigationServer3D.map_get_closest_point(map, sample)
+			if point.distance_to(here) < 1.0 or absf(point.y - here.y) > 3.0:
+				continue
+			var target := point + Vector3(0, 0.1, 0)
+			query.transform = Transform3D(player.global_basis, target) * collider.transform
+			if not space.intersect_shape(query, 1).is_empty():
+				continue
+			_event("nav_recovery", "from %s to %s after %d stuck attempts" % [_v(here), _v(target), _stucks_here])
+			player.global_position = target
+			player.velocity = Vector3.ZERO
+			_last_pos = target
+			_still = 0.0
+			_stucks_here = 0
+			_sidestep = 0.0
+			_repath_cd = 0.0
+			activity = _goal_activity()
+			_release_all()
+			return
+	_event("recovery_blocked", "no free capsule placement within 8 m")
 
 
 # ---- fighting ----------------------------------------------------------------
