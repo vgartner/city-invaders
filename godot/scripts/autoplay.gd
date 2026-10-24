@@ -20,8 +20,13 @@ var seconds := 600.0
 var rng := RandomNumberGenerator.new()
 var activity := "start"                 # read by the DevAgent's F5 recorder per frame
 var events: Array = []                  # stuck spots, unreachable pickups, falls, deaths
-var counts := {"robots_shot": 0, "pickups": 0, "grenades": 0, "drives": 0, "containers": 0, "trades": 0, "shots": 0}
+var counts := {"robots_shot": 0, "pickups": 0, "grenades": 0, "drives": 0, "containers": 0, "trades": 0, "shots": 0, "reloads": 0}
 var done := false
+var finish_reason := ""
+var attempts := {"drives": 0, "grenades": 0}
+var metrics := preload("res://scripts/autoplay_metrics.gd").new()
+var _observed_vehicle_id := 0
+var _observed_reload := false
 
 var _t := 0.0
 var _think_cd := 0.0
@@ -71,21 +76,31 @@ func _main() -> Node:
 
 func _ready() -> void:
 	_last_pos = player.global_position
+	var vehicle: Node3D = player.get("vehicle")
+	_observed_vehicle_id = vehicle.get_instance_id() if is_instance_valid(vehicle) else 0
+	metrics.reset(vehicle.global_position if is_instance_valid(vehicle) else player.global_position, is_instance_valid(vehicle))
 
 
-func stop() -> void:
+func stop(reason := "manual_stop") -> void:
+	finish_reason = reason
 	done = true
 	for a in ["forward", "back", "left", "right", "run", "fire", "jump"]:
 		Settings.virtual.erase(a)
 
 
 func _physics_process(delta: float) -> void:
-	if done or not is_instance_valid(player):
+	if done:
+		return
+	if not is_instance_valid(player):
+		stop("player_missing")
 		return
 	_observe_shots()
+	var driving := is_instance_valid(player.vehicle)
+	metrics.sample(player.vehicle.global_position if driving else player.global_position,
+			driving, delta, activity, player.weapon)
 	_t += delta
 	if _t >= seconds:
-		stop()
+		stop("duration_reached")
 		return
 	_grenade_cd -= delta
 	if player.dead:
@@ -97,6 +112,7 @@ func _physics_process(delta: float) -> void:
 		var map: RID = player.get_world_3d().navigation_map
 		player.global_position = NavigationServer3D.map_get_closest_point(map, player.global_position) + Vector3(0, 0.5, 0)
 		player.velocity = Vector3(0, 0, 0)
+		metrics.relocate(player.global_position, false)
 	if player.vehicle:
 		_drive(delta)
 		return
@@ -287,11 +303,11 @@ func _arrived() -> void:
 						counts["trades"] += 1
 						break
 		"car":
-			if is_instance_valid(_goal_node) and _goal_node.driver_peer == 0:
+			if is_instance_valid(_goal_node) and _goal_node.driver_peer == 0 and not _goal_node.get("_wrecked"):
+				attempts["drives"] += 1
 				player.request_vehicle.rpc_id(1, str(_goal_node.name))
 				_drive_left = rng.randf_range(25.0, 45.0)
 				_drive_goal = Vector3.INF
-				counts["drives"] += 1
 		"pickup", "heal":
 			if is_instance_valid(_goal_node) and _goal_node.active:
 				# stood on it and it is still there: out of reach (up on something, or refused)
@@ -381,6 +397,7 @@ func _recover_to_navmesh() -> void:
 				continue
 			_event("nav_recovery", "from %s to %s after %d stuck attempts" % [_v(here), _v(target), _stucks_here])
 			player.global_position = target
+			metrics.relocate(target, false)
 			player.velocity = Vector3.ZERO
 			_last_pos = target
 			_still = 0.0
@@ -432,6 +449,14 @@ func _observe_shots() -> void:
 	# Observe real ammunition consumption, rather than attempted trigger presses.
 	var weapon: String = player.weapon
 	var mag: int = player._mags.get(weapon, 0)
+	if weapon == _observed_weapon and _observed_reload and player._reload_left <= 0 and mag > _observed_mag:
+		counts["reloads"] += 1
+	_observed_reload = player._reload_left > 0
+	var vehicle_id: int = player.vehicle.get_instance_id() if is_instance_valid(player.vehicle) else 0
+	if vehicle_id != 0 and vehicle_id != _observed_vehicle_id and not player.vehicle.get("_wrecked") \
+			and player.vehicle.driver_peer == player.get_multiplayer_authority():
+		counts["drives"] += 1
+	_observed_vehicle_id = vehicle_id
 	if weapon == _observed_weapon and mag < _observed_mag:
 		counts["shots"] += _observed_mag - mag
 	_observed_weapon = weapon
@@ -516,10 +541,14 @@ func _grenades(at: Vector3) -> void:
 	if kind == "":
 		return
 	player.grenade = kind
-	player._grenade_cd = 0.0
-	player._throw_grenade()
-	counts["grenades"] += 1
-	_grenade_cd = 6.0
+	var before: int = player.grenades[kind]
+	attempts["grenades"] += 1
+	player._throw_grenade() # Respect the normal cooldown and action restrictions.
+	if player.grenades[kind] < before:
+		counts["grenades"] += 1
+		_grenade_cd = 6.0
+	else:
+		_grenade_cd = 1.0
 
 
 # ---- driving -----------------------------------------------------------------
@@ -527,6 +556,18 @@ func _grenades(at: Vector3) -> void:
 func _drive(delta: float) -> void:
 	activity = "drive"
 	var car: Node3D = player.vehicle
+	if car.get("_wrecked") or car.driver_peer != player.get_multiplayer_authority():
+		_event("vehicle_invalid", "left %s: wrecked or driver ownership lost" % car.name)
+		_bad[car.get_instance_id()] = true
+		var at := NavigationServer3D.map_get_closest_point(player.get_world_3d().navigation_map,
+				car.global_position - car.global_basis.x * 3.0) + Vector3(0, 0.1, 0)
+		player.left_vehicle(at)
+		metrics.relocate(at, false)
+		_drive_left = 0.0
+		_goal = Vector3.INF
+		_think_cd = 0.0
+		_release_all()
+		return
 	_drive_left -= delta
 	if _drive_left <= 0.0:
 		_release_all()

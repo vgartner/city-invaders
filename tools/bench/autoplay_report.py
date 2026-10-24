@@ -67,6 +67,81 @@ def pipeline_changes(rows, index):
     return changes
 
 
+def companion_path(run_path, value):
+    """New portable bundles use relative paths; old captures use absolute ones."""
+    return value if os.path.isabs(value) else os.path.join(os.path.dirname(os.path.abspath(run_path)), value)
+
+
+def counter_delta(samples, key):
+    values = [row[key] for row in samples if row.get("available") and key in row]
+    if len(values) < 2 or any(b < a for a, b in zip(values, values[1:])):
+        return None
+    return values[-1] - values[0]
+
+
+def print_diagnostics(run, rec, path):
+    coverage = run.get("coverage")
+    if coverage:
+        print("\nObserved coverage (player/vehicle positions; horizontal distance):")
+        print(f"  {coverage['foot_m']:.1f} m on foot, {coverage['vehicle_m']:.1f} m driving; "
+              f"{coverage['unique_cells_50m']} observed 50 m cells")
+        print(f"  excluded relocations {coverage['relocation_m']:.1f} m, other discontinuities "
+              f"{coverage['discontinuity_m']:.1f} m; stationary {coverage['stationary_s']:.1f} sim s "
+              f"({coverage['stationary_combat_s']:.1f} in combat; stationary does not mean stuck)")
+        missing = [key for key in ("grenades", "reloads", "drives", "containers", "trades")
+                   if not run["counts"].get(key)]
+        print("  actions not exercised: " + (", ".join(missing) if missing else "none of the tracked actions"))
+    else:
+        print("\nCoverage distances: not recorded in this older run")
+    if run.get("attempts"):
+        print("  action attempts (not confirmations): " + json.dumps(run["attempts"], sort_keys=True))
+    if "wall_seconds" in run:
+        print(f"  duration: {run['seconds']:.1f} sim s / {run['wall_seconds']:.1f} wall s; "
+              f"finish={run.get('finish_reason', 'unknown')}")
+    samples = rec.get("telemetry", []) if rec else []
+    if samples:
+        print(f"\nLow-rate engine telemetry ({len(samples)} samples, about 1 Hz):")
+        gpu = [v["gpu_ms"] for v in samples if v.get("gpu_ms") is not None and v["gpu_ms"] > 0.0]
+        print(f"  GPU samples: {len(gpu)}/{len(samples)} usable" +
+              (f", maximum {max(gpu):.2f} ms" if gpu else "; unavailable/zero readings are not GPU idle time"))
+        cpu = [v["cpu_render_ms"] for v in samples if v.get("cpu_render_ms") is not None]
+        if cpu:
+            print(f"  CPU render time: median {pct(cpu, .5):.2f} ms, maximum {max(cpu):.2f} ms (sampled; not full frame CPU)")
+        for key in ("static_memory_mb", "texture_counter_mb", "buffer_memory_mb", "nodes", "orphan_nodes"):
+            values = [r[key] for r in samples if r.get(key) is not None]
+            if values:
+                print(f"  {key}: start {values[0]:.1f}, end {values[-1]:.1f}, peak {max(values):.1f}")
+        kinds = sorted({k for row in samples for k in row.get("nodes_by_type", {})})
+        print("  peak node counts: " + ", ".join(f"{k}={max(r.get('nodes_by_type', {}).get(k, 0) for r in samples)}" for k in kinds))
+        for key in ("render_scale", "ambient_scale"):
+            values = [r[key] for r in samples if r.get(key) is not None]
+            if values:
+                print(f"  {key}: {min(values):.2f}..{max(values):.2f}" + (" (changed during test)" if min(values) != max(values) else ""))
+        print("  Allocation counters overlap, texture counters may disagree with inventory on Metal; "
+              "these are not OS process RAM. Node counts are not awake/visible effect counts.")
+    else:
+        print("\nLow-rate memory/effect telemetry: not recorded in this older run")
+    summary = rec.get("summary", {}) if rec else {}
+    if "recorder_max_ms" in summary:
+        print(f"  row-collector self-cost: max {summary['recorder_max_ms']:.3f} ms, "
+              f"mean {summary['recorder_total_ms'] / max(1, summary['frames']):.3f} ms/frame (excludes node hooks, bot logic, host sampler and final writing)")
+    host_path = companion_path(path, run["host_metrics"]) if run.get("host_metrics") else None
+    if host_path and os.path.exists(host_path):
+        host = json.load(open(host_path))
+        valid = [row for row in host.get("samples", []) if row.get("available")]
+        print(f"\nHost process metrics: {len(valid)} usable samples")
+        for key in ("footprint_mb", "rss_mb"):
+            values = [r[key] for r in valid if key in r]
+            if values:
+                print(f"  {key}: start {values[0]:.1f}, end {values[-1]:.1f}, peak {max(values):.1f}")
+        for key in ("pageins", "disk_read_bytes", "disk_write_bytes"):
+            value = counter_delta(valid, key)
+            print(f"  {key} delta: {value if value is not None else 'unavailable/counter reset'}")
+        print("  Low-rate correlation only: page-ins are not proof of swap; memory metrics overlap.")
+    else:
+        print("\nHost process footprint/page-ins/I/O: not recorded")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("run", nargs="?")
@@ -88,8 +163,10 @@ def main():
         print("conditions: not recorded in this older run")
 
     rows = []
-    if run.get("recording") and os.path.exists(run["recording"]):
-        rec = json.load(open(run["recording"]))
+    rec = {}
+    recording = companion_path(path, run["recording"]) if run.get("recording") else None
+    if recording and os.path.exists(recording):
+        rec = json.load(open(recording))
         rows = [dict(zip(rec["columns"], r)) for r in rec["rows"]]
         s = rec["summary"]
         print(f"frames: {s['frames']}, {s['avg_fps']} fps avg, median {s['median_ms']} ms, p99 {s['p99_ms']} ms, "
@@ -97,9 +174,12 @@ def main():
     else:
         print("(no recording found)")
 
+    if "reloads" in c:
+        print(f"observed reload completions: {c['reloads']}")
+    print_diagnostics(run, rec, path)
     if rows:
         print("\nMeasurement limits: process_ms and physics_ms are sampled engine monitors, "
-              "not per-function profiles or additive frame costs. GPU timing is not recorded.")
+              "not per-function profiles or additive frame costs. GPU timing, if available, is low-rate telemetry, not per-frame profiling.")
         tail = stationary_tail(rows)
         if tail is not None:
             print(f"\nPosition stayed within 0.6 m of its final location from {rows[tail]['t']:.1f} s "
@@ -171,6 +251,10 @@ def main():
         print(f"  {kind:16} x {x:5.0f} z {z:5.0f}  {len(es):3}x  {'; '.join(w for w, _ in whats)}"
               f"   (teleport x={es[0]['pos'][0]} y={es[0]['pos'][1]} z={es[0]['pos'][2]})")
 
+    if "renderer_errors" in run:
+        print(f"\nrenderer fence errors: {len(run['renderer_errors'])}; tester eval errors: {len(run.get('tester_eval_errors', []))}")
+        for error in run["renderer_errors"][:5]:
+            print("  " + str(error)[:200])
     errs = run.get("script_errors", [])
     print(f"\nscript errors: {len(errs)}")
     for e in errs[:10]:

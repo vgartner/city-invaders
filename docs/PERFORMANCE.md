@@ -493,3 +493,57 @@ The impact probe and bot block/fault-injection tests were run in the rendered
 game. A baseline polling request after its short autoplay had already ended
 returned an evaluation error; the completed run file, not that late query,
 was used for before-run events.
+
+
+## Measurement audit and autoplay coverage (2026-10-24)
+
+A new M3 Max / Metal Gasometro test adds measurements missing from the earlier
+runs: actual player/vehicle travel, confirmed reloads/entries, process physical
+footprint and disk I/O, effect-node populations, configuration drift, and
+collector self-cost. GPU timing is unavailable: both viewport timing and 1,584
+native visual-profiler frames returned only zero GPU times. Do not interpret
+these as GPU idle. Render-thread timing is not total frame CPU cost.
+
+The initial 90-second baseline averaged 60.1 FPS (median 16.5 ms, p99 24.5 ms,
+worst 79.4 ms), 55 rounds and 3 robots. It ended holding position while the bot
+was attached to a destroyed lorry whose driver owner was zero. A separate
+rendered fault-injection test reproduced the server accepting entry despite
+`take()` refusing it. Vehicle entry now rejects wrecks and checks ownership;
+the bot also detaches and blacklists stale associations. Runtime tests verify
+rejected wreck entry, inherited stale-association recovery, read-only status
+after completion, invalid durations, and unique files during rapid stop/start.
+
+The instrumented 180-second run (seed 7, scale 1, VSync 1, 2545x1080 viewport)
+averaged 58.2 FPS, median 16.9 ms, p99 24.6 ms and worst 140.6 ms, with two
+frames over 100 ms. It consumed 94 rounds, downed 9 robots, completed 3 reloads
+and 2 confirmed vehicle entries, and covered 943.1 m on foot plus 167.8 m driving
+in 20 observed 50 m cells. No relocation/discontinuity distance, script errors,
+renderer fence errors or tester-eval errors were recorded. Grenades, container
+rescues and trades were not exercised; a general bot run is not their test.
+Ambient scale changed from 0.9 to 1.0 during this run. Its duration, route,
+world randomness and population differ from baseline, so this is not evidence
+of an overall FPS improvement/regression.
+
+179 low-rate samples showed physical footprint 12,228.9 -> 12,430.6 MiB,
+1 process page-in and 6,569,984 bytes of disk reads. This short increase neither
+establishes a leak nor proves a swap hitch. Orphan nodes remained zero.
+Peak tracked populations were 135 RigidBody3D, 18 CPUParticles3D, 85 positional
+audio players and 69 OmniLight3D nodes; these are not active/awake counts.
+Sampled CPU render time was median 1.75 / maximum 3.44 ms. Row collection cost
+was mean 0.025 / maximum 0.094 ms per frame, excluding hooks, bot, host sampler
+and final writing. Allocation counters overlap and the Metal texture counter
+is not resident RAM.
+
+The 140.6 ms frame occurred at first container/mothership creation near 5 MB
+of disk reads and an approximately 85 MiB texture-counter increase. The
+container model was missing from the loading cache. A separate 119.7 ms late
+frame coincided with two DRAW pipeline compilations, without nearby disk I/O;
+its cause is unresolved. Correlation does not attribute the whole frame to a
+specific resource or function. Future matched-route tests should pin ambient
+population, target those pipeline variants, exercise grenades/rescues/trades,
+and obtain GPU timings with a supported Metal profiler before changing detail.
+
+Validation: 14 Python benchmark/report tests, 4 native-profiler parser tests,
+normal headless startup and the recovery/effect and measurement GDScript
+fixtures pass. Each headless test uses its own log file so it cannot rotate
+the rendered game's error log. See DEVAGENT.md for the safe portable runner.

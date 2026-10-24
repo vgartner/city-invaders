@@ -36,7 +36,8 @@ There are no hand-made scenes: `main.tscn` only holds `main.gd`.
 | `settings.gd` | Autoload: key bindings, mute, friendly fire, steering sensitivity, player name (`user://settings.cfg`) |
 | `controls_menu.gd` | Key rebinding UI |
 | `sfx.gd` | Autoload: sound cues |
-| `autoplay.gd` | DevAgent-driven player bot: normal inputs, semi-auto trigger edges, shot counting, blocked-shop/capsule-safe recovery and recovery from combat without damage |
+| `autoplay_metrics.gd` | Per-run observed player/vehicle travel and activity coverage; separates bot relocations and external discontinuities |
+| `autoplay.gd` | DevAgent-driven player bot: normal inputs, semi-auto trigger edges, confirmed shot/reload/vehicle tracking, blocked-shop/capsule-safe recovery, stale-vehicle and stalled-combat recovery |
 | `dev_agent.gd` | Autoload: JSON-RPC test interface and opt-in frame/pipeline/scene diagnostics (see [DEVAGENT.md](DEVAGENT.md)) |
 | `batcher.gd` | Draw-call batching: copies of a mesh become one MultiMesh per 64 m cell (see [PERFORMANCE.md](PERFORMANCE.md)) |
 | `texture_sharing.gd` | Loading-time sharing of byte-identical imported texture payloads in retained scenes and live meshes; weak caches, no pixel or import changes |
@@ -101,3 +102,11 @@ metal). The actual CPUParticles draw modes are rendered briefly behind the
 loading screen, alongside view-model preparation, to avoid repeated DRAW
 pipeline creation during combat. Mesh tessellation and particle settings are
 unchanged. Headless servers skip this rendering warm-up.
+
+DevAgent autoplay exposes read-only `autoplay_status` with unique run IDs.
+F5 records low-rate engine memory/render counters and incremental effect-node
+populations; `tools/bench/autoplay_bench.py` bundles these with macOS per-process
+footprint and disk I/O from `process_metrics.py`. GPU zero timestamps are
+unavailable. Server vehicle entry verifies that `take()` accepted ownership
+before sending `entered_vehicle`; the test bot separately repairs stale
+associations inherited from an old wreck.

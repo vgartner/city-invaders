@@ -124,11 +124,11 @@ by turning the body and head - for a set time, while the F5 recorder runs:
 
 ```bash
 DEVAGENT_PORT=24691 tools/devagent/devagent.py autoplay minutes=10 seed=7
-DEVAGENT_PORT=24691 tools/devagent/devagent.py autoplay          # what it is doing now
+DEVAGENT_PORT=24691 tools/devagent/devagent.py autoplay_status   # read-only, including after completion
 DEVAGENT_PORT=24691 tools/devagent/devagent.py autoplay on=false # stop early
 ```
 
-Parameters: `minutes` (10), `seed` (7: the same choices each run), `god`
+Parameters: `minutes` (10), `seed` (7: bot RNG only; world/navigation randomness is not reset), `god`
 (true: it doesn't die), `armed` (true: pistol, machine gun, two of each grenade),
 `drive_every` (70: seconds between drives; `drive_every=3` for a driving test).
 
@@ -167,7 +167,7 @@ name, weapon, ammunition, health, shots and time without damage; the bot
 skips it for 30 seconds and resumes other goals. The timer resets when the
 target changes or its health changes.
 
-At the end it writes `user://devagent/autoplay/run_<time>.json` (the counts,
+At the end it writes `user://devagent/autoplay/run_<time>_<pid>_<start_us>.json` (the counts,
 the events, the script errors, the recording's path and test conditions) and an inbox message.
 `tools/bench/autoplay_report.py` reads the latest run: the frame time per
 activity, a heatmap of the fps in 50 m cells (`--cell`), the slowest cells
@@ -178,6 +178,58 @@ frame cap and VSync mode. The report separates a final position hold of at
 least 15 seconds (within 0.6 m), so prolonged combat does not silently pass
 as map exploration. A hold can be intentional; check damage and shot progress.
 Run it with the player's own game closed.
+
+For a portable measured run against an already running, isolated DevAgent game:
+
+```bash
+python3 tools/bench/autoplay_bench.py --port 24691 --minutes 3 --seed 7 --output /tmp/ci-bench-new
+python3 tools/bench/autoplay_report.py /tmp/ci-bench-new/run.json
+```
+
+The output directory must be new. The runner polls `autoplay_status`, verifies
+its run ID, samples the OS process once a second, and copies the run and
+recording into the bundle. It does not launch/quit the game and refuses to
+replace another active autoplay. On failure it stops only its own still-active
+run. Do not poll bare `autoplay`: that command starts a new bot after the old
+one finishes. Status queries return scalar summaries, never live Node objects.
+Run/recording names include a process ID and monotonic timestamp, so rapid
+stop/start tests cannot overwrite each other. Durations must be finite/positive.
+
+New run diagnostics include observed horizontal distance on foot and in a
+vehicle (not chase-camera motion), visited 50 m cells, stationary/combat time,
+activity/weapon time, simulation and wall time, and finish reason. Explicit bot
+recovery hops and discontinuities are excluded from travelled distance and
+reported separately. Coverage cells are observed occupancy, not proof that
+every street or action was tested. The report lists unexercised tracked actions.
+Shots count consumed ammunition; reloads count completed magazine increases;
+drives require observed, valid driver ownership; grenades count consumed
+inventory and respect normal cooldowns. Drive/grenade attempts are separate.
+Other legacy counters (pickups, rescues and trades) are not all strict success
+confirmations. Wrecks are skipped; a stale/unowned vehicle association logs
+`vehicle_invalid`, detaches the test player and resumes navigation.
+
+F5 adds approximately 1 Hz engine telemetry: CPU render time, GPU timing when
+available, allocator/texture/buffer counters, orphan nodes, effect-node
+populations, render scale and ambient scale. Effect nodes are tracked by
+instance ID on tree entry/removal; counts are neither awake rigid bodies nor
+active/visible effects. A zero GPU timestamp is saved as unavailable, not idle.
+The native visual profiler also returned only zero GPU times on the M3 Max
+Metal run; GPU bottlenecks therefore remain unmeasured here. Row-collector
+self-cost excludes node hooks, bot logic, host sampling and final serialization.
+
+The macOS host sampler uses `proc_pid_rusage` v2: physical footprint, RSS,
+page-ins and disk I/O. Other platforms/errors are explicitly unsupported.
+Do not add memory counters together or equate page-ins with swap activity;
+texture counters can disagree with resource inventory on Metal. One-second
+samples correlate with stalls but cannot assign a specific function's cost.
+A changed ambient/render scale or world population prevents a clean FPS A/B.
+Renderer fence errors and tester Expression errors remain in separate arrays,
+instead of being silently discarded or labelled gameplay script failures.
+
+Concurrent headless tests must use their own `--log-file /tmp/unique-test.log`:
+the default user-data log is shared with the rendered game and can be rotated
+by another instance, invalidating its error audit. DevAgent eval probes should
+return only scalars, not Nodes/Resources that expand into large object graphs.
 
 Report regression checks: `python3 -m unittest discover -s tools/bench -p test_autoplay_report.py`.
 For the trigger regression, isolate a durable stationary enemy in a solo

@@ -52,7 +52,11 @@ func _process(_delta: float) -> void:
 			if _rec_skip_first:
 				_rec_skip_first = false  # discard the interval preceding record start
 			else:
+				var record_start := Time.get_ticks_usec()
 				_rec_frame(ms)
+				var cost := Time.get_ticks_usec() - record_start
+				_rec_cost_total_us += cost
+				_rec_cost_max_us = maxi(_rec_cost_max_us, cost)
 		if ms > HITCH_MS and _main() and _main().map_id != "":
 			_hitch_total += 1
 			var m := _main()
@@ -62,7 +66,7 @@ func _process(_delta: float) -> void:
 					"nodes": int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)),
 					"last_added": _last_added.slice(-6),
 					"engine_frame": Engine.get_process_frames(), "tick_us": now,
-					"pipelines": _pipeline_counts(), "recent_scenes": _recent_scenes.slice(-6),
+					"pipelines": _pipeline_counts(), "nodes_by_type": _effect_counts.duplicate(), "recent_scenes": _recent_scenes.slice(-6),
 					"recent_commands": _recent_commands.filter(func(c): return c["end_us"] >= _frame_t).duplicate(true)})
 			if _hitches.size() > 200:
 				_hitches.pop_front()
@@ -156,7 +160,7 @@ func _err(text: String) -> Dictionary:
 # ---- methods ---------------------------------------------------------------------
 
 func _m_ping(_p: Dictionary):
-	return {"pong": true, "fps": Engine.get_frames_per_second()}
+	return {"pong": true, "fps": Engine.get_frames_per_second(), "pid": OS.get_process_id()}
 
 
 func _m_start_solo(_p: Dictionary):
@@ -714,7 +718,29 @@ func _m_uncap(p: Dictionary):
 
 ## What entered the tree lately (by name / class), for the hitch log.
 var _last_added: Array = []
+var _effect_nodes: Dictionary = {} # ids only: do not retain nodes after removal
+var _effect_counts: Dictionary = {"RigidBody3D": 0, "CPUParticles3D": 0,
+		"GPUParticles3D": 0, "AudioStreamPlayer3D": 0, "OmniLight3D": 0}
+func _track_effect(n: Node) -> void:
+	var kind := n.get_class()
+	var id := n.get_instance_id()
+	if _effect_counts.has(kind) and not _effect_nodes.has(id):
+		_effect_nodes[id] = kind
+		_effect_counts[kind] += 1
+
+func _on_node_removed(n: Node) -> void:
+	var id := n.get_instance_id()
+	if _effect_nodes.has(id):
+		_effect_counts[_effect_nodes[id]] -= 1
+		_effect_nodes.erase(id)
+
+func _seed_effects(n: Node) -> void:
+	_track_effect(n)
+	for child in n.get_children():
+		_seed_effects(child)
+
 func _on_node_added(n: Node) -> void:
+	_track_effect(n)
 	# PackedScene roots include deep view models; sound spam must not hide them.
 	if n is Node3D and n.scene_file_path != "":
 		_recent_scenes.append({"path": n.scene_file_path, "tick_us": Time.get_ticks_usec()})
@@ -732,6 +758,8 @@ func _on_node_added(n: Node) -> void:
 func _ensure_hitch_history() -> void:
 	if not get_tree().node_added.is_connected(_on_node_added):
 		get_tree().node_added.connect(_on_node_added)
+		get_tree().node_removed.connect(_on_node_removed)
+		_seed_effects(get_tree().root)
 
 
 func _m_hitches(p: Dictionary):
@@ -1049,6 +1077,10 @@ var _rec_rows: Array = []
 var _rec_start := 0
 var _rec_hitch0 := 0
 var _rec_label: Label
+var _rec_telemetry: Array = []
+var _rec_next_sample_us := 0
+var _rec_cost_total_us := 0
+var _rec_cost_max_us := 0
 const PERF_DIR := "user://devagent/perf"
 func _toggle_rec() -> void:
 	if not _rec_on:
@@ -1056,6 +1088,11 @@ func _toggle_rec() -> void:
 		_rec_skip_first = true
 		_rec_on = true
 		_rec_rows = []
+		_rec_telemetry = []
+		_rec_next_sample_us = 0
+		_rec_cost_total_us = 0
+		_rec_cost_max_us = 0
+		RenderingServer.viewport_set_measure_render_time(get_viewport().get_viewport_rid(), true)
 		_rec_start = Time.get_ticks_msec()
 		_rec_hitch0 = _hitches.size()
 		_hitch_seen = _hitch_total
@@ -1087,11 +1124,12 @@ func _toggle_rec() -> void:
 	var summary := {"seconds": snappedf(total / 1000.0, 0.1), "frames": ms.size(), "avg_fps": snappedf(ms.size() / (total / 1000.0), 0.1),
 			"median_ms": qf.call(0.5), "p95_ms": qf.call(0.95), "p99_ms": qf.call(0.99), "max_ms": snappedf(ms[-1], 0.1),
 			"over_33ms": ms.filter(func(v): return v > 33.4).size(), "over_100ms": ms.filter(func(v): return v > 100.0).size(),
-			"hitches": hitches.size(), "map": _main().map_id if _main() else ""}
+			"hitches": hitches.size(), "recorder_total_ms": _rec_cost_total_us / 1000.0,
+			"recorder_max_ms": _rec_cost_max_us / 1000.0, "map": _main().map_id if _main() else ""}
 	DirAccess.make_dir_recursive_absolute(PERF_DIR)
-	var path := PERF_DIR.path_join("rec_%d.json" % Time.get_unix_time_from_system())
+	var path := PERF_DIR.path_join("rec_%d_%d_%d.json" % [Time.get_unix_time_from_system(), OS.get_process_id(), Time.get_ticks_usec()])
 	var f := FileAccess.open(path, FileAccess.WRITE)
-	f.store_string(JSON.stringify({"summary": summary, "hitches": hitches,
+	f.store_string(JSON.stringify({"summary": summary, "hitches": hitches, "telemetry": _rec_telemetry,
 			"columns": ["t", "frame_ms", "process_ms", "physics_ms", "draw_calls", "objects", "primitives",
 					"civilians", "robots", "vehicles", "x", "z", "heading_deg", "fps_setting_scale", "activity", "engine_frame", "tick_us", "pipeline_canvas", "pipeline_mesh", "pipeline_surface", "pipeline_draw", "pipeline_specialization"],
 			"rows": _rec_rows}))
@@ -1112,6 +1150,9 @@ func _toggle_rec() -> void:
 
 
 func _rec_frame(ms: float) -> void:
+	if Time.get_ticks_usec() >= _rec_next_sample_us:
+		_rec_next_sample_us = Time.get_ticks_usec() + 1000000
+		_rec_telemetry.append(_telemetry_sample())
 	var m := _main()
 	var P := Performance
 	var cam := get_viewport().get_camera_3d()
@@ -1132,6 +1173,25 @@ func _rec_frame(ms: float) -> void:
 			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_PIPELINE_COMPILATIONS_SPECIALIZATION)])
 
 
+## Low-rate diagnostics: allocator memory is not OS process footprint, and
+## node counts are not a count of awake physics bodies or visible effects.
+func _telemetry_sample() -> Dictionary:
+	var rid := get_viewport().get_viewport_rid()
+	var gpu := RenderingServer.viewport_get_measured_render_time_gpu(rid)
+	var cpu := RenderingServer.viewport_get_measured_render_time_cpu(rid)
+	var m := _main()
+	return {"t": (Time.get_ticks_msec() - _rec_start) / 1000.0,
+			"tick_us": Time.get_ticks_usec(), "engine_frame": Engine.get_process_frames(),
+			"cpu_render_ms": cpu if cpu > 0.0 else null, "gpu_ms": gpu if gpu > 0.0 else null,
+			"static_memory_mb": OS.get_static_memory_usage() / 1048576.0,
+			"texture_counter_mb": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TEXTURE_MEM_USED) / 1048576.0,
+			"buffer_memory_mb": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_BUFFER_MEM_USED) / 1048576.0,
+			"nodes": Performance.get_monitor(Performance.OBJECT_NODE_COUNT),
+			"orphan_nodes": Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT),
+			"nodes_by_type": _effect_counts.duplicate(), "render_scale": get_viewport().scaling_3d_scale,
+			"ambient_scale": m.ambient_scale if m and m.get("ambient_scale") != null else null}
+
+
 ## Autoplay (autoplay.gd): the local player plays by itself for `minutes`,
 ## with the F5 recording on and every frame tagged with what it was doing;
 ## at the end the run (counts, stuck spots, unreachable pickups, falls, the
@@ -1141,6 +1201,20 @@ const Autoplay := preload("res://scripts/autoplay.gd")
 var _autoplay: Node
 var _auto_errors0 := 0
 var _auto_config: Dictionary = {}
+var _auto_start_us := 0
+var _auto_id := ""
+var _last_autoplay_status: Dictionary = {}
+
+func _m_autoplay_status(_p: Dictionary) -> Dictionary:
+	if not is_instance_valid(_autoplay):
+		return {"active": false, "last": _last_autoplay_status.duplicate(true)}
+	return {"run_id": _auto_id, "active": not _autoplay.done, "finishing": _autoplay.done,
+			"elapsed_sim_s": _autoplay._t, "wall_s": (Time.get_ticks_usec() - _auto_start_us) / 1000000.0,
+			"remaining_sim_s": maxf(0.0, _autoplay.seconds - _autoplay._t),
+			"activity": _autoplay.activity, "goal_kind": _autoplay._goal_kind,
+			"counts": _autoplay.counts.duplicate(), "attempts": _autoplay.attempts.duplicate(),
+			"coverage": _autoplay.metrics.snapshot()}
+
 func _m_autoplay(p: Dictionary):
 	var pl := _player()
 	if pl == null:
@@ -1150,11 +1224,16 @@ func _m_autoplay(p: Dictionary):
 			_autoplay.stop()
 		return {"autoplay": false}
 	if _autoplay and not _autoplay.done:
-		return {"autoplay": "already on", "activity": _autoplay.activity, "t": _autoplay._t}
+		return {"autoplay": "already on", "run_id": _auto_id, "activity": _autoplay.activity, "t": _autoplay._t}
+	if is_instance_valid(_autoplay):
+		_autoplay_finish() # A stopped run must be finalized before its pointer is replaced.
+	var duration := float(p.get("minutes", 10)) * 60.0
+	if not is_finite(duration) or duration <= 0.0:
+		return _err("minutes must be finite and positive")
 	_autoplay = Autoplay.new()
 	_autoplay.process_mode = Node.PROCESS_MODE_PAUSABLE
 	_autoplay.player = pl
-	_autoplay.seconds = float(p.get("minutes", 10)) * 60.0
+	_autoplay.seconds = duration
 	_autoplay.rng.seed = int(p.get("seed", 7))
 	if p.has("drive_every"):            # a driving test: drive_every=5 takes cars almost all the time
 		_autoplay.drive_every = float(p["drive_every"])
@@ -1173,21 +1252,29 @@ func _m_autoplay(p: Dictionary):
 		"window_px": [get_window().size.x, get_window().size.y],
 		"viewport_px": [get_viewport().get_visible_rect().size.x, get_viewport().get_visible_rect().size.y],
 		"render_scale": get_viewport().scaling_3d_scale,
-		"max_fps": Engine.max_fps, "vsync_mode": DisplayServer.window_get_vsync_mode()}
+		"max_fps": Engine.max_fps, "vsync_mode": DisplayServer.window_get_vsync_mode(),
+		"engine_version": Engine.get_version_info().get("string", ""), "display_server": DisplayServer.get_name(),
+		"adapter": RenderingServer.get_video_adapter_name(), "pid": OS.get_process_id(),
+		"dynamic_resolution": _main().dynamic_resolution, "ambient_scale_start": _main().ambient_scale,
+		"seed_scope": "bot RNG only; world and navigation randomness are not reset"}
 	_auto_errors0 = _errors_seen()
+	_auto_start_us = Time.get_ticks_usec()
+	_auto_id = "%d:%d" % [OS.get_process_id(), _auto_start_us]
+	_auto_config["run_id"] = _auto_id
 	_main().add_child(_autoplay)
 	if not _rec_on:
 		_toggle_rec()
-	return {"autoplay": true, "seconds": _autoplay.seconds}
+	return {"autoplay": true, "run_id": _auto_id, "seconds": _autoplay.seconds}
 
 
 func _errors_seen() -> int:
-	var r: Dictionary = _m_errors({})
+	var r: Dictionary = _m_errors({"limit": 1000000})
 	return r.get("errors", []).size()
 
 
 func _autoplay_finish() -> void:
 	var ap := _autoplay
+	var wall_s := (Time.get_ticks_usec() - _auto_start_us) / 1000000.0
 	_autoplay = null
 	if _rec_on:
 		_toggle_rec()                      # writes the recording and its message
@@ -1196,13 +1283,19 @@ func _autoplay_finish() -> void:
 		if _inbox[i].has("perf_log"):
 			rec_path = _inbox[i]["perf_log"]
 			break
-	var errs: Array = _m_errors({}).get("errors", [])
+	var errs: Array = _m_errors({"limit": 1000000}).get("errors", [])
+	var new_errors := errs.slice(_auto_errors0)
 	var out := {"map": _main().map_id if _main() else "", "seconds": snappedf(ap._t, 0.1), "counts": ap.counts,
-			"events": ap.events, "recording": rec_path, "conditions": _auto_config, "script_errors": errs.slice(_auto_errors0).filter(
-				# Metal fence timeouts and a tester's own eval errors are not the game's
+			"events": ap.events, "recording": rec_path, "conditions": _auto_config,
+			"wall_seconds": wall_s, "finish_reason": ap.finish_reason, "attempts": ap.attempts,
+			"coverage": ap.metrics.snapshot(),
+			"renderer_errors": new_errors.filter(func(e): return "timeout waiting for fence" in str(e)),
+			"tester_eval_errors": new_errors.filter(func(e): return "core/math/expression.cpp" in str(e)),
+			"script_errors": new_errors.filter(
+				# Keep renderer and tester diagnostics separate from script errors.
 				func(e): return not "timeout waiting for fence" in str(e) and not "core/math/expression.cpp" in str(e))}
 	DirAccess.make_dir_recursive_absolute("user://devagent/autoplay")
-	var path := "user://devagent/autoplay/run_%d.json" % Time.get_unix_time_from_system()
+	var path := "user://devagent/autoplay/run_%d_%d_%d.json" % [Time.get_unix_time_from_system(), OS.get_process_id(), _auto_start_us]
 	var f := FileAccess.open(path, FileAccess.WRITE)
 	f.store_string(JSON.stringify(out))
 	f.close()
@@ -1218,6 +1311,9 @@ func _autoplay_finish() -> void:
 	fi.seek_end()
 	fi.store_line(JSON.stringify(msg))
 	fi.close()
+	_last_autoplay_status = {"run_id": _auto_id, "run_path": ProjectSettings.globalize_path(path), "recording": rec_path,
+			"seconds": ap._t, "wall_seconds": wall_s, "finish_reason": ap.finish_reason,
+			"counts": ap.counts.duplicate(), "coverage": ap.metrics.snapshot()}
 	ap.queue_free()
 
 
