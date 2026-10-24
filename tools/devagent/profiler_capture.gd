@@ -45,6 +45,7 @@ func _process(delta):
         if server.is_connection_available():
             stream = server.take_connection()
             packet.stream_peer = stream
+            packet.input_buffer_max_size = 67108864 # Resource inventories can exceed the 64 KiB default.
             packet.output_buffer_max_size = 8388608
             print("Debugger connected")
         return false

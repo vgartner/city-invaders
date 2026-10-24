@@ -870,18 +870,38 @@ func _warm_people_request() -> void:
 		if not p in _warm_people and ResourceLoader.exists(p) \
 				and ResourceLoader.load_threaded_request(p, "", true) == OK:
 			_warm_people.append(p)
+var texture_sharing_stats: Dictionary = {}
 func _finish_loading() -> void:
 	var t := 0.0
 	while t < 8.0 and ((multiplayer.is_server() and not _round_live)
 			or (not multiplayer.is_server() and civilians_root.get_child_count() == 0)):
 		t += get_process_delta_time()
 		await get_tree().process_frame
+	_set_loading(0.985, "Sharing identical textures...")
+	await get_tree().process_frame
+	var sharing := preload("res://scripts/texture_sharing.gd").new()
+	var share_start := Time.get_ticks_usec()
+	var texture_before := RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TEXTURE_MEM_USED)
+	for scene in _warm.values():
+		sharing.resource(scene)
+	sharing.tree(self)
+	print("Texture sharing: %d checked, %d duplicates (%.1f MiB imported files), %.2f s" % [
+			sharing.checked, sharing.shared, sharing.shared_bytes / 1048576.0,
+			(Time.get_ticks_usec() - share_start) / 1000000.0])
+	texture_sharing_stats = {"checked": sharing.checked, "shared": sharing.shared,
+			"seconds": (Time.get_ticks_usec() - share_start) / 1000000.0,
+			"texture_before_mb": texture_before / 1048576.0}
+	await get_tree().process_frame
+	await get_tree().process_frame
+	texture_sharing_stats["texture_after_mb"] = RenderingServer.get_rendering_info(
+			RenderingServer.RENDERING_INFO_TEXTURE_MEM_USED) / 1048576.0
 	_set_loading(0.99, "Getting ready...")
 	var pl: Node3D = null
 	for p in players_root.get_children():
 		if p.is_multiplayer_authority():
 			pl = p
 	if pl:
+		await pl.prewarm_view_models()
 		var yaw := pl.rotation.y
 		for k in 8:
 			pl.rotation.y = yaw + k * TAU / 8.0

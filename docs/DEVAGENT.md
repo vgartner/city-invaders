@@ -214,7 +214,9 @@ Start **one** test game with `DEVAGENT_PORT=24691 godot --path godot
 --remote-debug tcp://127.0.0.1:6008 --ignore-error-breaks -- --devagent`.
 After loading, write `start label` to `/tmp/ci-profile.control`; wait about
 half a second before the measured action. Write `stop label` afterwards.
-`memory` requests the native rendering resource inventory. `visual_start`
+`memory` requests the native rendering resource inventory. The capture helper
+allows 64 MiB incoming packets: the default 64 KiB buffer cannot receive the
+full city inventory. `visual_start`
 and `visual_stop` control the renderer profiler where supported. `quit`
 ends the capture helper. The listener is loopback-only and rejects object
 instantiation when decoding Variants. Runtime debugger breaks are continued

@@ -346,3 +346,74 @@ so map PNGs alone do not explain the full texture total. Inventory resources
 with the native `memory` request and test VRAM texture compression on a
 representative subset with visual comparison before any bulk conversion.
 Do not reduce models or all texture sizes based only on these totals.
+
+
+## Identical textures and view-model warm-up (2026-10-24)
+
+Many independently exported props repeat the same atlas in distinct texture
+resources. Gasometro's initial native rendering inventory listed 980 texture
+entries totalling 11,480 MiB (including internal render targets). Comparing
+imported files identified over 400 byte-identical payloads, rather than
+merely similar-looking images.
+
+`texture_sharing.gd` now visits retained PackedScenes, material overrides,
+Mesh and MultiMesh surface materials behind the loading screen. Imported
+CompressedTexture2D resources with identical SHA-256 payloads share one
+texture object. The hash covers the entire `.ctex`, including format,
+mipmaps and import flags; matching source image names or PNG pixels alone
+would not be sufficient. Unchanged material slots are not reassigned.
+Procedural textures and render targets are skipped. Per-pass weak references do not retain textures. A later loading pass
+starts fresh, including for previously checked artwork; there is no maintained alias manifest that can become
+stale after artwork changes. No geometry, UV, resolution or compression
+settings change. Future assets first loaded after this pass are not
+necessarily shared until a later loading pass.
+
+In the accepted real-game test, 884 imported textures were checked and
+404 duplicate objects shared in 3.31 seconds behind the loading screen.
+The subsequent inventory contained 609 texture entries totalling 6,614 MiB
+(6.46 GiB), about 42% below the initial inventory. Populations and resource
+sets differ slightly, so this is a scene inventory comparison, not a
+byte-exact whole-process A/B. The after-process physical footprint was
+12.4G, compared with 17.1G in the preceding investigation. Peak footprint
+was still 18.0G: this pass releases duplicates after loading, so it does not
+solve the initial loading peak. The instantaneous texture counter reported
+14,024 -> 2,155 MiB within the pass, but does not agree with the resource
+inventory on this Metal setup; do not call that a measured 85% RAM reduction
+or add these overlapping counters to OS footprint.
+
+An exploratory implementation hashed `get_image()` readbacks. It took
+36.31 seconds and hit a Metal fence timeout. It was discarded: the accepted
+implementation reads imported files and does not read back GPU pixels.
+A five-texture BC7 compression pilot was also restored; no compression or
+image changes are part of this fix.
+
+The local player's cached view models now render idle and mid-reload poses
+with the actual camera/environment before the loading screen disappears.
+This exposes skinned surfaces and reload accessories that loading the
+PackedScene alone does not compile. It does not grant inventory or ammo,
+and restores the selected weapon afterwards. Hidden cached AnimationPlayers
+are paused during switches. Headless servers skip rendering warm-up.
+Seven first armed weapon switches after warm-up created zero new DRAW
+pipelines; native `_show_weapon` times were 0.054-0.113 ms, with a 21.3 ms
+maximum frame in that fixed paused probe. This does not prewarm every
+combat effect, light variant or later scene.
+
+A subsequent two-minute autoplay (seed 7, scale 1, 2545x1080 viewport,
+6260x2656 window, VSync on) averaged 60.0 FPS, p99 22.4 ms and maximum
+87.8 ms, with no >100 ms frames or script errors. It fired 11 rounds,
+killed two robots and collected five pickups. It still created 35 DRAW
+pipelines and spent 26% of its time recovering from a ground_brick collider
+near x=110,z=190. The earlier run had a different route, state and combat
+load, so these totals do not establish a general FPS improvement or prove
+all hitches fixed. Some 70-88 ms frames still coincided with pipeline work.
+
+Checks: normal headless parse, 12 Python profiler/report tests, texture
+sharing tests in the project and in a PCK with no source PNGs:
+
+```bash
+godot --headless --path godot --script ../tools/bench/test_texture_sharing.gd
+```
+
+The sharing test checks distinct payloads, procedural textures, unchanged
+geometry, identical payload reuse and weak cache lifetime. Native inventory
+packets above 64 KiB are now supported by the capture helper.

@@ -1642,6 +1642,10 @@ func _show_weapon() -> void:
 		return
 	for c in _view_model.get_children():
 		c.visible = false
+	# Cached, hidden rigs must not keep evaluating their idle/reload clips.
+	for key in _vm_anims:
+		if key != weapon:
+			(_vm_anims[key] as AnimationPlayer).pause()
 	if WEAPONS[weapon].get("unarmed", false) and (not VIEW_MODELS.has(weapon) or not FISTS):
 		return                              # nothing in the hands yet
 	if not _view_models.has(weapon):
@@ -1691,6 +1695,39 @@ func _show_weapon() -> void:
 		_view_models[weapon] = node
 	_view_models[weapon].visible = true
 	_vm_play("raise" if weapon == "hands" else "draw")
+
+
+## Render first-use skinned surfaces behind the map loading screen, with the
+## actual player camera/environment. Loading a PackedScene alone does not
+## compile the DRAW pipelines. Never grant weapons/ammo or advance gameplay.
+func prewarm_view_models() -> void:
+	if _view_model == null or not is_multiplayer_authority() or DisplayServer.get_name() == "headless":
+		return # No rendered frames on a dedicated server.
+	var saved_weapon := weapon
+	var saved_visible := _view_model.visible
+	_view_model.visible = true
+	for w in VIEW_MODELS:
+		weapon = w
+		_show_weapon()
+		var ap: AnimationPlayer = _vm_anims.get(w)
+		if ap:
+			# Draw animations start outside the screen. Show the idle pose and
+			# a reload pose too, so magazines/speedloaders are rendered once.
+			for clip in ["idle_fists" if w == "hands" else "idle", "reload"]:
+				if not ap.has_animation(clip):
+					continue
+				ap.play(clip, 0.0)
+				ap.seek(ap.get_animation(clip).length * 0.5, true)
+				ap.pause()
+				await RenderingServer.frame_post_draw
+				await RenderingServer.frame_post_draw
+			ap.stop()
+		else:
+			await RenderingServer.frame_post_draw
+		_view_models[w].visible = false
+	weapon = saved_weapon
+	_show_weapon()
+	_view_model.visible = saved_visible
 
 
 ## What a player's bullet can hit: the world and robots, and with friendly
