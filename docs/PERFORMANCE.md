@@ -563,3 +563,55 @@ The screenshot confirms the real container is visible. This isolates first
 container creation; it is not a rerun of the full mothership delivery or proof
 that every 140 ms stall has been eliminated. The complete three-minute run
 predates this final warm-up change.
+
+
+## Fifteen-minute soak test (2026-10-24)
+
+A fresh rendered Gasometro game ran the updated autoplay for 900 simulation
+seconds / 900.6 wall seconds (seed 7; M3 Max Metal; scale 1; dynamic resolution
+off; VSync 1; 2545x1080). The director stayed enabled and ambient scale varied
+0.9-1.0. No gameplay/settings/code changes were made during this measurement.
+Low-rate read-only status/performance checkpoints were taken every 30 seconds;
+screenshots were taken outside the recorded interval.
+
+52,917 frames averaged 58.8 FPS (median 16.8 ms, p99 24.4 ms, worst 212.5 ms).
+Five consecutive three-minute windows averaged 58.4, 58.0, 59.9, 60.2 and
+57.4 FPS; p99 was 25.1, 25.2, 23.8, 23.7 and 24.0 ms. There is no clear
+progressive frame-rate degradation in this run, but different positions,
+actions and populations prevent a controlled beginning/end FPS comparison.
+
+The bot covered 5,800.6 m on foot and 449.9 m driving in 61 observed 50 m
+cells. It consumed 314 rounds, downed 29 robots, completed 15 reloads and
+5 vehicle entries, consumed 7 grenades, and recorded 23 pickups, one container
+opening and three trades. Every tracked action category was exercised, though
+legacy pickup/rescue/trade counters are not all strict success confirmations.
+One 2 m navigation recovery at 261.2 s is excluded from normal travel; no
+external discontinuity, invalid-vehicle association or stalled-combat recovery
+was recorded. Script, renderer-fence and tester-eval error lists were empty.
+
+Six frames exceeded 100 ms: at 6.003 s (115.22 ms), 214.250 s (160.59),
+254.452 s (134.55), 534.487 s (212.53), 779.183 s (120.90) and 890.643 s
+(100.66). The worst occurred while walking at local x=-52.1, z=175.0, with
+4,116 draw calls, 197 civilians and 14 robots. Nearby host samples (within
+1.5 s) recorded about 9 MiB of reads and an 88 MiB footprint increase, without
+page-ins. No pipeline counter increased within two neighbouring recorder rows
+around any of these six frames. The two driving stalls and the 120.90 ms
+walking stall had no nearby disk-read increase. These correlations identify
+reproduction targets, not confirmed causes; native CPU/Metal capture is still
+needed. GPU times remained unavailable (0/893 usable low-rate samples).
+
+889 host samples: process physical footprint 12,904.2 -> 13,053.8 MiB, peak
+13,082.1 MiB (net +149.6 MiB); 17 page-ins and 28,237,824 bytes read, no disk
+writes. Footprint did not remain flat: its fitted slope after minute five
+was approximately +12.4 MiB/min, with steps and a late decline. This does not
+establish or exclude a leak: caches/world load change and F5 retains growing
+row arrays. Allocator usage grew 403.6 -> 456.8 MiB. Nodes started at 19,731,
+peaked at 20,594 and ended at 19,952; orphan nodes stayed zero. Effect peaks
+were 87 rigid-body, 24 CPU-particle, 81 positional-audio and 63 OmniLight nodes.
+Row collection averaged 0.024 ms / peaked at 0.536 ms (not total observer cost).
+
+Next useful controlled tests: replay the two driving coordinates with native
+profiling; reproduce the 534 s wave/resource read; and compare repeated fixed
+routes with/without full F5 row retention to separate recorder growth from
+world/cache growth. A longer or repeated same-route session is needed before
+calling the memory behaviour a leak. The rendered test instance was closed.
