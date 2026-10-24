@@ -500,7 +500,7 @@ was used for before-run events.
 A new M3 Max / Metal Gasometro test adds measurements missing from the earlier
 runs: actual player/vehicle travel, confirmed reloads/entries, process physical
 footprint and disk I/O, effect-node populations, configuration drift, and
-collector self-cost. GPU timing is unavailable: both viewport timing and 1,584
+collector self-cost. GPU timing is unavailable: both viewport timing and 1,585
 native visual-profiler frames returned only zero GPU times. Do not interpret
 these as GPU idle. Render-thread timing is not total frame CPU cost.
 
@@ -547,3 +547,19 @@ Validation: 14 Python benchmark/report tests, 4 native-profiler parser tests,
 normal headless startup and the recovery/effect and measurement GDScript
 fixtures pass. Each headless test uses its own log file so it cannot rotate
 the rendered game's error log. See DEVAGENT.md for the safe portable runner.
+
+
+### Targeted container warm-up follow-up
+
+After the 180-second measurement above, the container GLB was added to threaded
+loading and rendered behind the loading screen. No model/material quality was
+reduced. In a fresh rendered game with the director disabled, a one-container
+probe found the model cached and no increase in any pipeline compilation
+counter or texture counter. The 61-frame sample had maximum 17.8 ms, with no
+frames over 33 ms. The native profiler captured 90 frames (maximum 17.42 ms);
+`_add_container` reported 0.449 ms inclusive and container `_ready` 0.335 ms.
+Inclusive/callback figures overlap and must not be summed. No script errors.
+The screenshot confirms the real container is visible. This isolates first
+container creation; it is not a rerun of the full mothership delivery or proof
+that every 140 ms stall has been eliminated. The complete three-minute run
+predates this final warm-up change.

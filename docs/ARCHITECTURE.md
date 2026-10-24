@@ -94,7 +94,7 @@ farroupilha camp) with box colliders.
 
 Native profiler capture tools live in `tools/devagent/profiler_capture.gd` and
 `profile_report.py` (see DEVAGENT.md). Map preparation keeps model resources
-in a path-keyed `_warm` cache, including the weapon view models and swarm,
+in a path-keyed `_warm` cache, including the weapon view models, swarm and people-container model,
 so their first disk read is performed behind the loading screen.
 
 Player impact particles share two immutable sphere meshes/materials (dust and
@@ -110,3 +110,8 @@ footprint and disk I/O from `process_metrics.py`. GPU zero timestamps are
 unavailable. Server vehicle entry verifies that `take()` accepted ownership
 before sending `entered_vehicle`; the test bot separately repairs stale
 associations inherited from an old wreck.
+
+People-container loading warm-up instantiates only the cached imported GLB
+geometry in the camera view behind the loading screen for two rendered frames.
+It does not instantiate the PeopleContainer gameplay script, physics, captives,
+network replication or group membership. Headless instances skip it.

@@ -866,6 +866,7 @@ func _warm_people_request() -> void:
 	for path in Player.VIEW_MODELS.values():
 		want.append(path)
 	want.append(preload("res://scripts/swarm.gd").MODEL)
+	want.append(PeopleContainer.MODEL)
 	for p in want:
 		if not p in _warm_people and ResourceLoader.exists(p) \
 				and ResourceLoader.load_threaded_request(p, "", true) == OK:
@@ -903,6 +904,7 @@ func _finish_loading() -> void:
 	if pl:
 		await pl.prewarm_view_models()
 		await pl.prewarm_impact_fx()
+		await _prewarm_container(pl.camera)
 		var yaw := pl.rotation.y
 		for k in 8:
 			pl.rotation.y = yaw + k * TAU / 8.0
@@ -914,6 +916,19 @@ func _finish_loading() -> void:
 	_hide_loading()
 	if not driven:   # leave the mouse free while the DevAgent drives the game
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+
+## Warm only the imported geometry: no container physics, captives, groups or
+## replication side effects. First delivery otherwise loaded/rendered it mid-round.
+func _prewarm_container(cam: Camera3D) -> void:
+	if DisplayServer.get_name() == "headless" or not _warm.has(PeopleContainer.MODEL):
+		return
+	var model: Node3D = (_warm[PeopleContainer.MODEL] as PackedScene).instantiate()
+	add_child(model)
+	model.global_position = cam.global_position - cam.global_basis.z * 6.0 - Vector3(0, 1.6, 0)
+	await RenderingServer.frame_post_draw
+	await RenderingServer.frame_post_draw
+	model.queue_free()
 
 
 @rpc("authority", "call_remote", "reliable")
