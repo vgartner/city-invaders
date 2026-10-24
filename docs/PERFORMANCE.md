@@ -440,3 +440,56 @@ branch. A fault-injection test disabled only player physics for six seconds:
 the bot skipped the shop at the second attempt and logged a capsule-checked
 recovery at 4.8 s after the third attempt, from (110.7,7.2,187.3) to
 (111.5,7.6,189.2). Player physics was restored afterwards.
+
+
+## Reused impact resources and valid wreck bodies (2026-10-24)
+
+A fixed-camera probe after view-model warm-up still created two new DRAW and
+two SURFACE pipelines for **every** bullet impact, even repeated effects of
+the same type. `player._impact` rebuilt a SphereMesh and material each time.
+It now reuses two immutable meshes/materials (dust/metal); each effect still
+has its independent CPUParticles node. Particle amount (14), lifetime (0.45 s),
+colour, mesh size and tessellation are unchanged. Both real particle draw
+modes render briefly behind the loading screen and are removed before play.
+No shots, damage, sound or drops are triggered by the warm-up.
+
+The same four-effect sequence (dust/metal/dust/metal) produced eight DRAW
+and eight SURFACE creations before, zero of either after. Initial probe
+windows peaked at 40.7/61.3 ms before and 19.6/16.6 ms after; these separate
+processes have different frozen world populations, so do not treat the timing
+ratios as a general FPS improvement. The pipeline deltas directly verify the
+resource reuse. Effects keep the original geometry and appearance.
+
+`wreck.shatter` also skips nonfinite/singular source transforms. Zero-scale
+bones/accessories have no visible plate but previously became phantom rigid
+bodies and triggered Jolt singular-transform warnings. Visible pieces retain
+their existing meshes, velocities and colliders. The fixture verifies both
+a rigid zero-scale mesh and an accessory hidden by a zero-scale skeleton bone:
+only the valid visible piece becomes a body. This does not cap debris or
+remove visible destruction effects.
+
+Fresh two-minute Gasometro autoplay, seed 7, scale 1, 2545x1080 viewport,
+6260x2656 window, VSync on: 60.9 FPS, p99 24.8 ms, maximum 76.9 ms,
+zero >100 ms frames and zero script errors. It fired 45 rounds, killed seven
+robots, took three pickups, drove once, opened one container and traded once.
+There were no navigation/recovery events in that run. It still created 13
+DRAW pipelines (seven SURFACE and two CANVAS), so not all first-use work is
+prewarmed. The prior run created 35 DRAW pipelines but had only 11 shots,
+two kills and a different route; do not infer a universal 35-to-13 improvement
+or general FPS gain. The focused four-impact probe is the controlled evidence.
+No singular-transform warning appeared in this accepted combat run; the
+existing navmesh-radius rounding warning remains.
+
+Regression checks (normal project autoloads are required for the fixture):
+
+```bash
+godot --headless --path godot ../tools/bench/test_recovery_fx.tscn
+```
+
+It covers real progress versus goal changes, per-shop exclusion, activity
+tag recovery, rigid/skinned hidden wreck parts and shared impact resources.
+The 12 Python report/profiler tests and normal headless parse also pass.
+The impact probe and bot block/fault-injection tests were run in the rendered
+game. A baseline polling request after its short autoplay had already ended
+returned an evaluation error; the completed run file, not that late query,
+was used for before-run events.

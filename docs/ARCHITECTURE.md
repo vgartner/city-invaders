@@ -21,7 +21,7 @@ There are no hand-made scenes: `main.tscn` only holds `main.gd`.
 | `props.gd` | Street furniture from `<map>.props.json`: trees (with shot-able crowns), lamps, signals, bins, stalls, the tram, parked cars, street name signs; destructible props |
 | `pickup.gd` | Pickups: churrasco, chimarrão, remédio, Fruki, pala, ammo, weapons |
 | `pigeon.gd` | Local (per peer) pigeon flocks that scatter at gunshots |
-| `wreck.gd` | Splits a robot's skinned mesh into per-bone plates once, throws them as rigid bodies on death |
+| `wreck.gd` | Splits a robot's skinned mesh into per-bone plates once, throws visible, nonsingular pieces as rigid bodies on death |
 | `step.gd` | Step-up over kerbs for character bodies |
 | `studio.gd` | Studio (title screen): cities and phases, import a city, rebuild a phase, open a phase for editing |
 | `editor_tools.gd` | Design-mode tools panel for the current phase: place models (saved as `_props`) |
@@ -95,3 +95,9 @@ Native profiler capture tools live in `tools/devagent/profiler_capture.gd` and
 `profile_report.py` (see DEVAGENT.md). Map preparation keeps model resources
 in a path-keyed `_warm` cache, including the weapon view models and swarm,
 so their first disk read is performed behind the loading screen.
+
+Player impact particles share two immutable sphere meshes/materials (dust and
+metal). The actual CPUParticles draw modes are rendered briefly behind the
+loading screen, alongside view-model preparation, to avoid repeated DRAW
+pipeline creation during combat. Mesh tessellation and particle settings are
+unchanged. Headless servers skip this rendering warm-up.

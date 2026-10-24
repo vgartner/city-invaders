@@ -1776,29 +1776,57 @@ func server_shoot(origin: Vector3, dir: Vector3, w: String = "pistol") -> void:
 		c.heard(origin)
 
 
-func _impact(at: Vector3, normal: Vector3, metal: bool) -> void:
+static var _impact_meshes: Dictionary = {}
+
+static func _impact_mesh(metal: bool) -> SphereMesh:
+	if not _impact_meshes.has(metal):
+		var mesh := SphereMesh.new()
+		mesh.radius = 0.025
+		mesh.height = 0.05
+		var mat := StandardMaterial3D.new()
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mat.albedo_color = Color(1, 0.75, 0.3) if metal else Color(0.65, 0.62, 0.58)
+		mesh.material = mat
+		_impact_meshes[metal] = mesh
+	return _impact_meshes[metal]
+
+
+static func _make_impact(metal: bool) -> CPUParticles3D:
 	var parts := CPUParticles3D.new()
 	parts.one_shot = true
 	parts.amount = 14
 	parts.explosiveness = 1.0
 	parts.lifetime = 0.45
-	parts.direction = normal
 	parts.spread = 35.0
 	parts.initial_velocity_min = 1.5
 	parts.initial_velocity_max = 4.0
 	parts.gravity = Vector3(0, -6, 0)
-	var m := SphereMesh.new()
-	m.radius = 0.025
-	m.height = 0.05
-	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.albedo_color = Color(1, 0.75, 0.3) if metal else Color(0.65, 0.62, 0.58)
-	m.material = mat
-	parts.mesh = m
+	parts.mesh = _impact_mesh(metal)
+	return parts
+
+
+func _impact(at: Vector3, normal: Vector3, metal: bool) -> void:
+	var parts := _make_impact(metal)
+	parts.direction = normal
 	get_tree().current_scene.add_child(parts)
 	parts.global_position = at + normal * 0.05
 	parts.emitting = true
 	get_tree().create_timer(1.0).timeout.connect(parts.queue_free)
+
+
+## The actual particle draw mode, not a stand-in MeshInstance: each impact
+## used to create another mesh/material and two DRAW pipelines mid-combat.
+func prewarm_impact_fx() -> void:
+	if not is_multiplayer_authority() or DisplayServer.get_name() == "headless":
+		return
+	for metal in [false, true]:
+		var parts := _make_impact(metal)
+		get_tree().current_scene.add_child(parts)
+		parts.global_position = camera.global_position - camera.global_basis.z * 2.0
+		parts.emitting = true
+		await RenderingServer.frame_post_draw
+		await RenderingServer.frame_post_draw
+		parts.queue_free()
 
 
 ## Every peer: leaves falling where this player's shot went through a tree.

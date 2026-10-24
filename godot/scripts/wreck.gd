@@ -131,9 +131,13 @@ static func shatter(model: Node3D, push := Vector3.ZERO, spin := 6.0) -> void:
 			pieces = [{"xf": m.global_transform, "mesh": m.mesh, "aabb": m.mesh.get_aabb()}]
 		if pieces.is_empty():
 			continue
-		any = true
 		for p in pieces:
 			var xf: Transform3D = p["xf"] if p.has("xf") else skel.global_transform * skel.get_bone_global_pose(p["bone"])
+			# Zero-scale bones hide accessories in the source animation. They
+			# have no visible plate and no valid orientation for a rigid body.
+			if not xf.is_finite() or xf.basis.determinant() == 0.0:
+				continue
+			any = true
 			var scale := xf.basis.get_scale()
 			var body := RigidBody3D.new()
 			body.collision_layer = 0

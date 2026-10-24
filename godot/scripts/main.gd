@@ -902,6 +902,7 @@ func _finish_loading() -> void:
 			pl = p
 	if pl:
 		await pl.prewarm_view_models()
+		await pl.prewarm_impact_fx()
 		var yaw := pl.rotation.y
 		for k in 8:
 			pl.rotation.y = yaw + k * TAU / 8.0
