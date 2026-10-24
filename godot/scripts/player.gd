@@ -774,9 +774,11 @@ func request_vehicle(car_name: String) -> void:
 	if not multiplayer.is_server() or (sender if sender != 0 else 1) != get_multiplayer_authority():
 		return
 	var car: Node = get_tree().current_scene.traffic_root.get_node_or_null(car_name)
-	if car == null or car.driver_peer != 0 or car.global_position.distance_to(global_position) > 10.0:
+	if car == null or car.driver_peer != 0 or car.get("_wrecked") or car.global_position.distance_to(global_position) > 10.0:
 		return
 	car.take(get_multiplayer_authority(), self)
+	if car.driver_peer != get_multiplayer_authority():
+		return # take() can refuse: never attach the player to an unowned wreck.
 	entered_vehicle.rpc_id(get_multiplayer_authority(), car_name)
 
 

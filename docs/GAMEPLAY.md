@@ -91,7 +91,8 @@ Driving: W / S throttle and brake (reverse), A / D steer, Space handbrake.
 Running over a person costs points; robots take ram damage (several hits).
 Motor vehicles have their own health (shown next to the speed): while you
 drive, shots hit the vehicle, not you. A vehicle shot to pieces explodes,
-and whoever is inside burns.
+and whoever is inside burns. Destroyed vehicles cannot be entered. The server
+only attaches a player after the vehicle has actually accepted driver ownership.
 Street furniture goes over by weight and speed (`Props.CRUSH`): a motorbike
 knocks over bins and crates, a car benches, barrels and planters (and lamps
 and signals when fast), a truck, bus or the harvester almost anything,
