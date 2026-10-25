@@ -760,3 +760,50 @@ to graphical synchronization in the broader driving interval, but includes
 normal pacing/presentation waits; it is not a GPU execution-time measurement
 or direct attribution of the 126.7 ms frame. Some Godot frames lack symbols.
 Further wait/rendering analysis remains appropriate for any residual stalls.
+
+
+### Post-change play and remaining long stalls
+
+A three-minute Gasometro autoplay after both UI changes used seed 19 and a
+40-second drive interval. It covered 1,307.9 m on foot and 69.8 m driving,
+consumed 43 rounds, downed six robots, confirmed two vehicle entries and one
+reload, and recorded one trade. No script or renderer-fence errors. It still
+averaged 55.3 FPS, median 17.4 ms, p99 31.8 ms, with nine frames above 100 ms
+and a 605.8 ms maximum. Render scale stayed 1 while ambient scale varied
+0.7-0.8. This was an aged world after earlier probes, not a fresh matched FPS
+baseline. The small UI savings do not eliminate the larger stalls.
+
+A further 90-second diagnostic autoplay (seed 23, native CPU profiler active)
+averaged 55.3 FPS, median 17.5 ms, p99 28.8 ms, with three frames above 100 ms
+and a 610.9 ms maximum; four robots, 13 rounds, an opened container and two
+trades were recorded. No script/renderer errors. It is an instrumented
+diagnostic, not a normal performance baseline.
+
+At that 610.86 ms recorder interval, the adjacent native frame was 602.704 ms
+(process 599.229 ms, script monitor 4.486 ms). Its largest reported callback
+was only about 1.13 ms. The HUD was no longer the large reported callback.
+The 605.8 ms smoke stall had no adjacent pipeline increments or nearby
+physical disk reads/page-ins; nearby footprint increased about 61.4 MiB.
+Near the 610.9 ms diagnostic stall, footprint increased about 64.1 MiB.
+These are one-second host-sample correlations, not allocation backtraces or
+proof of a memory/driver bug. Native script/physics timings overlap, so no
+GPU cost is inferred by subtraction.
+
+Unlike the failed Metal trace, a separate 30-second Xcode Time Profiler
+capture completed and exported successfully. It covers the beginning of the
+90-second diagnostic, not its final 610.9 ms frame. Its template does not
+record waiting threads, several Godot addresses lack symbols, and it supplies
+no GPU timing. The local trace and exported CPU table are retained for
+further analysis. No intrusive Metal System Trace was used in this iteration.
+
+Next useful work is a frame-aligned system/rendering-wait and memory-allocation
+capture around the repeatable ~600 ms intervals, including the suspected
+~64 MiB allocation/residency changes. This remains an investigation target,
+not a reason to reduce asset detail. Both new fixes are supported by their
+specific measured call/notification reductions; all stalls are not fixed.
+
+Verification: 14 benchmark/report Python tests, four native parser tests,
+normal headless startup, the title-cache/refresh fixture and the HUD transition/
+pulse fixture pass. Headless runs use isolated log files. The tablet screen
+was checked visually after the recorded intervals. Test games, profiler helper,
+OS sampler and Time Profiler were closed; user map edits were preserved.
