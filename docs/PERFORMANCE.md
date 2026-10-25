@@ -615,3 +615,81 @@ profiling; reproduce the 534 s wave/resource read; and compare repeated fixed
 routes with/without full F5 row retention to separate recorder growth from
 world/cache growth. A longer or repeated same-route session is needed before
 calling the memory behaviour a leak. The rendered test instance was closed.
+
+
+## Controlled repetitions and drone cache fix (2026-10-25)
+
+The fifteen-minute soak's 212.5 ms frame coincided with creation of
+`drone.glb`. Unlike the other robot scenes, Drone.MODEL was absent from the
+retained loading cache. Removing all drones and spawning a replacement in a
+paused rendered Gasometro world reproduced this reliably under native CPU
+profiling. Physics/world simulation was paused to isolate synchronous creation;
+this is not a gameplay FPS benchmark. The director was disabled.
+
+| Trial | Before: maximum frame ms | Before: drone `_ready` ms | After: maximum frame ms | After: drone `_ready` ms |
+|---|---:|---:|---:|---:|
+| 1 | 201.5 | 195.619 | 19.4 | 0.395 |
+| 2 | 185.4 | 180.384 | 15.9 | 0.361 |
+| 3 | 186.3 | 181.397 | 16.0 | 0.352 |
+
+The first pre-fix trial read 9,420,800 process-accounted bytes; subsequent
+trials still stalled with no new physical disk reads. A zero disk-I/O delta
+therefore cannot rule out synchronous resource reconstruction from OS cache.
+Adding Drone.MODEL to the existing threaded/retained loading set fixed all
+three repeated last-drone-removal cases in a fresh game. The cache-presence
+check changed false -> true and after-fix trials read zero bytes. Native
+inclusive/callback times overlap, so the table's costs must not be summed.
+No geometry, textures, detail settings or gameplay population rules changed.
+Keeping one shared model resident is an intentional bounded cache cost; this
+does not establish that all stalls in the soak have the same cause.
+
+### Recorder memory isolation
+
+Same process/camera, paused world, native CPU profiling disabled: 120 seconds
+OFF, 120 seconds ON, stop/clear retained rows and telemetry, 120 seconds OFF.
+The first OFF phase still drained pending startup cleanup (nodes 19,462 ->
+19,035), so its footprint change is not a matched stable-world baseline.
+The ON phase had a stable 19,027 nodes and accumulated 7,192 sampled rows plus
+119 telemetry entries. Allocator memory increased 419.327 -> 423.965 MiB.
+Immediately after stopping/clearing it was 419.446 MiB, ending the final OFF
+phase at 419.389 MiB. This measures approximately 4.5 MiB of reversible retained
+recording allocations over two minutes; it does not explain the entire
+149.6 MiB footprint growth in the previous soak. F5's existing full-history
+behaviour is retained, not silently truncated.
+
+Process footprint fluctuated substantially in all phases (approximately
+12,424-12,503 MiB); the final OFF phase ended near 12,429.5 MiB. Allocator bytes,
+process footprint and GPU allocations are different overlapping quantities.
+These short paused-scene controls cannot establish/exclude a gameplay leak.
+A preliminary probe attempted to access OS through Expression (not exposed)
+and returned a tester eval error before the recorded experiment; preserved
+separately from gameplay script failures.
+
+### Driving and Metal limits
+
+Two valid untraced real-input passes at z~256.6, x~56 -> -22 reproduced a
+120.3 ms wall-frame stall and an 85.3 ms one. One initial setup pass was
+excluded: the unowned traffic car followed its old AI route before boarding.
+The probe now reserves the vehicle before relocation. In the 120.3 ms pass,
+the native profiler's slowest frame was 93.15 ms and no single reported script
+callback explained the full delay. Hook/frame alignment and unprofiled work
+prevent attribution to GPU solely by subtraction. A later fresh-game pass
+peaked at 21.1 ms; different traffic/model/world state means this is not proof
+that the driving stalls are fixed by the drone change.
+
+A 30-second Xcode Metal System Trace attachment was attempted separately.
+It disturbed the game (300 ms maximum wall frame in its driving pass) and
+introduced two renderer fence timeouts near capture transitions. Finalization
+did not finish after several minutes; export reported Document Missing
+Template Error. The owned tracer was stopped and its incomplete 6.6 GiB
+scratch bundle removed, with failure logs preserved. No trustworthy GPU
+attribution is claimed. The final drone repetitions ran without an attached
+Metal trace; some trace finalization ran concurrently, so their frame maxima
+are diagnostic samples, not a controlled overall-FPS A/B. The native drone
+initialization cost nonetheless fell from 180-196 ms to 0.35-0.40 ms.
+
+Validation: normal headless parse, 14 Python benchmark/report tests, 4 native
+profiler parser tests; rendered before/after eviction probes and driving.
+The fresh after-fix game returned no script or renderer errors. Owned game,
+profiler and trace processes were closed. Pending work: native system/CPU
+wait analysis on the intermittent driving stalls and a usable Metal capture.

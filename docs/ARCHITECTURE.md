@@ -94,7 +94,7 @@ farroupilha camp) with box colliders.
 
 Native profiler capture tools live in `tools/devagent/profiler_capture.gd` and
 `profile_report.py` (see DEVAGENT.md). Map preparation keeps model resources
-in a path-keyed `_warm` cache, including the weapon view models, swarm and people-container model,
+in a path-keyed `_warm` cache, including the weapon view models, drone, swarm and people-container model,
 so their first disk read is performed behind the loading screen.
 
 Player impact particles share two immutable sphere meshes/materials (dust and
@@ -115,3 +115,9 @@ People-container loading warm-up instantiates only the cached imported GLB
 geometry in the camera view behind the loading screen for two rendered frames.
 It does not instantiate the PeopleContainer gameplay script, physics, captives,
 network replication or group membership. Headless instances skip it.
+
+The drone PackedScene is retained even after the last live drone disappears.
+Otherwise the weak resource cache can evict it and the next reinforcement
+synchronously rebuilds it in `_ready` (180-196 ms in native reproduction).
+The same unchanged model is now requested during threaded loading and kept
+in `_warm`, like the other robot resources.
