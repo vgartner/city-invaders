@@ -721,3 +721,42 @@ occurred near the first after-probe Home phase; no FPS A/B conclusion is drawn
 from those whole-frame samples. The video-list function/read counts are the
 evidence for this change. Full profiles and probe scripts are in the test
 artifacts rather than a production recording policy change.
+
+
+## Redundant HUD theme work during driving (2026-10-25)
+
+Three new real-input driving passes across z~256.6, x~56 -> -22 reproduced
+maximum wall frames of 85.6, 126.7 and 71.9 ms. A 45-second macOS `sample`
+capture was used instead of the intrusive Metal System Trace. In the native
+115.06 ms frame, `HUD.refresh()` reported 64.758 ms inclusive, with 64.714 ms
+in its repeated `Control.add_theme_color_override` calls. This identifies a
+costly update path in that reproduction, not every driving stall's cause.
+
+HUD refresh reapplied identical label colours and banner font sizes each
+frame. It now compares effective overrides first. Health thresholds, armour,
+empty ammunition, threat colours, score feedback, design-mode sizes and the
+animated exit-banner alpha retain their original behaviour. A regression test
+monitors the health/banner theme signals: 100 identical refreshes emitted
+300 notifications on the original source and zero after the change. It also
+checks alert transitions, the changing exit pulse and design-mode font size.
+
+Across the three before driving captures, 2,274 refreshes consumed 539.824 ms
+inclusive (maximum 64.758 ms) and issued 22,740 theme-colour override calls.
+Across the after captures, 2,550 refreshes consumed 154.709 ms (maximum
+0.227 ms) and issued four such override calls. Mean refresh cost fell from
+about 0.237 to 0.061 ms in these samples; this is not an overall FPS gain.
+Native timings include waits and callback overlap and must not be summed.
+
+After wall-frame maxima were 27.6, 23.0 and 26.0 ms, but only the first
+completed the ~78 m path. Traffic blocked the next two near their starts.
+World/vehicle/traffic differ between fresh launches and the before run had
+OS sampling overhead, so the pass maxima are not a matched route A/B proof.
+The notification regression and reduced native HUD calls support keeping the
+change without lowering rendering detail or changing gameplay.
+
+The system stack capture found 8,930 of 32,836 main-thread samples in
+`IOSurfaceSharedEvent waitUntilSignaledValue:timeoutMS:` (~27%). This points
+to graphical synchronization in the broader driving interval, but includes
+normal pacing/presentation waits; it is not a GPU execution-time measurement
+or direct attribution of the 126.7 ms frame. Some Godot frames lack symbols.
+Further wait/rendering analysis remains appropriate for any residual stalls.

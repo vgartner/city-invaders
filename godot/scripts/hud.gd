@@ -173,23 +173,30 @@ func _bar(parent: Control, colour: Color) -> ProgressBar:
 	return b
 
 
+## Reapplying an identical override still notifies the theme/layout machinery.
+## Check the effective value so transitions and the exit pulse stay unchanged.
+func _font_color(label: Label, color: Color) -> void:
+	if not label.has_theme_color_override("font_color") or label.get_theme_color("font_color") != color:
+		label.add_theme_color_override("font_color", color)
+
+
 ## d: health, weapon, slots, ammo, reserve, reloading, kills, goal (0 = none),
 ## goal_extra, civ_alive, civ_lost, threat, objective, exit_open, dead
 func refresh(d: Dictionary, delta: float) -> void:
 	_t += delta
 	var hp: int = d["health"]
 	_health.text = str(hp)
-	_health.add_theme_color_override("font_color", GREEN if hp > 60 else (AMBER if hp > 30 else RED))
+	_font_color(_health, GREEN if hp > 60 else (AMBER if hp > 30 else RED))
 	_health_bar.value = hp
 	var ar: int = d.get("armor", 0)
 	_armor.text = str(ar)
-	_armor.add_theme_color_override("font_color", ARMOR_COLOUR if ar > 0 else DIM)
+	_font_color(_armor, ARMOR_COLOUR if ar > 0 else DIM)
 	_armor_bar.value = ar
 	(_health_bar.get_theme_stylebox("fill") as StyleBoxFlat).bg_color = GREEN if hp > 60 else (AMBER if hp > 30 else RED)
 	_weapon.text = d["weapon"].to_upper()
 	_slots.text = d["slots"]
 	_ammo.text = str(d["ammo"])
-	_ammo.add_theme_color_override("font_color", RED if d["ammo"] == 0 else Color.WHITE)
+	_font_color(_ammo, RED if d["ammo"] == 0 else Color.WHITE)
 	_reserve.text = ("RELOADING" if d["reloading"] else "/ %d" % d["reserve"])
 	var goal: int = d["goal"]
 	if goal > 0:
@@ -210,25 +217,27 @@ func refresh(d: Dictionary, delta: float) -> void:
 	var total: int = code / 100
 	_relay.text = ["", "ANTENNAS %d/%d down · find them with a drone" % [down, total],
 			"ANTENNAS %d/%d down · one spotted (GPS)" % [down, total], "ANTENNAS all down"][relay]
-	_relay.add_theme_color_override("font_color", [DIM, AMBER, RED, GREEN][relay])
-	_mechs.add_theme_color_override("font_color", GREEN if d.get("mechs", 0) >= mg else AMBER)
+	_font_color(_relay, [DIM, AMBER, RED, GREEN][relay])
+	_font_color(_mechs, GREEN if d.get("mechs", 0) >= mg else AMBER)
 	_civ.text = "%d alive" % d["civ_alive"]
 	_civ_lost.text = "%d lost" % d["civ_lost"] + ("  (+%d robots to the goal)" % d["goal_extra"] if d["goal_extra"] > 0 else "")
-	_civ_lost.add_theme_color_override("font_color", RED if d["civ_lost"] > 0 else DIM)
+	_font_color(_civ_lost, RED if d["civ_lost"] > 0 else DIM)
 	var threat: Array = {"RELAX": ["CALM", GREEN], "BUILD_UP": ["ALERT", AMBER], "PEAK": ["ATTACK", RED]}.get(d["threat"], [d["threat"], DIM])
 	_threat.text = threat[0]
-	_threat.add_theme_color_override("font_color", threat[1])
+	_font_color(_threat, threat[1])
 	var blink := 0.55 + 0.45 * sin(_t * 6.0)
 	_banner.offset_top = 52 if d.get("design", false) else 14     # under the editor's menu bar
-	_banner.add_theme_font_size_override("font_size", 20 if d.get("design", false) else 30)
+	var banner_size := 20 if d.get("design", false) else 30
+	if _banner.get_theme_font_size("font_size") != banner_size:
+		_banner.add_theme_font_size_override("font_size", banner_size)
 	if d.get("design", false):
 		_banner.text = d["design_hint"]
-		_banner.add_theme_color_override("font_color", AMBER)
+		_font_color(_banner, AMBER)
 	else:
 		_banner.text = d["objective"]
-		_banner.add_theme_color_override("font_color", Color(GREEN, blink) if d["exit_open"] else Color(1, 1, 1, 0.92))
+		_font_color(_banner, Color(GREEN, blink) if d["exit_open"] else Color(1, 1, 1, 0.92))
 	_center.text = "YOU DIED\nrespawning..." if d["dead"] else ""
 	_prompt.text = d.get("prompt", "")
 	_score.text = str(d.get("score", 0))
 	_score_flash.text = d.get("score_flash", "")
-	_score_flash.add_theme_color_override("font_color", GREEN if d.get("score_up", true) else RED)
+	_font_color(_score_flash, GREEN if d.get("score_up", true) else RED)

@@ -122,3 +122,9 @@ Otherwise the weak resource cache can evict it and the next reinforcement
 synchronously rebuilds it in `_ready` (180-196 ms in native reproduction).
 The same unchanged model is now requested during threaded loading and kept
 in `_warm`, like the other robot resources.
+
+HUD refresh preserves all health/threat/ammunition colours and the exit pulse,
+but only applies font colour/size overrides when the effective value changes.
+This avoids repeated theme/layout notifications on identical state. The tablet
+keeps a title snapshot and header pictogram outside draw callbacks; video-list
+re-entry refreshes title edits from disk.
