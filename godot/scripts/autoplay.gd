@@ -13,6 +13,9 @@ extends Node
 ## Stuck (no progress while walking): a sidestep, then another goal, then a
 ## hop onto the navmesh - each one logged with where and what blocked it.
 
+const MAX_ROAD_JOIN := 4.0 # no route from an off-street yard to the street graph
+const RoadPath := preload("res://scripts/road_path.gd")
+
 const Entities := preload("res://scripts/entities.gd")
 
 var player: CharacterBody3D
@@ -46,7 +49,8 @@ var _reverse := 0.0                     # backing out of a wall in a car
 var _rev_still := 0.0                   # backing into something too: pull forward instead
 var _pull := 0.0
 var _queue := 0.0                       # behind a stopped vehicle this long
-var _overtake := 0.0                    # passing it in the other lane
+var _overtake := 0.0                    # retained diagnostic field; blind lane changes are disabled
+var road_metrics := {"driven_s": 0.0, "off_lane_s": 0.0, "max_lane_distance_m": 0.0, "planned_edges": 0, "rejected_joins": 0}
 var _ahead_cd := 0.0
 var _ahead := false
 var _box: BoxShape3D                    # the look ahead for a vehicle in the way
@@ -233,6 +237,10 @@ func _free_car(r: float) -> Node3D:
 	for v in _main().traffic_root.get_children():
 		if v.kind in ["car", "lorry", "truck", "harvester"] and v.driver_peer == 0 and not v.get("_wrecked") \
 				and (v as Node3D).global_position.distance_to(player.global_position) < r and not _bad.has(v.get_instance_id()):
+			var entry := _road_entry(v.global_position, -v.global_basis.z)
+			if entry.distance > MAX_ROAD_JOIN:
+				_reject_road_join(v, entry.distance)
+				continue
 			return v
 	return null
 
@@ -595,23 +603,27 @@ func _drive(delta: float) -> void:
 	# a random turn at each crossing
 	if _drive_goal == Vector3.INF:
 		_road_start(here)
-	elif _pi >= _path.size() - 1 and Vector2(_path[_path.size() - 1].x - here.x, _path[_path.size() - 1].z - here.z).length() < 5.0:
-		_road_next()
-	# aim at a point some way ahead, not the one under the bonnet: no zigzag
-	while _pi < _path.size() - 1 and Vector2(_path[_pi].x - here.x, _path[_pi].z - here.z).length() < 7.0:
-		_pi += 1
 	if _path.size() < 2:
-		_drive_left = 0.0               # no streets here: get out
+		_drive_left = 0.0
+		_release_all()
 		return
-	var next := _path[min(_pi, _path.size() - 1)]
+	var projection := RoadPath.project(_path, here, maxi(0, _pi - 1), 3)
+	_pi = int(projection.segment) + 1
+	# Plan through the next junction early enough to brake before its turn.
+	if RoadPath.remaining(_path, projection) < 25.0:
+		_road_next()
+		projection = RoadPath.project(_path, here, maxi(0, _pi - 1), 3)
+		_pi = int(projection.segment) + 1
+	var speed: float = float(car.get("_speed"))
+	var lookahead := clampf(3.0 + absf(speed) * 0.5, 3.0, 9.0)
+	var next := RoadPath.ahead(_path, projection, lookahead)
+	road_metrics.driven_s += delta
+	road_metrics.max_lane_distance_m = maxf(road_metrics.max_lane_distance_m, projection.distance)
+	if projection.distance > 3.0:
+		road_metrics.off_lane_s += delta
 	var fwd := -car.global_transform.basis.z
 	var to := Vector3(next.x - here.x, 0, next.z - here.z).normalized()
-	if _overtake > 0.0:
-		_overtake -= delta
-		next += to.cross(Vector3.UP) * -3.4         # the other lane
-		to = Vector3(next.x - here.x, 0, next.z - here.z).normalized()
-	var turn := fwd.signed_angle_to(to, Vector3.UP)
-	var speed: float = float(car.get("_speed"))
+	var turn := RoadPath.turn_angle(fwd, to)
 	_ahead_cd -= delta
 	if _ahead_cd <= 0.0:
 		_ahead_cd = 0.2
@@ -641,25 +653,43 @@ func _drive(delta: float) -> void:
 	if absf(turn) > 1.3:
 		_reverse = 2.0                  # the street is behind: back and round (a three-point turn)
 		return
-	# steer in short taps on a gentle bend, a full lock only on a sharp one
-	var lock := absf(turn) > 0.35 or fmod(_t * 5.0, 1.0) < absf(turn) / 0.35
-	if absf(turn) > 0.05 and lock:
-		Settings.virtual["left" if turn > 0.0 else "right"] = true
-	# slow for the corners, keep to town speed on the straight
-	var limit := 6.0 if absf(turn) > 0.5 else (10.0 if absf(turn) > 0.2 else 15.0)
+	# Pure pursuit gives a desired wheel position. Account for the normal
+	# player's steering filter rather than pulsing keys by duty alone.
+	var wheelbase: float = maxf(float(car.get("_length")) * 0.6, 1.0)
+	var spec: Array = car.DRIVE.get(car.kind, car.DRIVE["car"])
+	var available_lock: float = spec[2] * lerpf(1.0, 0.5, clampf(absf(speed) / spec[0], 0, 1))
+	var target_distance := maxf(1.0, RoadPath.flat(next - here).length())
+	var desired_lock := atan2(2.0 * wheelbase * sin(turn), target_distance)
+	var desired := -clampf(desired_lock / available_lock, -1.0, 1.0)
+	var rate := (1.0 + 6.0 * Settings.steering) * delta
+	var key := RoadPath.steer_key(desired, player._steer, rate)
+	if key != "":
+		Settings.virtual[key] = true
+	var limit := RoadPath.speed_limit(_path, projection)
+	# Slow down to rejoin a lane instead of cutting across a block at town speed.
+	if projection.distance > 2.0 or absf(turn) > 0.5:
+		limit = minf(limit, 4.0)
+	var left := RoadPath.remaining(_path, projection)
+	var exits: Array = _main().road_graph["out"].get(_road_node, [])
+	if not exits.any(func(option): return int(option[0]) != _road_edge):
+		limit = minf(limit, sqrt(5.0 * maxf(0, left - 1.0)))
+		if left < 2.0 and absf(speed) < 1.0:
+			_drive_left = 0.0
 	if _ahead:
-		# a car or bus in front: wait behind it, and pass it once it has stood a while (a bus stop, a jam)
+		# Do not blindly move 3.4 m into a pavement/opposing lane. Yield, then
+		# leave a persistently blocked vehicle and continue the walking test.
 		limit = 0.0
 		_queue += delta
 		_still = 0.0
-		if _queue > 2.5 and _overtake <= 0.0:
-			_overtake = 5.0
-			_queue = 0.0
+		if _queue > 12.0:
+			_event("traffic_blocked", "%s at %s" % [car.kind, _v(here)])
+			_bad[car.get_instance_id()] = true
+			_drive_left = 0.0
 	else:
 		_queue = 0.0
 	if speed < limit:
 		Settings.virtual["forward"] = true
-	elif speed > limit + 3.0:
+	elif speed > limit + 0.5:
 		Settings.virtual["back"] = true # brake
 	# a wall: back out, and find the street again
 	if absf(speed) < 0.5:
@@ -696,14 +726,13 @@ func _vehicle_ahead(car: Node3D) -> bool:
 
 
 var _road_node := -1
+var _road_edge := -1
 
 
 ## Onto the nearest street, heading the way it may be driven that is nearer the car's nose.
-func _road_start(here: Vector3) -> void:
+func _road_entry(here: Vector3, fwd: Vector3) -> Dictionary:
 	var g: Dictionary = _main().road_graph
-	var best := INF
-	var pick := [-1, true]
-	var fwd: Vector3 = -player.vehicle.global_transform.basis.z
+	var best := {"edge": -1, "forward": true, "distance": INF}
 	for i in g.get("edges", []).size():
 		var e: Dictionary = g["edges"][i]
 		var pts: Array = e["pts"]
@@ -711,36 +740,58 @@ func _road_start(here: Vector3) -> void:
 			var a := Vector2(pts[k - 1][0], pts[k - 1][1])
 			var b := Vector2(pts[k][0], pts[k][1])
 			var d := Geometry2D.get_closest_point_to_segment(Vector2(here.x, here.z), a, b).distance_to(Vector2(here.x, here.z))
-			if d < best:
-				best = d
+			if d < best.distance:
 				var along := Vector2(fwd.x, fwd.z).dot(b - a) >= 0.0
-				pick = [i, true if e["oneway"] else along]
+				best = {"edge": i, "forward": true if e["oneway"] else along, "distance": d}
+	return best
+
+
+func _reject_road_join(car: Node3D, distance: float) -> void:
+	_bad[car.get_instance_id()] = true
+	road_metrics.rejected_joins += 1
+	_event("road_join_refused", "%s %.1f m from street graph; no drivable exit route" % [car.name, distance])
+
+
+## Join a nearby lane; a yard needs its own drivable connection, not a chord
+## across pavements/buildings. Check again in case a selected car has moved.
+func _road_start(here: Vector3) -> void:
+	var car: Node3D = player.vehicle
+	var entry := _road_entry(here, -car.global_basis.z)
 	_drive_goal = here
-	if pick[0] < 0:
+	if entry.edge < 0 or entry.distance > MAX_ROAD_JOIN:
+		_reject_road_join(car, entry.distance)
 		_path = PackedVector3Array()
+		_drive_left = 0.0
 		return
-	_road_follow(pick[0], pick[1])
+	_road_follow(int(entry.edge), bool(entry.forward))
 
 
 func _road_next() -> void:
 	var g: Dictionary = _main().road_graph
 	var options: Array = g["out"].get(_road_node, [])
 	if options.is_empty():
-		_drive_goal = Vector3.INF       # a dead end at the map's edge: the nearest street again
-		_path = PackedVector3Array()
-		return
+		return # keep the final lane segment; brake at its end
+	var onward := options.filter(func(o): return int(o[0]) != _road_edge)
+	if onward.is_empty():
+		return # a dead end: stop in the current lane rather than blind U-turns
+	options = onward
 	var o: Array = options[rng.randi() % options.size()]
-	_road_follow(o[0], o[1])
+	_road_follow(o[0], o[1], true)
 
 
-func _road_follow(edge: int, forward: bool) -> void:
+func _road_follow(edge: int, forward: bool, append := false) -> void:
 	var e: Dictionary = _main().road_graph["edges"][edge]
 	var pts: Array = e["pts"].duplicate()
 	if not forward:
 		pts.reverse()
 	_road_node = int(e["b"]) if forward else int(e["a"])
 	var off := 0.9 if e["oneway"] else 1.7    # the right-hand lane, as the traffic keeps
-	_path = PackedVector3Array()
+	if append:
+		_path = _path.slice(maxi(0, _pi - 1))
+	else:
+		_path = PackedVector3Array()
+	_road_edge = edge
+	road_metrics.planned_edges += 1
 	var y: float = player.vehicle.global_position.y
 	for k in pts.size():
 		var p := Vector3(pts[k][0], y, pts[k][1])
@@ -748,15 +799,10 @@ func _road_follow(edge: int, forward: bool) -> void:
 		var dir := (Vector3(pts[n][0], y, pts[n][1]) - p).normalized() if n != k \
 				else (p - Vector3(pts[k - 1][0], y, pts[k - 1][1])).normalized()
 		_path.append(p + dir.cross(Vector3.UP) * off)
-	# start from the point ahead of the car, not the street's far beginning
-	_pi = 1
-	var here: Vector3 = player.vehicle.global_position
-	var bd := INF
-	for k in _path.size():
-		var d := Vector2(_path[k].x - here.x, _path[k].z - here.z).length()
-		if d < bd:
-			bd = d
-			_pi = mini(k + 1, _path.size() - 1)
+	# Project onto segments: sparse OSM points can be hundreds of metres apart.
+	# Picking the closest vertex used to skip a bend or even rejoin behind it.
+	var projection := RoadPath.project(_path, player.vehicle.global_position, 0, 3 if append else 0)
+	_pi = int(projection.segment) + 1
 
 
 # ---- helpers -----------------------------------------------------------------

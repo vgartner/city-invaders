@@ -93,6 +93,14 @@ def print_diagnostics(run, rec, path):
         print("  actions not exercised: " + (", ".join(missing) if missing else "none of the tracked actions"))
     else:
         print("\nCoverage distances: not recorded in this older run")
+    driving = run.get("driving")
+    if driving:
+        print(f"  lane tracking: {driving['driven_s']:.1f} sim s, "
+              f"{driving['off_lane_s']:.1f} s over 3 m from the planned lane, "
+              f"maximum {driving['max_lane_distance_m']:.1f} m; "
+              f"{driving['planned_edges']} road edges planned; "
+              f"{driving.get('rejected_joins', 0)} off-street joins refused")
+        print("  Lane deviation measures the OSM route, not rendered asphalt boundaries.")
     if run.get("attempts"):
         print("  action attempts (not confirmations): " + json.dumps(run["attempts"], sort_keys=True))
     if "wall_seconds" in run:

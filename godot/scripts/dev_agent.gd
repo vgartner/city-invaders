@@ -1213,7 +1213,7 @@ func _m_autoplay_status(_p: Dictionary) -> Dictionary:
 			"remaining_sim_s": maxf(0.0, _autoplay.seconds - _autoplay._t),
 			"activity": _autoplay.activity, "goal_kind": _autoplay._goal_kind,
 			"counts": _autoplay.counts.duplicate(), "attempts": _autoplay.attempts.duplicate(),
-			"coverage": _autoplay.metrics.snapshot()}
+			"coverage": _autoplay.metrics.snapshot(), "driving": _autoplay.road_metrics.duplicate()}
 
 func _m_autoplay(p: Dictionary):
 	var pl := _player()
@@ -1288,7 +1288,7 @@ func _autoplay_finish() -> void:
 	var out := {"map": _main().map_id if _main() else "", "seconds": snappedf(ap._t, 0.1), "counts": ap.counts,
 			"events": ap.events, "recording": rec_path, "conditions": _auto_config,
 			"wall_seconds": wall_s, "finish_reason": ap.finish_reason, "attempts": ap.attempts,
-			"coverage": ap.metrics.snapshot(),
+			"coverage": ap.metrics.snapshot(), "driving": ap.road_metrics.duplicate(),
 			"renderer_errors": new_errors.filter(func(e): return "timeout waiting for fence" in str(e)),
 			"tester_eval_errors": new_errors.filter(func(e): return "core/math/expression.cpp" in str(e)),
 			"script_errors": new_errors.filter(
@@ -1313,7 +1313,7 @@ func _autoplay_finish() -> void:
 	fi.close()
 	_last_autoplay_status = {"run_id": _auto_id, "run_path": ProjectSettings.globalize_path(path), "recording": rec_path,
 			"seconds": ap._t, "wall_seconds": wall_s, "finish_reason": ap.finish_reason,
-			"counts": ap.counts.duplicate(), "coverage": ap.metrics.snapshot()}
+			"counts": ap.counts.duplicate(), "coverage": ap.metrics.snapshot(), "driving": ap.road_metrics.duplicate()}
 	ap.queue_free()
 
 

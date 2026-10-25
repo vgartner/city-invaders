@@ -807,3 +807,30 @@ normal headless startup, the title-cache/refresh fixture and the HUD transition/
 pulse fixture pass. Headless runs use isolated log files. The tablet screen
 was checked visually after the recorded intervals. Test games, profiler helper,
 OS sampler and Time Profiler were closed; user map edits were preserved.
+
+
+### Autoplay street-following checks (2026-10-25)
+
+Road-following validation uses actual player key inputs, not traffic teleportation.
+On Gasometro, the old bot reached 12.43 m from the nearest street centreline and
+logged three `car_stuck` recoveries. After segment projection, advance junction
+planning, horizontal heading and steering-filter feedback, a pass using the same
+car model/start/seed travelled 513.5 m, with no stuck events, maximum 1.90 m from
+the nearest street centreline and 0.415 m from its planned right-hand lane.
+The pass ended at a road endpoint after 48 s; this is not a completed 90 s drive.
+Routes diverge after junctions because immediate U-turns are no longer selected.
+Traffic/world RNG is not reset. These are behavioural checks, not matched GPU
+benchmarks or proof of improved frame rate.
+
+The driving interval had p99 21.2 ms and one 400.8 ms hitch near newly added
+pedestrians and draw-pipeline counter changes. That is correlation; no native
+profile established the cause. Low-rate process/physics monitors are not the
+cost of that frame. Further profile work is needed before changing spawning.
+A broader run also exposed off-street parked vehicles whose straight join to the
+road graph crossed a block. The bot now refuses joins over 4 m and records
+`road_join_refused`; yards need explicit drivable connections.
+
+`autoplay_status` and the final JSON include `driving` lane-deviation metrics.
+Use `tools/bench/test_road_path.tscn` for geometry, grade, filter and admission
+regressions, then verify physical motion in the rendered game. Stopped/aborted
+runs and refused joins must be reported, not counted as successful routes.

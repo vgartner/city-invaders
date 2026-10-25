@@ -143,10 +143,18 @@ takes a car now and then (drives to a far point and gets out), picks up what
 it can take, or runs to a random far point. It runs, turns on the spot for a
 sharp turn and walks the last metres to a goal. A robot it has shot at for 5 s
 without a hit, it goes in close to. It drives along the traffic's streets
-(`road_graph`, in the right-hand lane, a random turn at each crossing), slows
-for the corners, waits behind a vehicle in front and passes it in the other
-lane when it stands still (a bus at its stop), backs out of a wall turning
-round and pulls forward when there is no room behind.
+(`road_graph`, in the right-hand lane). `road_path.gd` projects onto street
+segments, pursues a point along their arc length, and plans the next edge
+before the junction. It prefers continuations over immediate U-turns, brakes
+for upcoming curves using their spacing and angle, and uses horizontal heading
+so hill pitch cannot create a false steering error. Steering keys account for
+the player's wheel smoothing rather than assuming key duty equals wheel angle.
+It only joins a car within 4 m of a mapped street; off-street yards need
+an explicit drivable connection. `road_join_refused` records skipped cars,
+which are excluded for the run. The admission check is repeated on entry in
+case a selected vehicle moved. It waits behind vehicles instead of blindly changing lanes; after 12 seconds
+blocked it logs `traffic_blocked`, leaves that car and continues on foot.
+Wall recovery still backs out and pulls forward when there is no room behind.
 
 When it can't get on, it says where: no progress for 1.5 s logs a `stuck`
 event with what is in front of it, and it steps aside, then gives the goal up,
@@ -161,7 +169,15 @@ attempts: only actual progress does. Once movement resumes, the activity tag
 returns from `stuck` to its current task. Also `unreachable` (no navmesh path),
 `slow_goal` (far longer than the path says), `pickup_not_taken` (stood on it,
 still there), `car_stuck` (a car that doesn't move: backs out, gives up after
-three, and that car is not taken again) and `fell` (below the ground).
+three, and that car is not taken again), `traffic_blocked` (waited 12 s for
+traffic), and `fell` (below the ground).
+
+Run/status JSON also includes `driving`: simulation seconds in the road
+controller (including stops), maximum horizontal distance from its planned lane,
+seconds more than 3 m from that lane, planned edge count, and rejected joins. These measure the
+OSM lane route, not visible asphalt boundaries. A short interrupted drive must
+not be reported as a completed long route. Regression fixture:
+`godot --headless --path godot ../tools/bench/test_road_path.tscn`.
 
 Semi-automatic weapons release and press the trigger between shots, including
 following a reload. `counts.shots` counts observed ammunition consumption.
