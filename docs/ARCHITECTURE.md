@@ -11,6 +11,7 @@ There are no hand-made scenes: `main.tscn` only holds `main.gd`.
 |---|---|
 | `main.gd` | Menu, loading, phases, networking (ENet host/join), the city, navmesh bake, spawners (pedestrians, traffic, robots, pickups, dropships), status broadcast to the HUDs, score, design mode, landmarks, cinema screens, pause and settings menus |
 | `player.gd` | First-person player: movement, mouse look, weapons and view models, health / pala armour, pickups, vehicles (enter, drive, chase camera), score display |
+| `tablet.gd` | Field tablet apps and video UI; video titles refresh on list entry, with retained pictograms for draw callbacks |
 | `hud.gd` | The Doom-style status bar (health, weapon, ammo, robots, civilians, threat, score), objective banner, prompts |
 | `civilian.gd` | Pedestrians, skaters, street dogs, vendors and Brigada Militar officers: wander / flee AI, police combat, death |
 | `enemy.gd` | URB-07 trooper and URB-H9 mech: patrol, hunt civilians, chase players in flank slots, vandalise props, shoot; break apart when destroyed (`wreck.gd`) |

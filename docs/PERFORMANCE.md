@@ -693,3 +693,31 @@ profiler parser tests; rendered before/after eviction probes and driving.
 The fresh after-fix game returned no script or renderer errors. Owned game,
 profiler and trace processes were closed. Pending work: native system/CPU
 wait analysis on the intermittent driving stalls and a usable Metal capture.
+
+
+## Tablet redraw resource audit (2026-10-25)
+
+The autoplay soak did not repeatedly open the tablet. A separate rendered
+probe froze world simulation, allowed the tablet subtree to process, and
+opened Home/GPS/TcheTube/Bah/Radio for four seconds each, twice. Native CPU
+profiling found 858 title-file reads over approximately eight seconds of the
+TcheTube list: `_video_title()` re-read and parsed the same JSON on each draw.
+Its 858 calls consumed 60.296 ms inclusive (0.0703 ms/call), maximum 1.523 ms.
+This is redundant small I/O/CPU work, not a reproduced 100 ms tablet stall.
+
+Titles now refresh once when the video list opens; `_video_title()` uses the
+snapshot with the same filename fallback. Re-entering the app picks up title
+edits. The map-sized TcheTube pictogram is retained in the existing art cache
+instead of loading/checking it during every draw. Neither art nor text styling
+changed. After a fresh launch, the same two video-list openings caused two
+file reads. 988 title lookups consumed 7.290 ms (0.00738 ms/call). This reduces
+per-lookup CPU work by about 90%, not overall frame time by 90%.
+
+Headless regression covers named/unknown clips, stable cached content after a
+file edit, refresh after re-entry and a missing titles file. The rendered
+probe exercised all five available app screens with no script errors.
+World/camera/population differ between fresh launches, and one screenshot
+occurred near the first after-probe Home phase; no FPS A/B conclusion is drawn
+from those whole-frame samples. The video-list function/read counts are the
+evidence for this change. Full profiles and probe scripts are in the test
+artifacts rather than a production recording policy change.

@@ -43,6 +43,7 @@ var _tex := {}                     # loaded art by name
 var _regions := {}
 var _note := ""                    # a line at the bottom of the home screen ("em breve")
 var _note_t := 0.0
+var _video_titles: Dictionary = {} # refreshed when opening the video list, never during draw
 var _videos: Array = []            # TchêTube: res:// paths of the .ogv files
 var _player: VideoStreamPlayer      # the video playing on the tablet's screen
 
@@ -84,7 +85,7 @@ func _ready() -> void:
 	if FileAccess.file_exists(UI + "UI_REGIONS.json"):
 		_regions = JSON.parse_string(FileAccess.get_file_as_string(UI + "UI_REGIONS.json"))
 	for n in ["papel_parede_pampa", "inicial_overlay", "gps_molde", "radio_molde", "bah_molde",
-			"controls/pause", "controls/play"]:
+			"controls/pause", "controls/play", "map/tchetube"]:
 		if ResourceLoader.exists(UI + n + ".png"):
 			_tex[n] = load(UI + n + ".png")
 	visible = false
@@ -202,6 +203,7 @@ func key(event: InputEventKey) -> bool:
 
 ## TchêTube: the game's own videos (video/tchetube/*.ogv) in a list.
 func _scan_videos() -> void:
+	_load_video_titles()
 	_videos = []
 	for f in DirAccess.get_files_at(VIDEOS):
 		var n := f.trim_suffix(".remap").trim_suffix(".import")
@@ -210,14 +212,19 @@ func _scan_videos() -> void:
 	_videos.sort()
 
 
-## Titles from video/tchetube/titles.json (file name -> title), else the file name.
+## Refresh when the list opens, so edits appear on re-entry without per-frame I/O.
+func _load_video_titles(path: String = VIDEOS + "titles.json") -> void:
+	_video_titles = {}
+	if FileAccess.file_exists(path):
+		var titles = JSON.parse_string(FileAccess.get_file_as_string(path))
+		if titles is Dictionary:
+			_video_titles = titles
+
+
+## Cached title, falling back to the file name for unlisted videos.
 func _video_title(path: String) -> String:
 	var key := path.get_file().get_basename()
-	if FileAccess.file_exists(VIDEOS + "titles.json"):
-		var t = JSON.parse_string(FileAccess.get_file_as_string(VIDEOS + "titles.json"))
-		if t is Dictionary and t.has(key):
-			return t[key]
-	return key.replace("_", " ").capitalize()
+	return _video_titles.get(key, key.replace("_", " ").capitalize())
 
 
 ## Plays on the tablet's screen; the radio goes quiet meanwhile.
@@ -481,8 +488,9 @@ func _draw_ui() -> void:
 			_ui.draw_rect(Rect2(Vector2.ZERO, Vector2(SCREEN)), Color(0.04, 0.06, 0.05, 0.82))
 			_ui.draw_rect(Rect2(0, 0, SCREEN.x, 42), Color(0, 0, 0, 0.35))
 			_ui.draw_rect(Rect2(0, 48, SCREEN.x, 62), Color(0.08, 0.14, 0.11))
-			if ResourceLoader.exists(UI + "map/tchetube.png"):
-				_ui.draw_texture_rect(load(UI + "map/tchetube.png"), Rect2(36, 54, 52, 52), false)
+			var video_icon: Texture2D = _tex.get("map/tchetube")
+			if video_icon:
+				_ui.draw_texture_rect(video_icon, Rect2(36, 54, 52, 52), false)
 			else:
 				_ui.draw_rect(Rect2(40, 60, 52, 38), RED)
 				_ui.draw_colored_polygon(PackedVector2Array([Vector2(58, 68), Vector2(80, 79), Vector2(58, 90)]), CREAM)
