@@ -118,6 +118,9 @@ d.call("screenshot", width=800, hud=False)
 
 ## Autoplay: a bot that plays
 
+Swarm combat targets are individual live drones, aimed at their actual centres.
+Dead units are excluded; walls and roofs block target visibility.
+
 `autoplay` hands the local player to a bot (`godot/scripts/autoplay.gd`) that
 plays the way a person does - through the same keys (`Settings.virtual`) and
 by turning the body and head - for a set time, while the F5 recorder runs:

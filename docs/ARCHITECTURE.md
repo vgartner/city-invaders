@@ -128,3 +128,16 @@ but only applies font colour/size overrides when the effective value changes.
 This avoids repeated theme/layout notifications on identical state. The tablet
 keeps a title snapshot and header pictogram outside draw callbacks; video-list
 re-entry refreshes title edits from disk.
+
+### Swarm unit collisions
+
+`swarm.gd` gives each unit a swept `CharacterBody3D` sphere. Server movement
+collides with world layer 1 and roof layer 64; replicas receive the same
+`positions`/`alive_mask` and avoid smoothing through walls. Death disables the
+unit collision immediately. The swarm's single `died` signal advances the
+director without duplicating per-unit score. Cannon splash uses unit positions.
+Autoplay targets live units at their actual centres rather than skipping swarms.
+
+Regression fixture: `godot --headless --path godot ../tools/bench/test_swarm.tscn`.
+It exercises real weapon rays, death/score accounting, wall/roof sweeps, cover,
+spawn placement and cannon splash.

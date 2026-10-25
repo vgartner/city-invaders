@@ -1565,6 +1565,9 @@ func missile_fx(from: Vector3, at: Vector3, flight: float) -> void:
 func player_cannon_land(origin: Vector3, at: Vector3, normal: Vector3, wall: bool, r: float, dmg: int, peer: int) -> void:
 	var by := players_root.get_node_or_null(str(peer))
 	for e in enemies_root.get_children():
+		if e.get("variant") == "swarm":
+			e.damage_in_radius(at, r, dmg, by)
+			continue
 		if e is Node3D and (e as Node3D).global_position.distance_to(at) < r + 1.0 and e.has_method("apply_damage"):
 			e.apply_damage(dmg, by)
 	blast_fx.rpc(origin, at, normal, wall)
@@ -2094,6 +2097,8 @@ func _spawn_enemy_node(data: Variant) -> Node:
 		sw.name = "E%d" % data["id"]
 		sw.position = data["pos"]
 		sw.count = data.get("n", 8)
+		if multiplayer.is_server():
+			sw.died.connect(director.on_enemy_killed) # one completed group, points already paid per unit
 		return sw
 	if data.get("variant", "") == "drone":
 		var dr: CharacterBody3D = Drone.new()

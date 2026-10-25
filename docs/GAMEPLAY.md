@@ -433,7 +433,11 @@ reactor at the back doubles it; a trooper's head takes double, its legs 70%.
   3.2 / 2.6 / 2.0 s. The rest are gunners higher up and further out: a red
   glint, then a small bolt (2 / 2 / 3) when they can see you - an awning or
   a corner is cover. With the kamikazes gone a gunner turns kamikaze now
-  and then. One shot each. A swarm every 150 / 110 / 75 s. Standing in the
+  and then. One shot each; a destroyed drone immediately stops blocking
+  later shots. Each drone awards 40 points; clearing the group counts once
+  toward the phase. Cannon splash hits individual drones too. Orbiting drones
+  slide/climb along walls; dives burst on first wall/roof contact. Walls and
+  roofs block their gunfire and blast damage. A swarm every 150 / 110 / 75 s. Standing in the
   open without a pala and not shooting back: alive after a minute on easy,
   about 30 s on medium (a minute when you keep moving), 12-20 s on hard.
 

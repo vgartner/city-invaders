@@ -412,12 +412,28 @@ func _recover_to_navmesh() -> void:
 
 # ---- fighting ----------------------------------------------------------------
 
+func _combat_targets() -> Array:
+	var targets: Array = []
+	for enemy in _main().enemies_root.get_children():
+		if enemy.has_method("combat_targets"):
+			targets.append_array(enemy.combat_targets())
+		else:
+			targets.append(enemy)
+	return targets
+
+
+func _aim_point(enemy: Node3D) -> Vector3:
+	if enemy.has_method("aim_position"):
+		return enemy.aim_position()
+	return enemy.global_position + Vector3(0, 2.4 if enemy.get("variant") == "mech" else 1.1, 0)
+
+
 func _robot_in_sight(r: float) -> Node3D:
 	var best: Node3D = null
 	var bd := r
 	var eye: Vector3 = player.camera.global_position
-	for e in _main().enemies_root.get_children():
-		if e.get("variant") == "swarm" or not e.has_method("is_alive") or not e.is_alive():
+	for e in _combat_targets():
+		if not e.has_method("is_alive") or not e.is_alive():
 			continue
 		var id: int = e.get_instance_id()
 		if float(_blocked_targets.get(id, 0.0)) > _t:
@@ -426,9 +442,9 @@ func _robot_in_sight(r: float) -> Node3D:
 		var d := (e as Node3D).global_position.distance_to(player.global_position)
 		if d >= bd:
 			continue
-		var q := PhysicsRayQueryParameters3D.create(eye, (e as Node3D).global_position + Vector3(0, 1.2, 0), 1)
+		var q := PhysicsRayQueryParameters3D.create(eye, _aim_point(e), 1 | 64)
 		if player.get_world_3d().direct_space_state.intersect_ray(q):
-			continue                    # behind a wall
+			continue                    # behind a wall or roof
 		bd = d
 		best = e
 	return best
@@ -474,7 +490,7 @@ func _fight(delta: float) -> void:
 	activity = "fight"
 	Settings.virtual.erase("left")
 	Settings.virtual.erase("right")
-	var at := _target.global_position + Vector3(0, 1.1 if _target.get("variant") != "mech" else 2.4, 0)
+	var at := _aim_point(_target)
 	var d := at.distance_to(player.global_position)
 	var err := _face(at, 1.0, delta)
 	# missing at range (a moving Coletor, a drone up high): after 5 s without
@@ -528,10 +544,10 @@ func _grenades(at: Vector3) -> void:
 		return
 	var near := 0
 	var drones := 0
-	for e in _main().enemies_root.get_children():
+	for e in _combat_targets():
 		if e.has_method("is_alive") and e.is_alive() and (e as Node3D).global_position.distance_to(at) < 7.0:
 			near += 1
-			if e.get("variant") in ["drone", "swarm"]:
+			if e.get("variant") in ["drone", "swarm_unit"]:
 				drones += 1
 	var kind := ""
 	if drones > 0 and player.grenades["porongo"] > 0:
