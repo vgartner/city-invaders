@@ -96,7 +96,8 @@ farroupilha camp) with box colliders.
 
 Native profiler capture tools live in `tools/devagent/profiler_capture.gd` and
 `profile_report.py` (see DEVAGENT.md). Map preparation keeps model resources
-in a path-keyed `_warm` cache, including the weapon view models, drone, swarm and people-container model,
+in a path-keyed `_warm` cache, including the weapon view models, drone, swarm, people-container model and
+all existing pickup models (legacy fallbacks and definition-driven drops/gadgets),
 so their first disk read is performed behind the loading screen.
 
 Player impact particles share two immutable sphere meshes/materials (dust and

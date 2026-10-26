@@ -326,3 +326,27 @@ DEVAGENT_PORT=24691 tools/devagent/devagent.py start_solo map=gasometro
 ```
 
 AI and physics run as usual; screenshots need a window.
+
+
+## Opt-in frame-stage and pickup diagnostics
+
+`frame_stages(on=true)` creates a temporary timing node. Query `frame_stages()`
+for its snapshot; `frame_stages(on=false)` returns the final snapshot and removes
+it. No stage callbacks run by default. Samples above 50 ms are bounded to the
+latest 400. `matched` verifies process/pre-draw/post-draw frame IDs and timestamp
+ordering before publishing intervals. These are CPU signal intervals, **not GPU
+execution times**; `after_draw_ms` also includes pacing and physics before the
+next process signal. Correlate with F5/native frames, not low-rate averages.
+
+`spawn_pickup(kind="core", x=0, y=1, z=0)` uses the normal gameplay creation path
+and returns its node ID, model cache state and CPU `create_ms`. Subsequent drawing
+is outside this duration. It changes the world: only use it in an isolated test.
+`warm_pickups()` retains all existing pickup scenes in the map cache;
+`warm_pickups(on=false)` removes those strong references for a cold-cache control
+(live instances can still retain resources). Both are diagnostic mutations;
+normal map loading already retains these scenes automatically. Restart the test
+game afterwards, and never measure these synchronous setup calls as gameplay.
+
+Cache regression: `godot --headless --path godot ../tools/bench/test_pickup_cache.tscn`.
+The fixture limits requests to pickup assets; full threaded map loading is checked
+separately in the rendered game.

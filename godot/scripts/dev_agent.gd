@@ -171,6 +171,19 @@ func _m_start_solo(_p: Dictionary):
 	return _m_get_state({})
 
 
+var _frame_stages: Node
+
+func _m_frame_stages(p: Dictionary) -> Dictionary:
+	if bool(p.get("on", false)) and not is_instance_valid(_frame_stages):
+		_frame_stages = preload("res://scripts/frame_stages.gd").new()
+		add_child(_frame_stages)
+	var result: Dictionary = _frame_stages.snapshot() if is_instance_valid(_frame_stages) else {"active": false}
+	if p.has("on") and not bool(p["on"]) and is_instance_valid(_frame_stages):
+		_frame_stages.queue_free()
+		_frame_stages = null
+	return result
+
+
 func _m_perf(_p: Dictionary):
 	## Frame cost: where the time goes (ms per frame), what is drawn, how many agents.
 	var m := _main()
@@ -1618,6 +1631,31 @@ func _m_scan_gaps(p: Dictionary):
 	for c in clusters:
 		c["min_width"] = snappedf(c["min_width"], 0.01)
 	return {"checked": checked, "slit_samples": found.size(), "clusters": clusters.slice(0, int(p.get("limit", 50)))}
+
+
+## Diagnostic spawn: CPU creation time is separate from the following draw.
+func _m_spawn_pickup(p: Dictionary) -> Dictionary:
+	var main := _main()
+	var kind: String = p.get("kind", "core")
+	var path: String = main.Entities.get_def(kind).get("model", main.Pickup.MODELS.get(kind, ""))
+	var cached := ResourceLoader.has_cached(path)
+	var start := Time.get_ticks_usec()
+	var node: Node = main._spawn_pickup(kind, Vector3(p.get("x", 0), p.get("y", 0), p.get("z", 0)), false)
+	return {"id": str(node.name), "model": path, "cached_before": cached,
+		"cached_after": ResourceLoader.has_cached(path), "create_ms": (Time.get_ticks_usec() - start) / 1000.0}
+
+
+## Explicit diagnostic equivalent of retaining pickup scenes at map load.
+func _m_warm_pickups(p: Dictionary) -> Dictionary:
+	var main := _main()
+	var paths: PackedStringArray = main.Pickup.model_paths()
+	var start := Time.get_ticks_usec()
+	for path in paths:
+		if bool(p.get("on", true)):
+			main._warm[path] = load(path)
+		else:
+			main._warm.erase(path)
+	return {"models": paths.size(), "milliseconds": (Time.get_ticks_usec() - start) / 1000.0}
 
 
 func _m_spawn_enemy(p: Dictionary):

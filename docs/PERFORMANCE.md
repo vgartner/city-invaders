@@ -834,3 +834,49 @@ road graph crossed a block. The bot now refuses joins over 4 m and records
 Use `tools/bench/test_road_path.tscn` for geometry, grade, filter and admission
 regressions, then verify physical motion in the rendered game. Stopped/aborted
 runs and refused joins must be reported, not counted as successful routes.
+
+
+### Render-stage hitch isolation and pickup retention (2026-10-26)
+
+Opt-in `frame_stages` correlates process/pre-draw/post-draw signals with engine
+frame IDs. In a 100 s native-profiler + OS-sampling diagnostic, the largest
+matched interval was 241.3 ms: 12.2 ms before draw, 190.7 ms between render
+signals, 38.4 ms afterwards. Other 158–188 ms frames likewise spent 135–162 ms
+between render signals. Their pipeline counters did not increment. This narrows
+the search to rendering/driver work or waits, not a demonstrated script callback
+or new-pipeline compilation. Signal durations are CPU intervals, not GPU times.
+The intrusive diagnostic averaged 42.8 FPS with ten >100 ms frames; it is not a
+normal gameplay baseline. A MoltenVK experiment emitted pipeline-cache errors
+and multi-second camera-sweep stalls; no driver/threading/quality setting was
+changed. A native Metal process left overnight later emitted fence timeouts;
+that session was closed rather than used as a clean performance baseline.
+
+A separate confirmed inefficiency was repeated resource loading for pickup
+models that had no remaining instances. `Pickup.model_paths()` enumerates unique
+existing legacy and definition-driven models (23 in this checkout). Threaded map
+loading now retains their PackedScenes in `_warm`. Geometry, texture resolution,
+materials and gameplay are unchanged. This exchanges some loading-time/resident
+resource cost for cheaper later spawns; no isolated memory-delta claim is made.
+
+A rendered, paused-world A/B/A/B experiment used the same camera and eight drop/
+gadget types, three spawn/free cycles per type, 24 trials per phase:
+
+| Phase | Retained | Median creation CPU ms | Maximum creation CPU ms | Maximum lifecycle frame ms |
+|---|---|---:|---:|---:|
+| A1 | no | 3.638 | 15.758 | 51.4 |
+| B1 | yes | 1.019 | 2.262 | 128.7 |
+| A2 | no | 3.731 | 10.178 | 46.0 |
+| B2 | yes | 1.241 | 1.766 | 58.7 |
+
+Cache flags matched all 96 trials. No native profiler, OS sampler or headless
+fixture ran concurrently with these phases. The reduced CPU creation cost is
+repeatable; the 128.7 ms retained-phase outlier explicitly shows this is **not**
+a fix for all render stalls. A preliminary 597-to-9 ms comparison overlapped a
+headless asset test and is excluded as confounded. Headless load probes likewise
+are not rendered-game creation timings.
+
+Artifacts: local Codex workspace `outputs/hitches_20261025/` contains the raw
+alternating trials, frame-stage/native captures, profiler report and final
+rendered smoke audit. Test `tools/bench/test_pickup_cache.tscn` verifies original
+models survive repeated instance removal through the map's actual retention
+function. Full threaded loading is verified separately in the rendered game.

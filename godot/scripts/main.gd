@@ -865,6 +865,10 @@ func _warm_people_request() -> void:
 		want.append(Civilian.PEOPLE_GAIT[k])
 	for path in Player.VIEW_MODELS.values():
 		want.append(path)
+	# Definition-driven robot drops and gadgets may have no live instance.
+	# A path string does not keep their PackedScene/texture resources cached.
+	for path in Pickup.model_paths():
+		want.append(path)
 	# Drones can all die: retaining their scene avoids a synchronous reload
 	# when the next reinforcement arrives (180-196 ms in native probes).
 	want.append(Drone.MODEL)

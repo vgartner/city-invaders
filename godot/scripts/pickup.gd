@@ -44,6 +44,21 @@ var _ring_mat: StandardMaterial3D
 var _t := 0.0
 
 
+## Include definition-driven drops/gadgets as well as legacy fallback models.
+## Retain these scenes during map loading, even after their last pickup is gone.
+static func model_paths() -> PackedStringArray:
+	var paths := PackedStringArray()
+	for path in MODELS.values():
+		if not path in paths and ResourceLoader.exists(path):
+			paths.append(path)
+	for definition in Entities.all():
+		var path: String = definition.get("model", "")
+		if definition.get("pickup", false) and not path.is_empty() \
+				and not path in paths and ResourceLoader.exists(path):
+			paths.append(path)
+	return paths
+
+
 func _ready() -> void:
 	collision_layer = 0
 	collision_mask = 4          # players
