@@ -2,6 +2,8 @@ extends Node
 ## Opt-in DevAgent timing at existing frame signals. CPU callback intervals,
 ## not GPU timings: post-draw to next process also includes pacing/physics.
 var frames := 0
+var non_drawable_intervals := 0
+var _drawable := false
 var over_100ms := 0
 var max_ms := 0.0
 var slow_frames: Array = []
@@ -20,8 +22,10 @@ func _ready() -> void:
 
 func _begin() -> void:
 	var now := Time.get_ticks_usec()
+	var drawable := (DisplayServer.get_name() != "headless" and get_window().can_draw())
 	if _process_us > 0:
 		frames += 1
+		if not _drawable or not drawable: non_drawable_intervals += 1
 		var ms := (now - _process_us) / 1000.0
 		max_ms = maxf(max_ms, ms)
 		if ms > 100.0: over_100ms += 1
@@ -29,11 +33,12 @@ func _begin() -> void:
 			var matched := _pre_frame == _process_frame and _post_frame == _process_frame \
 					and _process_us <= _pre_us and _pre_us <= _post_us and _post_us <= now
 			slow_frames.append({"frame": _process_frame, "tick_us": now, "frame_ms": ms,
-				"matched": matched, "pre_frame": _pre_frame, "post_frame": _post_frame,
+				"window_can_draw": _drawable and drawable, "matched": matched, "pre_frame": _pre_frame, "post_frame": _post_frame,
 				"before_draw_ms": (_pre_us - _process_us) / 1000.0 if matched else -1.0,
 				"draw_signal_ms": (_post_us - _pre_us) / 1000.0 if matched else -1.0,
 				"after_draw_ms": (now - _post_us) / 1000.0 if matched else -1.0})
 			if slow_frames.size() > 400: slow_frames.pop_front()
+	_drawable = drawable
 	_process_us = now
 	_process_frame = Engine.get_process_frames()
 	_pre_us = 0
@@ -48,5 +53,6 @@ func _after_draw() -> void:
 	_post_frame = Engine.get_process_frames()
 
 func snapshot() -> Dictionary:
-	return {"frames": frames, "over_100ms": over_100ms, "max_ms": max_ms,
+	return {"frames": frames, "non_drawable_intervals": non_drawable_intervals,
+		"render_comparison_valid": non_drawable_intervals == 0 and frames > 0, "over_100ms": over_100ms, "max_ms": max_ms,
 		"slow_frames": slow_frames.duplicate(true)}

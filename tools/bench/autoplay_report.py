@@ -79,7 +79,30 @@ def counter_delta(samples, key):
     return values[-1] - values[0]
 
 
+def render_validity(rec):
+    """Drawability at both interval ends, not a GPU execution measurement."""
+    columns = rec.get("columns", []) if rec else []
+    if "window_can_draw" not in columns or not rec.get("rows"):
+        return {"known": False, "valid": False, "reason": "window drawability not recorded"}
+    index = columns.index("window_can_draw")
+    rows = rec["rows"]
+    # Require actual booleans for every row; malformed/partial captures are unknown.
+    if any(len(row) <= index or type(row[index]) is not bool for row in rows):
+        return {"known": False, "valid": False, "reason": "incomplete window drawability samples"}
+    hidden = sum(not row[index] for row in rows)
+    return {"known": True, "valid": hidden == 0, "non_drawable_intervals": hidden,
+            "frames": len(rows)}
+
+
 def print_diagnostics(run, rec, path):
+    audit = render_validity(rec)
+    if not audit["known"]:
+        print("\nRender comparison UNVERIFIED: " + audit["reason"])
+    elif not audit["valid"]:
+        print(f"\nRender comparison INVALID: {audit['non_drawable_intervals']}/{audit['frames']} "
+              "intervals touch a non-drawable window; process FPS can include skipped rendering.")
+    else:
+        print("\nWindow drawable at both sampled ends of every interval (not a GPU timing).")
     coverage = run.get("coverage")
     if coverage:
         print("\nObserved coverage (player/vehicle positions; horizontal distance):")

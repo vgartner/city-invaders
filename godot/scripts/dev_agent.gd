@@ -42,10 +42,12 @@ var _frame_t := 0
 var _rec_skip_first := false
 var _recent_commands: Array = []
 var _recent_scenes: Array = []
+var _frame_can_draw := false
 
 
 func _process(_delta: float) -> void:
 	var now := Time.get_ticks_usec()
+	var can_draw := (DisplayServer.get_name() != "headless" and get_window().can_draw())
 	if _frame_t > 0:
 		var ms := (now - _frame_t) / 1000.0
 		if _rec_on:
@@ -53,7 +55,7 @@ func _process(_delta: float) -> void:
 				_rec_skip_first = false  # discard the interval preceding record start
 			else:
 				var record_start := Time.get_ticks_usec()
-				_rec_frame(ms)
+				_rec_frame(ms, can_draw and _frame_can_draw)
 				var cost := Time.get_ticks_usec() - record_start
 				_rec_cost_total_us += cost
 				_rec_cost_max_us = maxi(_rec_cost_max_us, cost)
@@ -66,6 +68,7 @@ func _process(_delta: float) -> void:
 					"nodes": int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)),
 					"last_added": _last_added.slice(-6),
 					"engine_frame": Engine.get_process_frames(), "tick_us": now,
+					"window_can_draw": can_draw, "previous_window_can_draw": _frame_can_draw,
 					"pipelines": _pipeline_counts(), "nodes_by_type": _effect_counts.duplicate(), "recent_scenes": _recent_scenes.slice(-6),
 					"recent_commands": _recent_commands.filter(func(c): return c["end_us"] >= _frame_t).duplicate(true)})
 			if _hitches.size() > 200:
@@ -73,8 +76,10 @@ func _process(_delta: float) -> void:
 		if _autoplay and _autoplay.done:
 			_autoplay_finish()
 	_frame_t = now
+	_frame_can_draw = can_draw
 	if _recording:
 		_frames.append(now)
+		_frames_drawable.append(can_draw)
 	while _server.is_connection_available():
 		var p := _server.take_connection()
 		_peers.append(p)
@@ -190,7 +195,8 @@ func _m_perf(_p: Dictionary):
 	var P := Performance
 	var vrid := get_viewport().get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(vrid, true)
-	return {"fps": Engine.get_frames_per_second(), "render_scale": snappedf(get_viewport().scaling_3d_scale, 0.01),
+	return {"window_can_draw": (DisplayServer.get_name() != "headless" and get_window().can_draw()), "window_focused": get_window().has_focus(),
+		"fps": Engine.get_frames_per_second(), "render_scale": snappedf(get_viewport().scaling_3d_scale, 0.01),
 		"gpu_ms": snappedf(RenderingServer.viewport_get_measured_render_time_gpu(vrid), 0.01),
 		"cpu_render_ms": snappedf(RenderingServer.viewport_get_measured_render_time_cpu(vrid), 0.01),
 		"process_ms": snappedf(P.get_monitor(P.TIME_PROCESS) * 1000.0, 0.01),
@@ -803,15 +809,21 @@ func _m_scene_count(_p: Dictionary):
 ## Frame times for benchmarks: `frames on=true` starts recording every frame,
 ## `frames` (on missing) returns the distribution since then and goes on.
 var _recording := false
+var _frames_drawable: Array[bool] = []
 var _frames: PackedInt64Array = []
 func _m_frames(p: Dictionary):
 	if p.has("on"):
 		_recording = bool(p["on"])
 		_frames.clear()
+		_frames_drawable.clear()
 		return {"recording": _recording}
 	var ms: Array = []
+	var non_drawable := 0
 	for i in range(1, _frames.size()):
+		if not _frames_drawable[i - 1] or not _frames_drawable[i]:
+			non_drawable += 1
 		ms.append((_frames[i] - _frames[i - 1]) / 1000.0)
+	_frames_drawable = _frames_drawable.slice(_frames_drawable.size() - 1) if not _frames_drawable.is_empty() else _frames_drawable
 	_frames = _frames.slice(_frames.size() - 1) if _frames.size() > 0 else _frames
 	if ms.is_empty():
 		return {"frames": 0}
@@ -820,7 +832,7 @@ func _m_frames(p: Dictionary):
 	for v in ms:
 		total += v
 	var q := func(f: float) -> float: return snappedf(ms[mini(ms.size() - 1, int(ms.size() * f))], 0.1)
-	return {"frames": ms.size(), "seconds": snappedf(total / 1000.0, 0.1), "avg_fps": snappedf(ms.size() / (total / 1000.0), 0.1),
+	return {"frames": ms.size(), "non_drawable_intervals": non_drawable, "render_comparison_valid": non_drawable == 0, "seconds": snappedf(total / 1000.0, 0.1), "avg_fps": snappedf(ms.size() / (total / 1000.0), 0.1),
 			"median_ms": q.call(0.5), "p95_ms": q.call(0.95), "p99_ms": q.call(0.99), "max_ms": snappedf(ms[-1], 0.1),
 			"over_33ms": ms.filter(func(v): return v > 33.4).size(), "over_100ms": ms.filter(func(v): return v > 100.0).size()}
 
@@ -1138,13 +1150,15 @@ func _toggle_rec() -> void:
 			"median_ms": qf.call(0.5), "p95_ms": qf.call(0.95), "p99_ms": qf.call(0.99), "max_ms": snappedf(ms[-1], 0.1),
 			"over_33ms": ms.filter(func(v): return v > 33.4).size(), "over_100ms": ms.filter(func(v): return v > 100.0).size(),
 			"hitches": hitches.size(), "recorder_total_ms": _rec_cost_total_us / 1000.0,
-			"recorder_max_ms": _rec_cost_max_us / 1000.0, "map": _main().map_id if _main() else ""}
+			"recorder_max_ms": _rec_cost_max_us / 1000.0,
+			"non_drawable_intervals": _rec_rows.filter(func(r): return not r[-1]).size(),
+			"render_comparison_valid": _rec_rows.all(func(r): return r[-1]), "map": _main().map_id if _main() else ""}
 	DirAccess.make_dir_recursive_absolute(PERF_DIR)
 	var path := PERF_DIR.path_join("rec_%d_%d_%d.json" % [Time.get_unix_time_from_system(), OS.get_process_id(), Time.get_ticks_usec()])
 	var f := FileAccess.open(path, FileAccess.WRITE)
 	f.store_string(JSON.stringify({"summary": summary, "hitches": hitches, "telemetry": _rec_telemetry,
 			"columns": ["t", "frame_ms", "process_ms", "physics_ms", "draw_calls", "objects", "primitives",
-					"civilians", "robots", "vehicles", "x", "z", "heading_deg", "fps_setting_scale", "activity", "engine_frame", "tick_us", "pipeline_canvas", "pipeline_mesh", "pipeline_surface", "pipeline_draw", "pipeline_specialization"],
+					"civilians", "robots", "vehicles", "x", "z", "heading_deg", "fps_setting_scale", "activity", "engine_frame", "tick_us", "pipeline_canvas", "pipeline_mesh", "pipeline_surface", "pipeline_draw", "pipeline_specialization", "window_can_draw"],
 			"rows": _rec_rows}))
 	f.close()
 	var line := "%.0f s, %.0f fps avg, median %.1f ms, p99 %.1f ms, worst %.0f ms, %d frames over 100 ms" % [
@@ -1162,7 +1176,7 @@ func _toggle_rec() -> void:
 	fi.close()
 
 
-func _rec_frame(ms: float) -> void:
+func _rec_frame(ms: float, can_draw: bool) -> void:
 	if Time.get_ticks_usec() >= _rec_next_sample_us:
 		_rec_next_sample_us = Time.get_ticks_usec() + 1000000
 		_rec_telemetry.append(_telemetry_sample())
@@ -1183,7 +1197,7 @@ func _rec_frame(ms: float) -> void:
 			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_PIPELINE_COMPILATIONS_MESH),
 			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_PIPELINE_COMPILATIONS_SURFACE),
 			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_PIPELINE_COMPILATIONS_DRAW),
-			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_PIPELINE_COMPILATIONS_SPECIALIZATION)])
+			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_PIPELINE_COMPILATIONS_SPECIALIZATION), can_draw])
 
 
 ## Low-rate diagnostics: allocator memory is not OS process footprint, and
@@ -1195,6 +1209,7 @@ func _telemetry_sample() -> Dictionary:
 	var m := _main()
 	return {"t": (Time.get_ticks_msec() - _rec_start) / 1000.0,
 			"tick_us": Time.get_ticks_usec(), "engine_frame": Engine.get_process_frames(),
+			"window_can_draw": (DisplayServer.get_name() != "headless" and get_window().can_draw()), "window_focused": get_window().has_focus(),
 			"cpu_render_ms": cpu if cpu > 0.0 else null, "gpu_ms": gpu if gpu > 0.0 else null,
 			"static_memory_mb": OS.get_static_memory_usage() / 1048576.0,
 			"texture_counter_mb": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TEXTURE_MEM_USED) / 1048576.0,
@@ -1263,6 +1278,7 @@ func _m_autoplay(p: Dictionary):
 		"god": bool(p.get("god", true)), "armed": bool(p.get("armed", true)),
 		"drive_every": _autoplay.drive_every,
 		"window_px": [get_window().size.x, get_window().size.y],
+		"window_can_draw_at_start": (DisplayServer.get_name() != "headless" and get_window().can_draw()), "window_focused_at_start": get_window().has_focus(),
 		"viewport_px": [get_viewport().get_visible_rect().size.x, get_viewport().get_visible_rect().size.y],
 		"render_scale": get_viewport().scaling_3d_scale,
 		"max_fps": Engine.max_fps, "vsync_mode": DisplayServer.window_get_vsync_mode(),

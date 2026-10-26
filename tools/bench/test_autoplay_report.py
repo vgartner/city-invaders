@@ -1,6 +1,6 @@
 """Regression tests for separating final position holds from exploration."""
 import unittest
-from autoplay_report import stationary_tail, pipeline_changes
+from autoplay_report import stationary_tail, pipeline_changes, render_validity
 
 
 def row(t, x=0, z=0):
@@ -37,6 +37,24 @@ class PipelineCounterTests(unittest.TestCase):
 
     def test_counter_reset_is_not_a_negative_compilation(self):
         self.assertEqual(pipeline_changes([{"pipeline_draw": 10}, {"pipeline_draw": 0}], 1)["pipeline_draw"], 0)
+
+
+class DrawabilityTests(unittest.TestCase):
+    def test_old_capture_is_unverified(self):
+        self.assertFalse(render_validity({"columns": ["t"], "rows": [[0]]})["known"])
+
+    def test_hidden_interval_rejects_render_comparison(self):
+        rec = {"columns": ["window_can_draw"], "rows": [[True], [False], [True]]}
+        self.assertEqual(render_validity(rec), {"known": True, "valid": False,
+                                               "non_drawable_intervals": 1, "frames": 3})
+
+    def test_visible_capture_and_empty_capture(self):
+        self.assertTrue(render_validity({"columns": ["window_can_draw"], "rows": [[True]]})["valid"])
+        self.assertFalse(render_validity({"columns": ["window_can_draw"], "rows": []})["known"])
+
+    def test_partial_or_non_boolean_samples_are_not_silently_valid(self):
+        for rows in [[[True], []], [[True], [1]], [[True], [None]]]:
+            self.assertFalse(render_validity({"columns": ["window_can_draw"], "rows": rows})["known"])
 
 
 if __name__ == "__main__":

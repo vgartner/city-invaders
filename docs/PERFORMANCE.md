@@ -900,3 +900,51 @@ That smoke did not fire at robots or drive; it does not extend combat coverage.
 This is a correctness fix, not a measured frame-rate improvement. Headless
 startup, 14 benchmark Python tests, four native parser tests, cache, road, swarm
 and tracer fixtures pass. The user map edit remains untouched.
+
+
+### Visible-window repeat and render audit (2026-10-26)
+
+An occluded macOS window can stop drawing while process frames keep advancing.
+An exploratory frozen-world comparison showed unchanged draw counters and
+process-only throughput around 140 FPS; those intervals were discarded. F5,
+`frames` and opt-in `frame_stages` now check `Window.can_draw()` at both interval
+ends. Headless is explicitly excluded (its dummy Window API can return true).
+Reports retain all frames, mark mixed/non-drawable captures invalid for render
+comparison and older captures unverified. This qualifies measurements; it does
+not measure GPU execution/presentation, nor speed up the game on its own.
+
+A new single-instance Metal repeat at 6260 x 2656, render scale 1.0, had **zero
+non-drawable intervals** in both gameplay runs and every camera-test phase:
+
+| Run | Average FPS | Median ms | p99 ms | Maximum ms | Frames >100 ms |
+|---|---:|---:|---:|---:|---:|
+| 90 s natural autoplay | 53.2 | 17.7 | 31.6 | 107.1 | 3 |
+| 60 s with nearby enemy injections | 43.6 | 21.8 | 49.7 | 182.9 | 7 |
+
+The natural run covered 646.6 m but fired no shots. The combat run used explicit
+clear-line-of-sight, navmesh-projected enemy spawns: 69 shots, 13 robot kills,
+two grenades, one reload and one vehicle entry. World RNG/routes differ, so
+these are coverage checks, not an optimization A/B. No 1 s stall recurred in
+these runs; this does not establish that occlusion caused every prior stall.
+
+Two passes through the same six camera poses, with the world frozen, isolated
+rendering features. Normal median frame times were 19.7–22.7 ms; shadows off
+17.8 ms, combined SSAO/SSIL/glow off 13.1 ms, actors hidden 19.3 ms. Separate
+SSAO-off and glow-off phases had medians 15.7 and 17.3 ms, but maxima 523.1 and
+375.1 ms. Thus post-processing contributes steady cost but disabling it is not
+a demonstrated hitch fix. Short phases and feature switches can create resources/
+pipelines; these are not normal gameplay or evidence of a specific GPU/driver
+fault. All original graphics/visibility settings were restored and checked.
+
+An Xcode Game Memory capture failed to finish initialization; after its bounded
+wait it was terminated. Its incomplete trace supplies no GPU-memory evidence.
+A short headless fixture overlapped that already unusable capture attempt; no
+normal gameplay/camera comparison above had such a concurrent test. GPU timing
+remains unavailable/zero. Do not interpret render-signal intervals as GPU time.
+
+Artifacts in the local workspace: `outputs/hitches_20261026_repeat/REPORT.md`,
+raw gameplay recordings, stage intervals, both camera comparisons and the
+restored-scene screenshot. Verification: 18 benchmark/report Python tests,
+four native parser tests, headless startup and the coverage/drawability fixture
+pass. User map changes were preserved. The new diagnostic does not force window
+focus, change its size or modify graphics settings in normal operation.

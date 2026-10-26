@@ -162,3 +162,11 @@ real RPC/damage path, checks hit/wall endpoints, cooldown and cleanup. Run the
 same scene in two headless processes with `-- --network --host` and
 `-- --network` on isolated port 24693 to verify server/client FX exactly once
 and server-only damage. Start the host first.
+
+
+DevAgent frame recordings qualify render comparisons with window drawability
+at both interval endpoints. This avoids reporting process-only frames from an
+occluded/minimized window as rendered throughput. Headless is always excluded;
+older captures without the field remain unverified. The opt-in stage timer and
+F5 preserve all intervals and label invalid captures rather than filtering away
+hitches. This instrumentation does not change normal game rendering settings.

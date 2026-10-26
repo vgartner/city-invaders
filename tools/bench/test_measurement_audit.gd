@@ -56,5 +56,26 @@ func _ready() -> void:
 	assert(DevAgent._effect_counts["CPUParticles3D"] == before + 1)
 	particles.free()
 	assert(DevAgent._effect_counts["CPUParticles3D"] == before)
-	print("Coverage, read-only status and effect lifetime tests passed")
+	# One visible interval and one transition into a hidden window.
+	DevAgent._frames = PackedInt64Array([1000, 2000, 3000])
+	DevAgent._frames_drawable.assign([true, true, false])
+	var frames: Dictionary = DevAgent._m_frames({})
+	assert(frames.frames == 2 and frames.non_drawable_intervals == 1)
+	assert(not frames.render_comparison_valid)
+	assert(DevAgent._frames.size() == 1 and DevAgent._frames_drawable == [false])
+	DevAgent._frames.append(4000)
+	DevAgent._frames_drawable.append(true)
+	assert(DevAgent._m_frames({}).non_drawable_intervals == 1, "The boundary interval still touches the hidden window")
+	DevAgent._frames.append(5000)
+	DevAgent._frames_drawable.append(true)
+	assert(DevAgent._m_frames({}).render_comparison_valid, "A later fully visible interval is valid")
+	DevAgent._m_frames({"on": false})
+	DevAgent._m_frame_stages({"on": true})
+	for frame in 4:
+		await get_tree().process_frame
+	var stages: Dictionary = DevAgent._m_frame_stages({"on": false})
+	assert(stages.frames > 0 and stages.non_drawable_intervals == stages.frames)
+	assert(not stages.render_comparison_valid, "Headless process FPS must never count as rendered FPS")
+	await get_tree().process_frame
+	print("Coverage, drawability, read-only status and effect lifetime tests passed")
 	get_tree().quit()

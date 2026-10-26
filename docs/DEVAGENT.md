@@ -350,3 +350,23 @@ game afterwards, and never measure these synchronous setup calls as gameplay.
 Cache regression: `godot --headless --path godot ../tools/bench/test_pickup_cache.tscn`.
 The fixture limits requests to pickup assets; full threaded map loading is checked
 separately in the rendered game.
+
+
+### Drawability audit for render comparisons
+
+`perf` reports `window_can_draw` and `window_focused`. F5 records drawability
+at both ends of every process interval in the `window_can_draw` column;
+`frames` and `frame_stages` also report `non_drawable_intervals` and
+`render_comparison_valid`. Headless runs are explicitly non-drawable even if
+the dummy display server's Window API returns true. Focus alone is not enough:
+a covered/minimized macOS window may stop drawing while process frames continue.
+These checks qualify a render comparison; they do not measure GPU execution or
+prove that every frame was presented.
+
+`autoplay_report.py` marks captures with non-drawable intervals INVALID for
+render comparisons and older/partial captures UNVERIFIED. It keeps raw data and
+functional coverage instead of silently dropping slow frames. Leave the test
+window visible, keep its size fixed and use one game instance. Do not compare
+background process FPS with foreground rendering FPS. Changing focus/occlusion
+is itself a confound; repeat interrupted runs. The diagnostic never forces
+window focus, resizes windows or changes graphics settings on its own.
