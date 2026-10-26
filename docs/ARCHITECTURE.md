@@ -143,3 +143,22 @@ Autoplay targets live units at their actual centres rather than skipping swarms.
 Regression fixture: `godot --headless --path godot ../tools/bench/test_swarm.tscn`.
 It exercises real weapon rays, death/score accounting, wall/roof sweeps, cover,
 spawn placement and cannon splash.
+
+
+### Controlled drone shot visuals
+
+`Player.server_shoot` broadcasts `drone_shot_fx` only for the drone weapon, using
+its authoritative hitscan endpoint. The RPC accepts the server as remote sender;
+`call_local` also draws it for a solo host. The owning client does not predict a
+second tracer. `drone_shot.gd` shares one emissive/unshaded cylinder and material,
+scales it between a camera-relative muzzle offset and the hit, and removes the
+visual after 0.10 s. Short/zero-distance and vertical shots are handled without
+invalid orientations. It allocates no lights, colliders or imported resources.
+This changes visual feedback only; hit masks, damage and impact particles stay
+on the existing paths.
+
+Regression: `tools/bench/test_drone_shot.tscn` drives `_drone_fire` through the
+real RPC/damage path, checks hit/wall endpoints, cooldown and cleanup. Run the
+same scene in two headless processes with `-- --network --host` and
+`-- --network` on isolated port 24693 to verify server/client FX exactly once
+and server-only damage. Start the host first.

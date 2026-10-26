@@ -1439,6 +1439,7 @@ const DRONE_CEILING := 120.0
 ## the drone's light gun: no ammo, it fires while the battery lasts
 const DRONE_DAMAGE := 5
 const DRONE_INTERVAL := 0.15
+const DroneShot := preload("res://scripts/drone_shot.gd")
 const DRONE_RANGE := 160.0             # control link: no further from your body
 var _drone: Node3D
 var _drone_cam: Camera3D
@@ -1528,6 +1529,14 @@ func _drone_fire() -> void:
 	var b := _drone_cam.global_transform.basis
 	var dir := -b.z + b.x * randf_range(-1, 1) * 0.01 + b.y * randf_range(-1, 1) * 0.01
 	_shoot_ray(_drone_cam.global_position, dir.normalized(), "drone")
+
+
+## The server resolves the endpoint once; every peer sees the same shot.
+@rpc("any_peer", "call_local", "unreliable")
+func drone_shot_fx(origin: Vector3, direction: Vector3, to: Vector3) -> void:
+	if multiplayer.get_remote_sender_id() not in [0, 1]:
+		return
+	DroneShot.show(get_tree().current_scene, origin, direction, to)
 
 
 ## A small window in the corner with what your body sees while you fly.
@@ -1746,6 +1755,8 @@ func server_shoot(origin: Vector3, dir: Vector3, w: String = "pistol") -> void:
 	var q := PhysicsRayQueryParameters3D.create(origin, origin + dir * (MELEE[w][1] if melee else 150.0), shot_mask())
 	q.exclude = [get_rid()]
 	var hit := get_world_3d().direct_space_state.intersect_ray(q)
+	if w == "drone":
+		drone_shot_fx.rpc(origin, dir, hit.position if hit else origin + dir * 150.0)
 	var dmg: int = MELEE[w][0] if melee else (DRONE_DAMAGE if w == "drone" else WEAPONS.get(w, WEAPONS["pistol"])["damage"])
 	if melee:
 		if hit and hit.collider.has_method("apply_damage"):

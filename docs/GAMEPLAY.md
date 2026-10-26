@@ -466,3 +466,13 @@ when there is room; 100 % draws every pixel; 85 / 67 / 50 % draw it
 smaller and scale it up to the screen (MetalFX on a Mac, FSR elsewhere) -
 on a large screen (4K, ultrawide, a Retina display) 67 % roughly doubles the
 frame rate with hardly a visible difference.
+
+
+### Controlled drone gun feedback
+
+The controlled drone's light gun shows a brief green energy tracer on every
+shot, from below/right of its camera to the first hit surface (or the 150 m
+hitscan endpoint on a miss). The server broadcasts the resolved endpoint so
+all peers see one shot; walls stop the ray. Existing impact particles, 5 damage,
+0.15 s interval, spread and battery rules are unchanged. The tracer lasts 0.10 s
+and has no collision or dynamic light.
