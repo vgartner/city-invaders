@@ -1250,13 +1250,17 @@ func show_shot(to: Vector3) -> void:
 		tw.tween_callback(flash.queue_free)
 	# a short energy bolt flying to the target, not a beam spanning the street
 	# (one mesh and material for every bolt; its glow is the emission, no light)
+	var delta := to - from
+	if delta.is_zero_approx():
+		return # Sound/flash still play; a zero-length shot has no tracer direction.
 	var bolt := MeshInstance3D.new()
 	bolt.mesh = _bolt_mesh()
 	bolt.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	get_tree().current_scene.add_child(bolt)
-	var dir := (to - from).normalized()
+	var dir := delta.normalized()
 	bolt.global_position = from + dir * BOLT_LENGTH / 2
-	bolt.look_at(to, Vector3.UP if abs(dir.y) < 0.99 else Vector3.RIGHT)
+	# Close hits can coincide with the bolt centre or lie behind it.
+	bolt.look_at(bolt.global_position + dir, Vector3.UP if abs(dir.y) < 0.99 else Vector3.RIGHT)
 	bolt.rotate_object_local(Vector3.RIGHT, PI / 2)
 	var travel: float = max(from.distance_to(to) - BOLT_LENGTH / 2, 0.1)
 	var bt := bolt.create_tween()

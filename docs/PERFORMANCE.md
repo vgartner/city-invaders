@@ -880,3 +880,23 @@ alternating trials, frame-stage/native captures, profiler report and final
 rendered smoke audit. Test `tools/bench/test_pickup_cache.tscn` verifies original
 models survive repeated instance removal through the map's actual retention
 function. Full threaded loading is verified separately in the rendered game.
+
+
+The fresh 90 s functional smoke covered 608.2 m, 38 shots, one robot kill,
+two pickups and one trade, with all 23 pickup models retained automatically.
+It still had six >100 ms frames (maximum 1034.9 ms, 1013.5 ms between render
+signals). Another game instance was open, so this is not an isolated FPS
+comparison. It exposed a coincident-target `look_at` error in enemy tracers.
+
+### Close-hit tracer correction (2026-10-26)
+
+A target at half the tracer length could coincide with its centre; closer hits
+also reversed its orientation. `show_shot` now orients using the shot direction,
+and omits only the tracer for a zero-length shot (sound/flash remain). The actual
+shot path is exercised at 0, 0.1, 0.7 and 10 m by
+`tools/bench/test_enemy_tracer.tscn`. The same four probes passed in the renderer,
+followed by a fresh 60 s autoplay smoke: 541.5 m, four pickups, no reported errors.
+That smoke did not fire at robots or drive; it does not extend combat coverage.
+This is a correctness fix, not a measured frame-rate improvement. Headless
+startup, 14 benchmark Python tests, four native parser tests, cache, road, swarm
+and tracer fixtures pass. The user map edit remains untouched.
