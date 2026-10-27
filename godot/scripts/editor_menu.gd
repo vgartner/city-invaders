@@ -176,7 +176,7 @@ func _show_help() -> void:
 			"Palette: click a model, then click the world to place it; Q / E turn it; Esc stops",
 			"Object Inspector: rename, move, raise and turn models placed by hand",
 			"Del: remove the selection  ·  Ctrl+Z: undo the last placing  ·  Esc: stop, deselect, leave",
-			"F1: talk to Claude - everything selected goes along as reference",
+			"F1: talk to the AI assistant - everything selected goes along as reference",
 			"Tab: lock the mouse to look around as in the game (and back)"])
 		add_child(_help)
 	_help.popup_centered()

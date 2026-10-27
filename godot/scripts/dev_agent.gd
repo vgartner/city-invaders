@@ -31,6 +31,90 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_build_chat()
 	_ensure_hitch_history()
+	if port == PORT:
+		_show_welcome.call_deferred()       # the player's game; a test instance (another port) has no one to read it
+
+
+## The developer keys, shown once when the game starts with the DevAgent:
+## a dark panel like the menus' with an OK button (Enter / Esc close it too).
+const WELCOME_KEYS := [
+	["F1", "Chat with the AI assistant - your position, view and selection go along"],
+	["F2", "Design mode - the world freezes, you fly; click objects to select them"],
+	["F3", "God mode on / off - no damage"],
+	["F5", "Record performance (F5 again stops) - the AI analyses the log"],
+]
+const DRIVING_METHODS := ["start_solo", "hold_keys", "tap", "teleport", "look_at", "design", "autoplay", "launch"]
+var _welcome: CanvasLayer
+
+
+func _show_welcome() -> void:
+	_welcome = CanvasLayer.new()
+	_welcome.layer = 45                       # over the menus and Controls
+	_welcome.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(_welcome)
+	var root := Control.new()
+	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_welcome.add_child(root)
+	var shade := ColorRect.new()
+	shade.color = Color(0, 0, 0, 0.6)
+	shade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.add_child(shade)
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.add_child(center)
+	var panel := PanelContainer.new()
+	var style := StyleBoxFlat.new()          # the menus' panel (main.gd _sub_screen)
+	style.bg_color = Color(0.04, 0.05, 0.07, 0.92)
+	style.set_corner_radius_all(14)
+	style.set_content_margin_all(32)
+	style.border_color = Color(0.85, 0.2, 0.15, 0.9)
+	style.set_border_width_all(2)
+	panel.add_theme_stylebox_override("panel", style)
+	center.add_child(panel)
+	var box := VBoxContainer.new()
+	box.custom_minimum_size = Vector2(640, 0)
+	box.add_theme_constant_override("separation", 14)
+	panel.add_child(box)
+	var title := Label.new()
+	title.text = "Developer keys"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 44)
+	title.add_theme_color_override("font_color", Color(1.0, 0.32, 0.22))
+	box.add_child(title)
+	var intro := Label.new()
+	intro.text = "The DevAgent is on: an AI agent can see and drive this game."
+	intro.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	intro.add_theme_font_size_override("font_size", 20)
+	intro.add_theme_color_override("font_color", Color(0.75, 0.78, 0.82))
+	box.add_child(intro)
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 24)
+	grid.add_theme_constant_override("v_separation", 10)
+	box.add_child(grid)
+	for row in WELCOME_KEYS:
+		var key := Label.new()
+		key.text = row[0]
+		key.add_theme_font_size_override("font_size", 26)
+		key.add_theme_color_override("font_color", Color(1.0, 0.32, 0.22))
+		grid.add_child(key)
+		var what := Label.new()
+		what.text = row[1]
+		what.add_theme_font_size_override("font_size", 22)
+		grid.add_child(what)
+	var ok := Button.new()
+	ok.text = "OK"
+	ok.custom_minimum_size = Vector2(0, 60)
+	ok.add_theme_font_size_override("font_size", 30)
+	ok.pressed.connect(_close_welcome)
+	box.add_child(ok)
+	ok.grab_focus.call_deferred()            # Enter / Space press it
+
+
+func _close_welcome() -> void:
+	if is_instance_valid(_welcome):
+		_welcome.queue_free()
+	_welcome = null
 
 
 ## Hitches: every frame longer than HITCH_MS, with what the world held then.
@@ -110,6 +194,8 @@ func _handle(p: StreamPeerTCP, line: String) -> void:
 	if not has_method("_m_" + method):
 		_reply(p, msg.get("id"), null, "unknown method: " + method)
 		return
+	if method in DRIVING_METHODS:
+		_close_welcome()                    # a script is driving: out of its way
 	var command := {"method": method, "start_us": Time.get_ticks_usec(), "end_us": 9223372036854775807}
 	_recent_commands.append(command)
 	if _recent_commands.size() > 16:
@@ -952,7 +1038,7 @@ func _build_chat() -> void:
 	panel.add_theme_stylebox_override("panel", st)
 	_chat_layer.add_child(panel)
 	_chat_edit = LineEdit.new()
-	_chat_edit.placeholder_text = "Message to Claude (Enter sends, Esc closes) - what you selected in design mode goes with it"
+	_chat_edit.placeholder_text = "Message to the AI assistant (Enter sends, Esc closes) - what you selected in design mode goes with it"
 	_chat_edit.add_theme_font_size_override("font_size", 22)
 	_chat_edit.text_submitted.connect(_send_chat)
 	panel.add_child(_chat_edit)
@@ -982,6 +1068,11 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 var _chat_mouse := Input.MOUSE_MODE_CAPTURED
 func _input(event: InputEvent) -> void:
+	if is_instance_valid(_welcome) and event is InputEventKey and event.pressed \
+			and (event as InputEventKey).keycode == KEY_ESCAPE:
+		_close_welcome()                    # Esc closes the developer-keys panel
+		get_viewport().set_input_as_handled()
+		return
 	if _chat_layer and _chat_layer.visible and event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 		_close_chat()
 		get_viewport().set_input_as_handled()
@@ -1189,7 +1280,7 @@ func _toggle_rec() -> void:
 	f.close()
 	var line := "%.0f s, %.0f fps avg, median %.1f ms, p99 %.1f ms, worst %.0f ms, %d frames over 100 ms" % [
 			summary["seconds"], summary["avg_fps"], summary["median_ms"], summary["p99_ms"], summary["max_ms"], summary["over_100ms"]]
-	_m_say({"text": "Performance recorded (%s) - sent to Claude" % line, "seconds": 8})
+	_m_say({"text": "Performance recorded (%s) - sent to the AI assistant" % line, "seconds": 8})
 	var msg := {"text": "(F5 performance recording) " + line, "time": Time.get_datetime_string_from_system(),
 			"map": summary["map"], "perf_log": ProjectSettings.globalize_path(path), "summary": summary}
 	var pl := _player()
@@ -1410,7 +1501,7 @@ func _m_say(p: Dictionary):
 	panel.add_theme_stylebox_override("panel", st)
 	var l := Label.new()
 	var t := str(p.get("text", ""))
-	l.text = t if t.begins_with("(sent)") else "Claude: " + t
+	l.text = t if t.begins_with("(sent)") else "AI: " + t
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD
 	l.add_theme_font_size_override("font_size", 20)
 	panel.add_child(l)
@@ -1543,7 +1634,7 @@ func _m_selection(_p: Dictionary):
 			"all": _main().design_selections.map(func(e): return _sel_ref(e))}
 
 
-## One design-mode selection as a reference for Claude.
+## One design-mode selection as a reference for the AI assistant.
 func _sel_ref(e: Dictionary) -> Dictionary:
 	var r := {"what": e["what"], "name": e["name"], "detail": e["detail"], "pos": _v(e["pos"])}
 	var n = e.get("node")

@@ -5,7 +5,7 @@ extends PanelContainer
 ## properties (kind, model, definition, position, turn, size); a model placed
 ## by hand can be renamed, moved, raised and turned here, saved to the map's
 ## user edits. Several objects (Shift+click): the list, remove them together;
-## F1 sends them all to Claude as references.
+## F1 sends them all to the AI assistant as references.
 
 const Entities := preload("res://scripts/entities.gd")
 const Photos := preload("res://scripts/photos.gd")
@@ -105,7 +105,7 @@ func _map_page() -> void:
 	_row("Designed lines", str(lines.size()) if not lines.is_empty() else "none (one round of all stops)")
 	if Edits.runtime():
 		_hint("Edits are kept in your game folder and applied by the game. Building heights and paving need the map pipeline (the source version).")
-	_hint("Click an object to inspect it  ·  Shift+click adds more  ·  F1 sends the selection to Claude")
+	_hint("Click an object to inspect it  ·  Shift+click adds more  ·  F1 sends the selection to the AI assistant")
 
 
 func _object_page(s: Dictionary) -> void:
@@ -283,7 +283,7 @@ func _many_page(sels: Array) -> void:
 	if not removable.is_empty():
 		_action("Remove %d objects" % removable.size(), func(): _remove(removable))
 	_action("Clear the selection", func(): _main().design_deselect())
-	_hint("F1: talk to Claude about these %d objects" % sels.size())
+	_hint("F1: talk to the AI assistant about these %d objects" % sels.size())
 
 
 func _remove(sels: Array) -> void:

@@ -2790,7 +2790,7 @@ func _show_selection() -> void:
 	if last["what"] != "building" and map_editor:
 		map_editor.close()
 	if design_selections.size() > 1:
-		design_label = "%d OBJECTS SELECTED  ·  Shift+click adds or removes  ·  F1 talks to Claude about them" % design_selections.size()
+		design_label = "%d OBJECTS SELECTED  ·  Shift+click adds or removes  ·  F1 talks to the AI assistant about them" % design_selections.size()
 	else:
 		var p: Vector3 = last["pos"]
 		design_label = "%s  %s  %s   (%.0f, %.0f, %.0f)" % [String(last["what"]).to_upper(), last["name"] if last["what"] != "building" else "",
