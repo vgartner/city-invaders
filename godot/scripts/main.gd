@@ -1012,6 +1012,9 @@ func _set_loading(frac: float, step: String) -> void:
 
 func _hide_loading() -> void:
 	_loading.visible = false
+	var dev := get_node_or_null("/root/DevAgent")
+	if dev and dev.has_method("round_started"):
+		dev.round_started()                 # the developer keys panel, the first round only
 	if _load_music and _load_music.playing:
 		var tw := create_tween()
 		tw.tween_property(_load_music, "volume_db", -40.0, 2.0)

@@ -31,12 +31,12 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_build_chat()
 	_ensure_hitch_history()
-	if port == PORT:
-		_show_welcome.call_deferred()       # the player's game; a test instance (another port) has no one to read it
+	_player_game = port == PORT         # a test instance (another port) has no one to read the welcome panel
 
 
-## The developer keys, shown once when the game starts with the DevAgent:
-## a dark panel like the menus' with an OK button (Enter / Esc close it too).
+## The developer keys, shown when the first round of the session appears (in
+## the game, not over the menu): a dark panel like the menus' with an OK
+## button (Enter / Esc close it too). Solo, the round waits while it is open.
 const WELCOME_KEYS := [
 	["F1", "Chat with the AI assistant - your position, view and selection go along"],
 	["F2", "Design mode - the world freezes, you fly; click objects to select them"],
@@ -45,6 +45,22 @@ const WELCOME_KEYS := [
 ]
 const DRIVING_METHODS := ["start_solo", "hold_keys", "tap", "teleport", "look_at", "design", "autoplay", "launch"]
 var _welcome: CanvasLayer
+var _player_game := false
+var _welcome_done := false
+var _welcome_paused := false
+
+
+## main.gd, when the loading screen goes: the first round of a player's game
+## (not a test instance, not one a script is driving) gets the panel.
+func round_started() -> void:
+	if _welcome_done or not _player_game or _main() == null or _main().driven:
+		return
+	_welcome_done = true
+	_show_welcome()
+	_welcome_paused = multiplayer.get_peers().is_empty() and not get_tree().paused
+	if _welcome_paused:
+		get_tree().paused = true
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 
 func _show_welcome() -> void:
@@ -112,9 +128,15 @@ func _show_welcome() -> void:
 
 
 func _close_welcome() -> void:
-	if is_instance_valid(_welcome):
-		_welcome.queue_free()
+	if not is_instance_valid(_welcome):
+		return
+	_welcome.queue_free()
 	_welcome = null
+	if _welcome_paused:
+		get_tree().paused = false
+		_welcome_paused = false
+	if _main() and not _main().driven and _player():
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED     # back to the round
 
 
 ## Hitches: every frame longer than HITCH_MS, with what the world held then.

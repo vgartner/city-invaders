@@ -55,10 +55,11 @@ building with its OSM id and link) and a picture of the screen
 ## Developer keys
 
 Only with the DevAgent on (a player's game has none of them). The game
-started this way (`./run-godot.sh`, port 24690) shows them once in a
-"Developer keys" panel with an OK button (Enter or Esc close it too); a
-test instance on another port doesn't, and the panel closes by itself as
-soon as a script starts driving the game (`start_solo`, `hold_keys`, ...).
+started this way (`./run-godot.sh`, port 24690) shows them in a "Developer
+keys" panel when its first round appears, with an OK button (Enter or Esc
+close it too); solo, the round waits while it is open. A test instance on
+another port doesn't show it, nor a round a script started (`start_solo`),
+and it closes by itself as soon as a script starts driving the game.
 
 | Key | |
 |---|---|
