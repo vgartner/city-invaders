@@ -31,6 +31,9 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_build_chat()
 	_ensure_hitch_history()
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--video-stage="):
+			_start_video.call_deferred(argument.trim_prefix("--video-stage="))
 	_player_game = port == PORT         # a test instance (another port) has no one to read the welcome panel
 
 
@@ -43,7 +46,7 @@ const WELCOME_KEYS := [
 	["F3", "God mode on / off - no damage"],
 	["F5", "Record performance (F5 again stops) - the AI analyses the log"],
 ]
-const DRIVING_METHODS := ["start_solo", "hold_keys", "tap", "teleport", "look_at", "design", "autoplay", "launch"]
+const DRIVING_METHODS := ["start_solo", "hold_keys", "tap", "teleport", "look_at", "design", "autoplay", "launch", "stage", "take"]
 var _welcome: CanvasLayer
 var _player_game := false
 var _welcome_done := false
@@ -282,6 +285,53 @@ func _m_start_solo(_p: Dictionary):
 		await _main()._solo(str(_p.get("map", "")))
 		await get_tree().process_frame
 	return _m_get_state({})
+
+
+var _video: Node
+
+func _video_node() -> Node:
+	if not is_instance_valid(_video):
+		_video = preload("res://scripts/video_stage.gd").new()
+		_video.agent = self
+		add_child(_video)
+	return _video
+
+func _m_stage(p: Dictionary) -> Dictionary:
+	if str(p.get("name", "")).is_empty():
+		return {"scenes":preload("res://scripts/video_stage.gd").catalogue()}
+	_close_welcome()
+	return await _video_node().prepare(str(p["name"]))
+
+func _m_take(p: Dictionary) -> Dictionary:
+	if not bool(p.get("on", true)):
+		_video_node().stop()
+		return _video_node().status()
+	return _video_node().play(bool(p.get("quit_on_end",false)))
+
+func _m_take_status(_p: Dictionary) -> Dictionary:
+	return _video.status() if is_instance_valid(_video) else {"running":false,"scene":""}
+
+func _m_stage_clear(_p: Dictionary) -> Dictionary:
+	if is_instance_valid(_video): _video.clear()
+	return {"scene":"","running":false}
+
+func _m_stage_drop(p: Dictionary) -> Dictionary:
+	if not is_instance_valid(_video) or _video.scene_name != "street_battle":
+		return _err("Prepare street_battle first")
+	return {"result":_main().call_dropship(_player().global_position, int(p.get("count",4)))}
+
+func _start_video(name: String) -> void:
+	var result := await _m_stage({"name":name})
+	if result.has("__error"):
+		push_error(result["__error"])
+		if "--video-quit" in OS.get_cmdline_user_args(): get_tree().quit(1)
+		return
+	print("VIDEO_STAGE_READY ", JSON.stringify(result))
+	if "--video-take" in OS.get_cmdline_user_args():
+		result = _m_take({"quit_on_end":"--video-quit" in OS.get_cmdline_user_args()})
+		if result.has("__error"):
+			push_error(result["__error"])
+			if "--video-quit" in OS.get_cmdline_user_args(): get_tree().quit(1)
 
 
 var _frame_stages: Node

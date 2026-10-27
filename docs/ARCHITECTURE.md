@@ -175,3 +175,18 @@ occluded/minimized window as rendered throughput. Headless is always excluded;
 older captures without the field remain unverified. The opt-in stage timer and
 F5 preserve all intervals and label invalid captures rather than filtering away
 hitches. This instrumentation does not change normal game rendering settings.
+
+
+### Staged video rehearsals
+
+DevAgent lazily creates `video_stage.gd` only on an explicit stage/take command
+or a `--devagent --video-stage=...` startup request. Presets are data in
+`godot/data/video_scenes.json`; the standalone `tools/devagent/stage.py` client
+protects the owner's default port. Setup is separate from taking footage.
+A take runs before player physics, using opt-in `scripted_control/scripted_move`
+analog input through the existing movement/collision path. Normal keyboard
+movement is unchanged when the flag is false. Quintic ramps and shortest-arc
+camera easing are sampled on the game clock; no wall-clock RPC loop drives the
+motion. Per-tick take logs and movie frame markers support encoded-video QA.
+This is phase one: four manually playable setups and one scripted walking test,
+not a complete automated trailer director, cinematic flyover or combat sequence.

@@ -1,0 +1,178 @@
+{
+  "usina_walk": {
+    "title": "Usina: a player-paced walk and look around",
+    "map": "gasometro",
+    "position": [
+      0,
+      4,
+      62
+    ],
+    "yaw": 0,
+    "pitch": 5,
+    "weapon": "pistol",
+    "settle_s": 2,
+    "guide": "Walk towards the Usina, look up at the chimney. This scene also has a 12-second scripted walking take.",
+    "pickups": [
+      {
+        "kind": "fruki",
+        "offset": [
+          2,
+          0,
+          -7
+        ]
+      },
+      {
+        "kind": "pala",
+        "offset": [
+          -2,
+          0,
+          -10
+        ]
+      }
+    ],
+    "take": {
+      "duration_s": 12,
+      "look": [
+        {
+          "t": 0,
+          "yaw": 0,
+          "pitch": 5
+        },
+        {
+          "t": 4,
+          "yaw": -8,
+          "pitch": 9
+        },
+        {
+          "t": 8,
+          "yaw": -34,
+          "pitch": 50
+        },
+        {
+          "t": 12,
+          "yaw": -20,
+          "pitch": 12
+        }
+      ],
+      "walk": [
+        {
+          "start": 0.7,
+          "end": 5.2,
+          "direction": [
+            0,
+            -1
+          ],
+          "ramp_s": 0.65,
+          "speed_fraction": 0.45
+        }
+      ]
+    }
+  },
+  "street_battle": {
+    "title": "Street firefight",
+    "map": "gasometro",
+    "position": [
+      85,
+      3,
+      277
+    ],
+    "yaw": 90,
+    "pitch": 0,
+    "weapon": "machinegun",
+    "settle_s": 8,
+    "guide": "Fight the two troopers along the street. Use the stage_drop command for a dropship; its landing zone is chosen by gameplay, not fixed to the camera.",
+    "enemies": [
+      {
+        "variant": "trooper",
+        "offset": [
+          -20,
+          0,
+          0
+        ]
+      },
+      {
+        "variant": "trooper",
+        "offset": [
+          -30,
+          0,
+          2
+        ]
+      }
+    ],
+    "pickups": [
+      {
+        "kind": "ammo",
+        "offset": [
+          -4,
+          0,
+          1
+        ]
+      }
+    ]
+  },
+  "grenades_swarm": {
+    "title": "Bergamota, Porongo and a swarm",
+    "map": "gasometro",
+    "position": [
+      35,
+      5,
+      95
+    ],
+    "yaw": 0,
+    "pitch": 0,
+    "weapon": "machinegun",
+    "settle_s": 8,
+    "guide": "Q throws the selected grenade; Z switches Bergamota/Porongo. Keep civilians clear of the shot.",
+    "enemies": [
+      {
+        "variant": "trooper",
+        "offset": [
+          -2,
+          0,
+          -18
+        ]
+      },
+      {
+        "variant": "trooper",
+        "offset": [
+          2,
+          0,
+          -18
+        ]
+      },
+      {
+        "variant": "swarm",
+        "offset": [
+          0,
+          3,
+          -25
+        ]
+      }
+    ]
+  },
+  "drone_lasso": {
+    "title": "Catch and fly a drone",
+    "map": "gasometro",
+    "position": [
+      -40,
+      3,
+      100
+    ],
+    "yaw": 0,
+    "pitch": 15,
+    "weapon": "laco",
+    "settle_s": 8,
+    "guide": "Catch the drone with the lasso, then G to fly. A spare captured drone is supplied so the flight take can be rehearsed independently. Click fires its green ray.",
+    "drones": 1,
+    "enemies": [
+      {
+        "variant": "drone",
+        "offset": [
+          0,
+          7,
+          -16
+        ]
+      }
+    ]
+  }
+}

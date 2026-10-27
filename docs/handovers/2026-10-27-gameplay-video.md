@@ -116,3 +116,36 @@ coming from the current map (`tablet.gd` / the tablet's UI).
 - Docs updated in the same commits: [docs/DEVAGENT.md](../DEVAGENT.md)
   (the new methods / CLI), a short "Making a gameplay video" section.
 - Report what was tested and how, and what was not.
+
+
+## Phase-one implementation (Codex, 2026-10-27)
+
+Implemented on branch `gameplay-video`, in the isolated worktree
+`~/Documents/Codex/city-invaders-gameplay-video`.
+No owner map edits were copied, reverted or committed. See the new "Making a
+gameplay video" section in DEVAGENT.md for commands and scope.
+
+- Four JSON presets and explicit stage/take/status/clear/drop RPCs.
+- `usina_walk` has a simulation-clock 12 s take; the other three are manual.
+- Opt-in analog movement uses the real player collision/footstep path, quintic
+  acceleration/braking and shortest-arc eased camera turns. Cancellation restores
+  ordinary controls. No in-take teleports.
+- Movie Maker tested: 1920x1080, 60 fps; final trimmed MP4 has exactly 720 decoded
+  frames, 12.0 s and audio. Master mute and Retina viewport mismatch were caught
+  and fixed using the `movie` feature tag and matching capture/window sizes.
+- DevAgent remained reachable during offline capture. AVI includes a loading
+  prefix; trim using the logged start frame. AVI could not be read by macOS
+  avconvert here; the sample was encoded/muxed with native AVFoundation instead.
+- Native movement test and three Python scene/safety tests pass. All four setups
+  were checked in the rendered game, with screenshots and no runtime errors.
+- Movie recording had a pre-stage Metal fence timeout during map loading and
+  existing exit resource warnings. The selected 720-frame take was verified
+  individually; no consecutive identical encoded input frames or position jumps.
+
+Artifacts are in the Codex workspace `outputs/gameplay_video/`: final
+`usina_preview.mp4`, raw AVI, take logs, encoded-frame QA and validation notes.
+This is a rehearsal sample, **not** the complete 2–3 minute presentation.
+Remaining: scripted combat/interaction/flight shots, a free flyover camera,
+precise dropship choreography, full montage/titles and the optional tablet place
+name fix. The dropship helper is exposed, but its complete arrival/unloading was
+not included in the tested sample. World/traffic RNG is still live.

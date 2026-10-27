@@ -7,6 +7,9 @@ const EnemyScript := preload("res://scripts/enemy.gd")
 ## (semi-auto) and machine gun (full-auto, picked up on the street).
 
 const Step := preload("res://scripts/step.gd")
+## Opt-in analog movement for scripted video takes; normal controls stay unchanged.
+var scripted_control := false
+var scripted_move := Vector2.ZERO
 const WALK_SPEED := 5.0
 const RUN_SPEED := 9.0
 const JUMP_VELOCITY := 5.0
@@ -694,8 +697,10 @@ func _physics_process(delta: float) -> void:
 	var input := Vector2(
 		float(Settings.pressed("right")) - float(Settings.pressed("left")),
 		float(Settings.pressed("back")) - float(Settings.pressed("forward")))
+	if scripted_control: input = scripted_move.limit_length()
 	var dir := (transform.basis * Vector3(input.x, 0, input.y)).normalized()
 	var speed := (RUN_SPEED if Settings.pressed("run") else WALK_SPEED) * (Tune.adrenaline_speed if _adrenaline > 0 else 1.0)
+	if scripted_control: speed *= input.length()
 	velocity.x = dir.x * speed
 	velocity.z = dir.z * speed
 	Step.try_step(self, Vector3(velocity.x, 0, velocity.z) * get_physics_process_delta_time() * 3.0)

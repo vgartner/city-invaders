@@ -378,3 +378,89 @@ window visible, keep its size fixed and use one game instance. Do not compare
 background process FPS with foreground rendering FPS. Changing focus/occlusion
 is itself a confound; repeat interrupted runs. The diagnostic never forces
 window focus, resizes windows or changes graphics settings on its own.
+
+
+## Making a gameplay video
+
+Use your isolated test instance (port **24691**). Staging is an explicit,
+destructive solo rehearsal: it clears the current robots/ships, disables the
+Director and scheduled swarms, relocates the player on the navmesh, supplies
+weapons/items and enables god mode. It does not edit maps/assets. Never stage
+the owner's live game without their explicit request. The CLI protects port
+24690 unless `--allow-player-game` is supplied. It rejects shared rounds and
+active autoplay/takes; leave vehicles/editor and unpause first.
+
+```bash
+DEVAGENT_PORT=24691 godot --path godot -- --devagent
+python3 tools/devagent/stage.py --list
+python3 tools/devagent/stage.py usina_walk --take --wait
+python3 tools/devagent/stage.py street_battle
+python3 tools/devagent/stage.py --drop
+python3 tools/devagent/stage.py grenades_swarm
+python3 tools/devagent/stage.py drone_lasso
+```
+
+Presets live in `godot/data/video_scenes.json`:
+
+- `usina_walk`: pistol, Fruki/pala props, a 12 s walking/look-up take near the Usina.
+- `street_battle`: armed troopers and ammo in the long east-west street. `--drop`
+  separately requests a gameplay dropship; its valid landing zone is selected by
+  normal game logic, not fixed in the shot. Result 1 = dropship requested, 0 =
+  an existing dropship, -1 = no suitable zone.
+- `grenades_swarm`: troopers/swarm, Bergamota and Porongo for manual play.
+- `drone_lasso`: a flying drone, laço and one spare captured drone for rehearsing
+  flight independently of the capture. G flies it; click fires its green ray.
+
+Only `usina_walk` currently has a fully scripted take; the other presets are
+manual scene setups for OBS/gameplay recording. Click the window to capture the
+mouse before playing manually. Scene preparation is not part of a shot. A
+2–8 s simulation-time settle lets the spawn effects finish; enemies remain
+active, so manual shots can vary. Pedestrians/traffic and world RNG are not reset.
+Scene clear restores Director/swarm timing and temporary movie render/audio
+settings, removes tracked stage actors/items and releases movement control;
+it cannot undo cleared original robots, combat damage or collected items.
+Restart the solo round for a pristine rehearsal.
+
+RPC methods: `stage` (no name lists presets), `stage(name=...)`, `take`,
+`take(on=false)`, `take_status`, `stage_clear`, `stage_drop(count=4)`.
+CLI `--status`, `--stop` and `--clear` wrap the corresponding methods.
+
+### Smooth movement and offline capture
+
+The take uses engine simulation time, not Python sleeps or network intervals.
+It sets an optional analog walking input before the player's ordinary movement
+physics: acceleration/deceleration use quintic easing, still passing through
+`Step.try_step` / `move_and_slide`, footsteps and collisions. Camera keyframes
+use the shortest yaw arc and smooth easing; no position writes or interpolation
+resets happen during a take. `scripted_control` defaults off and is released on
+finish/cancel. This is a scripted rehearsal, not footage of a human playing.
+
+Movie Maker writes fixed-rate frames and audio independently of wall-clock
+render speed. Test a short independent shot before a full 2–3 minute montage:
+
+```bash
+DEVAGENT_PORT=24691 godot --path godot --windowed --resolution 1920x1080 \
+  --write-movie /absolute/output/usina_raw.avi --fixed-fps 60 -- \
+  --devagent --video-stage=usina_walk --video-take --video-quit
+```
+
+Keep that port free. Do not use `--headless` for the visual capture. The output
+includes menu/loading/settle footage: trim to the `VIDEO_TAKE_START` frame marker,
+then the 12 s take. Actual output resolution is reported by Movie Maker; the
+staged movie capture matches the window to its 1920x1080 base viewport to avoid
+a cropped HUD on macOS/Retina.
+`VIDEO_TAKE_END` gives a JSON log in `user://devagent/takes/` containing per-tick
+position/aim/input and start frame markers. Graceful `--video-quit` closes the
+movie cleanly. Do not force-kill AVI recording. AVI/MJPEG is an intermediate;
+convert a trimmed clip to H.264/MP4 for sharing. Keep shots short (the built-in
+AVI writer has a 4 GB limit). Movie capture temporarily fixes render scale to
+1.0 and unmutes the master bus in memory; it does not save those preferences.
+
+Movie Maker removes recording-time frame drops; it does not fix logical jumps,
+collisions or bad choreography. Review the encoded frames and the take log.
+Official reference: https://docs.godotengine.org/en/stable/tutorials/animation/creating_movies.html
+
+Regression checks: `python3 -m unittest discover -s tools/devagent -p test_stage.py`
+and `godot --headless --fixed-fps 60 --path godot ../tools/bench/test_video_take.tscn`.
+The latter exercises the actual player's collision movement and verifies 720
+continuous physics samples, bounded motion/aim, eased endpoints and cancellation.
