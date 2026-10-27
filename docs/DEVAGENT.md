@@ -150,8 +150,10 @@ before the junction. It prefers continuations over immediate U-turns, brakes
 for upcoming curves using their spacing and angle, and uses horizontal heading
 so hill pitch cannot create a false steering error. Steering keys account for
 the player's wheel smoothing rather than assuming key duty equals wheel angle.
-It only joins a car within 4 m of a mapped street; off-street yards need
-an explicit drivable connection. `road_join_refused` records skipped cars,
+It only joins a car within 4 m of a mapped street, or one in a car park
+with its way out (the map's `out` route, while the car still stands at its
+spot): it drives that out (`drive_out` event) and joins the street where the
+route ends, in the lane's own direction. `road_join_refused` records skipped cars,
 which are excluded for the run. The admission check is repeated on entry in
 case a selected vehicle moved. It waits behind vehicles instead of blindly changing lanes; after 12 seconds
 blocked it logs `traffic_blocked`, leaves that car and continues on foot.

@@ -4093,7 +4093,8 @@ func _park_cars() -> void:
 	for k in n:
 		_car_seq += 1
 		car_spawner.spawn({"id": _car_seq, "model": cars[rng.randi() % cars.size()],
-				"parked": spots[k][0] + Vector3(0, 0.3, 0), "yaw": spots[k][1]})
+				"parked": spots[k][0] + Vector3(0, 0.3, 0), "yaw": spots[k][1],
+				"out": spots[k][2], "out_edge": spots[k][3]})
 
 
 ## Server: the armoured combine harvester waits, empty, on a street near the
@@ -5688,13 +5689,16 @@ func _spawn_car_node(data: Variant) -> Node:
 		car.position = data["parked"]
 		car.rotation.y = data.get("yaw", 0.0)
 		car.occupied = false
+		# a car park's way out to the street (props.json "out"), for a driver to follow
+		if not data.get("out", []).is_empty():
+			car.set_meta("drive_out", data["out"])
+			car.set_meta("drive_out_edge", data.get("out_edge", -1))
 		car.ready.connect(car.settle_parked, CONNECT_ONE_SHOT)
 	elif multiplayer.is_server():
 		car.ready.connect(func(): car.start(data["edge"], data["forward"]), CONNECT_ONE_SHOT)
 	return car
 
 
-## Server: a fresh reachable street point for a respawning pickup.
 ## Where a player can get to `at`: `at` itself when a path from the start
 ## reaches it, else where the path ends - the walkable spot nearest it (a shop
 ## counter's can inside the walls comes out onto the pavement in front) - if
@@ -5711,6 +5715,7 @@ func _reachable_spot(map: RID, at: Vector3, max_m: float) -> Vector3:
 	return end
 
 
+## Server: a fresh reachable street point for a respawning pickup.
 func random_pickup_point(avoid: Vector3) -> Vector3:
 	var map := get_world_3d().navigation_map
 	for attempt in 60:

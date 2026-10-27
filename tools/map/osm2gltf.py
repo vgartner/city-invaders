@@ -1710,6 +1710,7 @@ def main():
     args.out.with_suffix(".places.json").write_text(json.dumps(places, ensure_ascii=False))
     print("places:", {k: sum(1 for p in places if p["kind"] == k) for k in sorted({p["kind"] for p in places})},
           "models placed:", sum(1 for p in places if p.get("model")))
+    _drive_out_routes(props, carriageway.difference(footprint.buffer(0.3, join_style=2)), graph)
     args.out.with_suffix(".props.json").write_text(json.dumps(props))
     args.out.with_suffix(".landmarks.json").write_text(json.dumps(landmarks))
     args.out.with_suffix(".buildings.json").write_text(json.dumps(building_index))
@@ -1944,6 +1945,85 @@ def _road_graph(vehicle, area):
         node_xz[i] = [x, -y]
     print(f"road graph: {len(node_xz)} nodes, {len(edges)} edges")
     return {"nodes": node_xz, "edges": edges}
+
+
+DRIVE_OUT_JOIN_M = 3.0      # a route ends this close to a street's centre line (the bot joins within 4 m)
+DRIVE_OUT_MAX_M = 160.0     # how far from its spot a parked car looks for a street
+
+
+def _drive_out_routes(props, drivable, graph):
+    """A car parked off the street (a car park) gets the way out to it: the
+    shortest route over the asphalt (`drivable`: streets, service roads and
+    car parks, less the buildings) on a 1 m grid, from its spot to within
+    DRIVE_OUT_JOIN_M of a street of the traffic graph. Stored on the spot as
+    "out" ([[x, z], ...] game points) and "edge" (the street it joins), so a
+    driver leaves along the aisles, not across pavements. OSM rarely maps the
+    aisles inside a car park, but the car park itself is asphalt."""
+    import heapq
+    from shapely import contains_xy
+    from shapely.prepared import prep
+    streets = []
+    for i, e in enumerate(graph["edges"]):
+        streets.append((i, LineString([(p[0], -p[1]) for p in e["pts"]])))   # back to map metres
+    if not streets:
+        return
+    street_union = unary_union([ln for _, ln in streets])
+    near_street = prep(street_union.buffer(DRIVE_OUT_JOIN_M))
+    routed = far = 0
+    for p in props:
+        if p["type"] != "car":
+            continue
+        sx, sy = p["pos"][0], -p["pos"][2]
+        if street_union.distance(Point(sx, sy)) <= DRIVE_OUT_JOIN_M + 1.0:
+            continue                         # at the kerb already
+        x0, y0 = math.floor(sx - DRIVE_OUT_MAX_M), math.floor(sy - DRIVE_OUT_MAX_M)
+        n = int(DRIVE_OUT_MAX_M * 2) + 1
+        xs = x0 + np.arange(n) + 0.5
+        ys = y0 + np.arange(n) + 0.5
+        gx, gy = np.meshgrid(xs, ys, indexing="ij")
+        ok = contains_xy(drivable, gx, gy)
+        goal = contains_xy(street_union.buffer(DRIVE_OUT_JOIN_M), gx, gy) & ok
+        si, sj = int(sx - x0), int(sy - y0)
+        ok[si, sj] = True                    # the spot itself (a car's centre can sit on a lot's edge)
+        # Dijkstra, 8 neighbours; a little extra cost near the edge of the asphalt
+        dist = {(si, sj): 0.0}
+        prev = {}
+        heap = [(0.0, si, sj)]
+        end = None
+        while heap:
+            d, i, j = heapq.heappop(heap)
+            if d > dist.get((i, j), 9e9):
+                continue
+            if goal[i, j]:
+                end = (i, j)
+                break
+            for di, dj, w in ((1, 0, 1.0), (-1, 0, 1.0), (0, 1, 1.0), (0, -1, 1.0),
+                              (1, 1, 1.414), (1, -1, 1.414), (-1, 1, 1.414), (-1, -1, 1.414)):
+                a, b = i + di, j + dj
+                if 0 <= a < n and 0 <= b < n and ok[a, b]:
+                    nd = d + w
+                    if nd < dist.get((a, b), 9e9):
+                        dist[(a, b)] = nd
+                        prev[(a, b)] = (i, j)
+                        heapq.heappush(heap, (nd, a, b))
+        if end is None:
+            p["no_way_out"] = True           # walled in: the game makes it a car under a tarp
+            far += 1
+            continue
+        cells = [end]
+        while cells[-1] in prev:
+            cells.append(prev[cells[-1]])
+        cells.reverse()
+        line = LineString([(sx, sy)] + [(xs[i], ys[j]) for i, j in cells[1:]])
+        simple = line.simplify(1.0)
+        if drivable.buffer(0.6).contains(simple):
+            line = simple
+        tip = Point(line.coords[-1])
+        edge = min(streets, key=lambda s: s[1].distance(tip))[0]
+        p["out"] = [[round(x, 2), round(-y, 2)] for x, y in line.coords]
+        p["edge"] = edge
+        routed += 1
+    print(f"parked cars off the street: {routed} with a way out over the asphalt, {far} without")
 
 
 def _paint(folder, name, rgb):

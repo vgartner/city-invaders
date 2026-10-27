@@ -238,7 +238,7 @@ func _free_car(r: float) -> Node3D:
 		if v.kind in ["car", "lorry", "truck", "harvester"] and v.driver_peer == 0 and not v.get("_wrecked") \
 				and (v as Node3D).global_position.distance_to(player.global_position) < r and not _bad.has(v.get_instance_id()):
 			var entry := _road_entry(v.global_position, -v.global_basis.z)
-			if entry.distance > MAX_ROAD_JOIN:
+			if entry.distance > MAX_ROAD_JOIN and _drive_out(v).is_empty():
 				_reject_road_join(v, entry.distance)
 				continue
 			return v
@@ -727,6 +727,43 @@ func _vehicle_ahead(car: Node3D) -> bool:
 
 var _road_node := -1
 var _road_edge := -1
+var _drive_out_join := []               # [street edge, forward] to take at the end of a car park's way out
+
+
+## A parked car's way out of its car park (props.json "out", carried on the car),
+## if it still stands at the start of it; [] otherwise.
+func _drive_out(car: Node3D) -> Array:
+	if not car.has_meta("drive_out") or int(car.get_meta("drive_out_edge", -1)) < 0:
+		return []
+	var out: Array = car.get_meta("drive_out")
+	if out.size() < 2 or Vector2(out[0][0] - car.global_position.x, out[0][1] - car.global_position.z).length() > 4.0:
+		return []                       # it has been moved since it was parked
+	return out
+
+
+## Drive the car park's way out, then (in _road_next) join its street in the
+## direction the way out arrives.
+func _follow_drive_out(car: Node3D) -> bool:
+	var out := _drive_out(car)
+	if out.is_empty():
+		return false
+	var edge := int(car.get_meta("drive_out_edge"))
+	var e: Dictionary = _main().road_graph["edges"][edge]
+	var y: float = car.global_position.y
+	_path = PackedVector3Array()
+	for q in out:
+		_path.append(Vector3(q[0], y, q[1]))
+	_pi = 1
+	_road_edge = -1
+	_road_node = -1
+	# along the street the way the last stretch of the way out points (a one-way: its own way)
+	var last := Vector2(out[out.size() - 1][0] - out[out.size() - 2][0], out[out.size() - 1][1] - out[out.size() - 2][1])
+	var pts: Array = e["pts"]
+	var along := Vector2(pts[pts.size() - 1][0] - pts[0][0], pts[pts.size() - 1][1] - pts[0][1])
+	_drive_out_join = [edge, true if e["oneway"] else last.dot(along) >= 0.0,
+			Vector3(out[out.size() - 1][0], y, out[out.size() - 1][1])]
+	_event("drive_out", "%s out of its car park, %d points, onto street edge %d" % [car.name, out.size(), edge])
+	return true
 
 
 ## Onto the nearest street, heading the way it may be driven that is nearer the car's nose.
@@ -758,6 +795,9 @@ func _road_start(here: Vector3) -> void:
 	var car: Node3D = player.vehicle
 	var entry := _road_entry(here, -car.global_basis.z)
 	_drive_goal = here
+	_drive_out_join = []
+	if entry.distance > MAX_ROAD_JOIN and _follow_drive_out(car):
+		return                          # out of the car park first, then onto its street
 	if entry.edge < 0 or entry.distance > MAX_ROAD_JOIN:
 		_reject_road_join(car, entry.distance)
 		_path = PackedVector3Array()
@@ -768,6 +808,12 @@ func _road_start(here: Vector3) -> void:
 
 func _road_next() -> void:
 	var g: Dictionary = _main().road_graph
+	if not _drive_out_join.is_empty():
+		# the end of a car park's way out: onto its street
+		var join: Array = _drive_out_join
+		_drive_out_join = []
+		_road_follow(int(join[0]), bool(join[1]), true, join[2])
+		return
 	var options: Array = g["out"].get(_road_node, [])
 	if options.is_empty():
 		return # keep the final lane segment; brake at its end
@@ -779,7 +825,10 @@ func _road_next() -> void:
 	_road_follow(o[0], o[1], true)
 
 
-func _road_follow(edge: int, forward: bool, append := false) -> void:
+## `join`: where a car park's way out reaches this street - the lane starts
+## there, not at the street's first point (on a long one-way that was a drive
+## the wrong way to its far end and a U-turn back).
+func _road_follow(edge: int, forward: bool, append := false, join := Vector3.INF) -> void:
 	var e: Dictionary = _main().road_graph["edges"][edge]
 	var pts: Array = e["pts"].duplicate()
 	if not forward:
@@ -793,12 +842,20 @@ func _road_follow(edge: int, forward: bool, append := false) -> void:
 	_road_edge = edge
 	road_metrics.planned_edges += 1
 	var y: float = player.vehicle.global_position.y
+	var lane := PackedVector3Array()
 	for k in pts.size():
 		var p := Vector3(pts[k][0], y, pts[k][1])
 		var n: int = mini(k + 1, pts.size() - 1)
 		var dir := (Vector3(pts[n][0], y, pts[n][1]) - p).normalized() if n != k \
 				else (p - Vector3(pts[k - 1][0], y, pts[k - 1][1])).normalized()
-		_path.append(p + dir.cross(Vector3.UP) * off)
+		lane.append(p + dir.cross(Vector3.UP) * off)
+	if join != Vector3.INF and lane.size() >= 2:
+		var at := RoadPath.project(lane, Vector3(join.x, y, join.z), 0, 0)
+		var from := int(at.segment)
+		var rest := PackedVector3Array([at.point])
+		rest.append_array(lane.slice(from + 1))
+		lane = rest
+	_path.append_array(lane)
 	# Project onto segments: sparse OSM points can be hundreds of metres apart.
 	# Picking the closest vertex used to skip a bend or even rejoin behind it.
 	var projection := RoadPath.project(_path, player.vehicle.global_position, 0, 3 if append else 0)

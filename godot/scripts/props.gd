@@ -77,7 +77,8 @@ func build(path: String) -> void:
 				if p["type"] == "car":
 					# a few under a tarp stay as street furniture; the other
 					# spots are for parked cars you can drive (main.gd)
-					if randf() < 0.05 and _covered_n < 5:
+					# walled in (no way out over the asphalt to a street): a car under a tarp
+					if p.get("no_way_out", false) or (randf() < 0.05 and _covered_n < 5):
 						_covered_n += 1
 						_covered_only = true
 						var r := _model_prop("car", pos, yaw)
@@ -85,7 +86,8 @@ func build(path: String) -> void:
 						if r:
 							_parked.append(r)
 					else:
-						parked_spots.append([pos, yaw])
+						# [where, yaw, way out to a street (car parks), the street it joins]
+						parked_spots.append([pos, yaw, p.get("out", []), int(p.get("edge", -1))])
 				elif MODELS.has(p["type"]):
 					_model_prop(p["type"], pos, yaw)
 	_batch.build(self)

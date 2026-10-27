@@ -148,7 +148,13 @@ it to know which OSM building is where (map editor, DevAgent `selection`).
   ground's own level. Generated buildings reaching into the carriageway are
   cut back to the kerb; OSM street furniture standing on it moves to the
   sidewalk or, without one, to the verge. Parked cars keep the traffic
-  lanes free. Street furniture with a front (bus stops, benches, newsstands:
+  lanes free. A car parked in a car park (off the street) gets its way out
+  in `.props.json` (`out`: points, `edge`: the street it joins): the
+  shortest route over the asphalt - streets, service roads and car parks,
+  less the buildings - on a 1 m grid, to within 3 m of a street of the road
+  graph (OSM rarely maps the aisles, but the car park is asphalt). A car
+  park with no asphalt way to a street (`no_way_out`) gets a car under a
+  tarp instead of one you can drive. Street furniture with a front (bus stops, benches, newsstands:
   `faces` in their definition) turns it to its street or walk and keeps off
   the asphalt; nothing generated stands in a model placed by hand
 - zebra crossings where OSM has them (`highway=crossing` nodes on a car
