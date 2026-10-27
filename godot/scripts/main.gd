@@ -1294,9 +1294,13 @@ func _place_pickups() -> void:
 	if not multiplayer.is_server() or pickups_root.get_child_count() > 0:
 		return
 	await wait_for_navmesh()
-	for lp in landmark_pickups:
-		_spawn_pickup(lp[0], lp[1] - Vector3(0, 0.0, 0), true, true)
 	var map := get_world_3d().navigation_map
+	for lp in landmark_pickups:
+		var at := _reachable_spot(map, lp[1], 8.0)
+		if at == Vector3.INF:
+			push_warning("landmark %s at %s: no walkable way to it within 8 m, left out" % [lp[0], lp[1]])
+			continue
+		_spawn_pickup(lp[0], at, true, true)
 	var placed := []
 	for key in PICKUP_COUNTS:
 		var kind: String = role(key) if Entities.get_def(key).is_empty() else key
@@ -1327,7 +1331,8 @@ func _place_pickups() -> void:
 		if item == "":
 			continue
 		var at := NavigationServer3D.map_get_closest_point(map, Vector3(pl["door"][0], 0, pl["door"][1]))
-		if at.distance_to(Vector3(pl["door"][0], at.y, pl["door"][1])) < 4.0:
+		at = _reachable_spot(map, at, 4.0)       # not on a walkable island cut off from the streets
+		if at != Vector3.INF and at.distance_to(Vector3(pl["door"][0], at.y, pl["door"][1])) < 4.0:
 			# on whatever floor is there now (a shop's front pad sits above the street)
 			var top := get_world_3d().direct_space_state.intersect_ray(
 					PhysicsRayQueryParameters3D.create(at + Vector3(0, 1.2, 0), at - Vector3(0, 2.0, 0), 1))
@@ -5690,6 +5695,22 @@ func _spawn_car_node(data: Variant) -> Node:
 
 
 ## Server: a fresh reachable street point for a respawning pickup.
+## Where a player can get to `at`: `at` itself when a path from the start
+## reaches it, else where the path ends - the walkable spot nearest it (a shop
+## counter's can inside the walls comes out onto the pavement in front) - if
+## that is within `max_m`; Vector3.INF when there is none.
+func _reachable_spot(map: RID, at: Vector3, max_m: float) -> Vector3:
+	var path := NavigationServer3D.map_get_path(map, spawn_point, at, true)
+	if path.is_empty():
+		return Vector3.INF
+	var end: Vector3 = path[path.size() - 1]
+	if end.distance_to(at) < 1.2:
+		return at
+	if Vector2(end.x - at.x, end.z - at.z).length() > max_m or absf(end.y - at.y) > 3.0:
+		return Vector3.INF
+	return end
+
+
 func random_pickup_point(avoid: Vector3) -> Vector3:
 	var map := get_world_3d().navigation_map
 	for attempt in 60:

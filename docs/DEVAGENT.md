@@ -29,6 +29,7 @@ Clients:
 | `errors limit` | latest script errors from the game log |
 | `inspect id` | an NPC's AI state, goal, navigation and automatic diagnoses |
 | `raycast from to mask` | physics ray |
+| `nav_probe points=[[x,y,z],...]`, `nav_probe landmark_pickups=true` | can a player walk there: metres to the nearest walkable (navmesh) point and how far from it a path from the start ends (0 = reachable, -1 = no path) |
 | `scan_gaps` | see-through slits between buildings |
 | `spawn_enemy x y z variant` | a trooper, mech or drone |
 | `kill_enemies`, `set_director enabled phase`, `set_god enabled`, `set_sun` | test helpers |

@@ -86,7 +86,12 @@ nodes the game reads:
 
 - `lamp_*` – an interior light
 - `pickup_<kind>` – a fixed pickup that comes back in the same spot (the
-  pharmacy's `remedio`)
+  pharmacy's `remedio`; `pickup_counter` is a can of Fruki on a shop counter).
+  It must be reachable on foot from the round's start: a marker inside the
+  walls (most shop models' counters) is moved to where that path ends, the
+  pavement in front, if that is within 8 m, else left out with a warning. Items
+  at OSM shop doors get the same check (no walkable island cut off from the
+  streets).
 - meshes ending in `_screen` – a cinema screen playing `godot/assets/rio_grande_do_sul/video/cinema.ogv`
 - materials ending in `_wall`, `_base`, `_brick` – textured in game with the
   city's PBR scans (triplanar), tinted with the model's colour

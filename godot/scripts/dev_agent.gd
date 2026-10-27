@@ -366,6 +366,32 @@ func _in_sight() -> Node3D:
 	return best if best else nearest
 
 
+## Can a player walk there? For each point ("points": [[x, y, z], ...], or
+## "landmark_pickups": true for the items placed by landmark models): how far
+## the nearest walkable (navmesh) point is, and how far from it a path from the
+## round's start ends (0 = reachable).
+func _m_nav_probe(p: Dictionary):
+	var main := _main()
+	if main == null:
+		return _err("no round; call start_solo first")
+	var pts: Array = []
+	if p.get("landmark_pickups", false):
+		for lp in main.landmark_pickups:
+			pts.append({"what": lp[0], "at": lp[1]})
+	for q in p.get("points", []):
+		pts.append({"what": "", "at": Vector3(float(q[0]), float(q[1]), float(q[2]))})
+	var map: RID = main.get_world_3d().navigation_map
+	var out := []
+	for e in pts:
+		var at: Vector3 = e["at"]
+		var near := NavigationServer3D.map_get_closest_point(map, at)
+		var path := NavigationServer3D.map_get_path(map, main.spawn_point, at, true)
+		var end_off := INF if path.is_empty() else path[path.size() - 1].distance_to(at)
+		out.append({"what": e["what"], "at": [snappedf(at.x, 0.1), snappedf(at.y, 0.1), snappedf(at.z, 0.1)],
+				"navmesh_m": snappedf(near.distance_to(at), 0.01), "path_end_m": snappedf(end_off, 0.01) if end_off != INF else -1})
+	return {"points": out}
+
+
 func _m_teleport(p: Dictionary):
 	var pl := _player()
 	if pl == null:
