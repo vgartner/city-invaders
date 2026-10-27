@@ -1,0 +1,118 @@
+# Handover: a scripted gameplay video
+
+From: Claude Code session (2026-10-27) · To: Codex (or any coding agent) ·
+Owner: Vilson
+
+Read [AGENTS.md](../../AGENTS.md) first (setup, rules, ports, working next
+to other agents). Work in your own git worktree; the owner may be playing
+on port 24690 while you test on 24691.
+
+## Goal
+
+A 2-3 minute gameplay video of City Invaders that shows almost everything
+the game can do, made from a **script**, not from the autoplay bot: the bot
+decides by itself and sometimes gets stuck or idles; a script says exactly
+what happens in each shot. The owner wants to use it to present the project.
+
+## Recommended approach (agreed in the session)
+
+**Phase 1 - staged scenes, the owner plays** (do this first):
+
+- One command per scene that sets it up in the test or the owner's game:
+  map, player position and view, weapon and items given, robots / mech /
+  drones / swarm spawned in the right place, a dropship called, god mode,
+  the AI Director off so nothing else interferes. The owner then plays the
+  scene and records it (OBS), or a short scripted action runs in it.
+- Put the scenes in data (e.g. `tools/devagent/scenes/*.json` or one
+  `scenes.json`), run them with a DevAgent method such as `stage name=...`
+  or a small CLI (`tools/devagent/stage.py <scene>`).
+- Test the **Godot Movie Maker** on one scene: `godot --path godot
+  --write-movie out.avi --fixed-fps 60 -- --devagent` renders every frame
+  off real time, so the video has no hitches even on a slow machine, with
+  the audio. Check the size/quality (`.avi` MJPEG or a PNG sequence) and
+  whether the DevAgent still drives the game while it renders.
+
+**Phase 2 - fully scripted shots** (if phase 1 works out):
+
+- A "director" (`godot/scripts/demo.gd`) that plays a timeline of shots:
+  each shot = setup (as phase 1) + timed actions.
+- **Smooth camera**: `teleport` / `look_at` cut instantly; video needs
+  eased moves between keyframes (position + look target over N seconds),
+  plus a free "cinema" camera for fly-overs that is not the player's head.
+- **Actions**, reusing the autoplay bot (`godot/scripts/autoplay.gd`):
+  aim and fire at a target (`_face`, `_fight`), throw a grenade
+  (`_grenades` / `player._throw_grenade`), get in and drive along the lanes
+  (`_road_follow`, `_drive`, car-park `drive_out` routes), plus new ones:
+  catch a drone with the laço and fly it (`player._lasso_target`,
+  `player._fly_drone`), take and fire a mech's cannon (`canhao`), open a
+  people container (`main.open_container`), open the tablet apps.
+- Each shot short and independent, so a bad take is re-rendered alone.
+
+## Shot list (a starting point; the owner can reorder)
+
+1. Opening: the Usina do Gasômetro from above, flying down to the street.
+2. Pick up the pistol, a Fruki and a pala (armour).
+3. A dropship arrives and drops robots (`main.call_dropship(near, n)`);
+   a firefight in a Centro street (the long straight one: road edge 11,
+   x 95 -> -51, z ~277).
+4. A Bergamota de Aço into a group; a Porongo EMP bringing drones down.
+5. A swarm (`main._swarms`, variant `swarm` in `enemy.gd`).
+6. A mech and its missile; then take the mech's cannon and use it.
+7. Laço a drone, fly it, spot the relay antenna (red column).
+8. A Coletor carrying a captive; open a people container, everyone runs out.
+9. The armoured harvester driving over robots (its reel, `car.gd _reel_tick`).
+10. The bus, the Acampamento Farroupilha (fire, musicians, flag), the Laçador.
+11. The tablet: GPS route, Bah, the radio.
+12. Closing: the map editor (F2), an aerial view of the Centro, the title.
+
+The owner's screenshots of many of these places (with positions in the F1
+messages) are in `docs/images/` once committed; positions are also easy to
+read with `devagent.py get_state` while standing there.
+
+## What exists (names to start from)
+
+- DevAgent methods (`godot/scripts/dev_agent.gd`, `_m_*`): `start_solo`,
+  `teleport`, `look_at`, `hold_keys`, `tap`, `arm`, `spawn_enemy`
+  (variants `trooper`, `mech`, `drone`, `collector`, `swarm`),
+  `spawn_pickup`, `kill_enemies`, `set_director`, `set_god`, `set_sun`,
+  `design`, `screenshot`, `eval`, `autoplay`, `nav_probe`, `say`.
+  See [docs/DEVAGENT.md](../DEVAGENT.md).
+- `main.gd`: `call_dropship(near, n)`, `_spawn_pickup(kind, pos, respawns)`,
+  `throw_grenade(kind, origin, dir)`, `open_container(path)`,
+  `_park_war_machine()`, `_containers`, `road_graph` (streets for driving).
+- `enemy.gd` `VARIANTS`; `dropship.gd`; `swarm.gd`; `people_container.gd`;
+  `player.gd` (`give`, `_switch`, `_throw_grenade`, `_use_vehicle`,
+  `_lasso_target`, `_fly_drone`); `tablet.gd`.
+- Entity definitions (items, weapons): `godot/assets/**/**.def.json`,
+  [docs/ENTITIES.md](../ENTITIES.md).
+
+## Pitfalls seen in this project
+
+- DevAgent `eval` is a Godot `Expression`: no assignments, no lambdas, no
+  engine singletons (`NavigationServer3D` is not reachable - add a method,
+  as `nav_probe` did); `Vector3.ZERO` does not parse, write `Vector3(0,0,0)`;
+  `obj.set("prop", value)` works where `obj.prop = value` doesn't.
+- GDScript warnings are errors: type variables inferred from a Variant.
+- `start_solo` marks the round as script-driven (`main.driven`): no
+  developer-keys panel, mouse left free. Starting it with `eval
+  main._solo('<map>')` instead behaves like a player's round.
+- Robots spawned with `spawn_enemy` land with a dust burst for a few
+  seconds - wait ~8 s before a shot.
+- A covered or minimised game window stops drawing on macOS: keep the test
+  window visible when taking screenshots or measuring.
+- Never start rounds, teleport or quit the owner's game (port 24690)
+  unless he asks; test on 24691 (`DEVAGENT_PORT=24691`).
+
+## Small bug noticed on the way (optional)
+
+The tablet's home screen header says "Centro Histórico · Porto Alegre"
+while playing the Gasômetro map: the place name looks fixed instead of
+coming from the current map (`tablet.gd` / the tablet's UI).
+
+## Done means
+
+- Phase 1: a handful of scenes (3-4 to start) that the owner can call and
+  play, and a note on how the Movie Maker test went (a sample file).
+- Docs updated in the same commits: [docs/DEVAGENT.md](../DEVAGENT.md)
+  (the new methods / CLI), a short "Making a gameplay video" section.
+- Report what was tested and how, and what was not.
