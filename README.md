@@ -40,7 +40,7 @@ To rebuild a map from its OpenStreetMap data and photos, see
 | [docs/PERFORMANCE.md](docs/PERFORMANCE.md) | frame-rate budget, graphics preset, batching, agent LOD, how to measure |
 | [docs/BUILDING.md](docs/BUILDING.md) | exporting a release (Windows `.exe`) |
 | [docs/LICENSING.md](docs/LICENSING.md) | the licences of the data and assets |
-| [docs/AGENTS.md](docs/AGENTS.md) | how AI agents work on the project |
+| [AGENTS.md](AGENTS.md), [docs/AGENTS.md](docs/AGENTS.md) | for AI coding agents (Codex, Claude Code, Cursor...): rules, testing in the game, a file index, setup per tool |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | cities as chains of maps, automatic import, the map editor |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | how to contribute maps, models and code |
 | [godot/assets/CREDITS.md](godot/assets/CREDITS.md) | asset sources and licences |

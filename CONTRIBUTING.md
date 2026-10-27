@@ -5,10 +5,12 @@ all welcome.
 
 ## Getting started
 
-1. Install [Godot 4.7](https://godotengine.org) and Python 3.12+.
-2. Build a map (they are not in git, see [docs/MAP_PIPELINE.md](docs/MAP_PIPELINE.md))
-   or download the map files from a release into `godot/city/`.
-3. `./run-godot.sh` (starts the game with the DevAgent enabled).
+1. Install [Godot 4.7](https://godotengine.org), [Git LFS](https://git-lfs.com) and Python 3.12+,
+   then clone (the maps, models and sounds come through Git LFS) and import once:
+   `cd godot && godot --headless --path . --import`.
+2. `./run-godot.sh` (starts the game with the DevAgent enabled).
+3. Working with an AI agent (Codex, Claude Code, Cursor...)? Point it at
+   [AGENTS.md](AGENTS.md); setup per tool is in [docs/AGENTS.md](docs/AGENTS.md).
 
 Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) first; it maps the scripts.
 

@@ -1,39 +1,72 @@
 # Working with AI agents
 
-Much of City Invaders is built with AI agents. This page explains how they
-work on the project, so contributors can use them the same way, and so the
-agents themselves have a starting point. (`AGENTS.md` at the repository root
-points here.)
+Much of City Invaders is built with AI agents - Claude Code and Codex so far,
+and any other agent is welcome. This page is the detail behind the root
+[AGENTS.md](../AGENTS.md), which every agent should read first: setup per
+tool, who does what, recipes, and habits that keep agents cheap.
+
+## Setting up your agent
+
+The instructions are written once, in `AGENTS.md`, and each tool is pointed
+at them. The DevAgent works for every agent from the command line
+(`tools/devagent/devagent.py`); an agent that speaks MCP can also get it as
+tools (`tools/devagent/devagent_mcp.py`, stdio).
+
+| Agent | Instructions | DevAgent as MCP tools |
+|---|---|---|
+| Codex (CLI, IDE, app) | reads `AGENTS.md` by itself | in `~/.codex/config.toml`: `[mcp_servers.city-invaders-devagent]`, `command = "<repo>/tools/.venv/bin/python"`, `args = ["<repo>/tools/devagent/devagent_mcp.py"]` (absolute paths) |
+| Claude Code | `CLAUDE.md`, which imports `AGENTS.md` | `.mcp.json` in the repository (approve it once) |
+| Cursor | reads `AGENTS.md` | `.cursor/mcp.json` with the same content as `.mcp.json` |
+| Gemini CLI | `.gemini/settings.json`: `"contextFileName": "AGENTS.md"` | the same file: `"mcpServers"` as in `.mcp.json` |
+| GitHub Copilot, others | `AGENTS.md` where supported, else paste its link | the CLI is enough |
+
+Tool settings change between versions; check your agent's documentation if
+a key above has moved. Per-user settings (`~/.codex/`, `~/.claude/`, a
+personal `.cursor/`) stay out of the repository.
 
 ## Who does what
 
-| Agent | Role | How it works |
-|---|---|---|
-| Claude Code (coding agent) | game code, map pipeline, procedural models, tests | edits the repository, runs Blender and the map tools from the command line, plays the game through the DevAgent |
-| Asset agents (e.g. ChatGPT / Codex with Blender) | character, vehicle and prop packs | deliver `.glb` packs (zip) following [ASSETS.md](ASSETS.md); the coding agent checks and integrates them |
+| Who | Role |
+|---|---|
+| Coding agents (Codex, Claude Code, ...) | game code, map pipeline, procedural models, tools, tests through the DevAgent, docs |
+| Asset agents (e.g. ChatGPT with Blender) | character, vehicle and prop packs as `.glb` zips following [ASSETS.md](ASSETS.md); a coding agent checks and integrates them |
+| The owner | plays the game, points at problems with F1, decides what ships; the only one who deploys the online services |
 
-Several agents can use Blender at the same time: each run is its own
-process. Rules that keep them out of each other's way:
+Several agents can work at once - each in its own worktree with its own test
+port (rules in [AGENTS.md](../AGENTS.md#working-next-to-other-agents-and-people)).
+Several can run Blender at once too; asset agents deliver zips to their own
+output folder and never write into the repository; a coding agent never
+edits another agent's `.blend` in place (it copies first); integrated packs
+keep their originals until the owner deletes them.
 
-- asset agents deliver zips to their own output folder; they don't write into the repository
-- the coding agent never edits another agent's `.blend` in place; it copies first
-- integrated packs keep their originals (zip or folder) until the owner deletes them
-
-## The loop the coding agent follows
+## The loop a coding agent follows
 
 1. **Understand** the request, read the relevant docs and code.
-2. **Change** the code or generate the asset with a script (models are
-   reproducible: `tools/blender/*.py`, never hand-only edits).
-3. **Verify in the game**, not only by compiling:
-   - `godot --headless --path godot --quit` must show no parse errors
-   - start the game with the DevAgent (`./run-godot.sh`), drive it with
-     `tools/devagent/devagent.py` / the MCP tools: `start_solo`, `hold_keys` (real
-     input), `screenshot` (cropped, without HUD), `audit_ground`, `errors`
-   - check numbers (health, distances, scores) and look at screenshots
-4. **Commit** one topic at a time, English message, and update the docs in
-   the same commit ([ARCHITECTURE](ARCHITECTURE.md), [GAMEPLAY](GAMEPLAY.md),
-   [ASSETS](ASSETS.md), [MAP_PIPELINE](MAP_PIPELINE.md), CREDITS).
+2. **Change** the code, or generate the asset with a script.
+3. **Verify in the game** (AGENTS.md, "Testing in the game"): parse check,
+   your own test instance on port 24691, real input, numbers first, then a
+   small screenshot; `autoplay` for anything that affects a whole round.
+4. **Commit** one topic at a time, English message, docs in the same commit.
 5. **Report** what was done, what was tested and how, and what was not.
+
+## Recipes
+
+- **Play and look**: `DEVAGENT_PORT=24691 $P tools/devagent/devagent.py launch`,
+  `start_solo map=gasometro`, `teleport x=.. y=.. z=.. yaw=..`,
+  `screenshot width=800 hud=false`, `quit`.
+- **Can a player get there?** `nav_probe points=[[x,y,z]]` (or
+  `landmark_pickups=true`): metres to the walkable mesh and to the end of a
+  path from the start.
+- **A long unattended check**: `autoplay minutes=20` on the test instance,
+  then `$P tools/bench/autoplay_report.py` - what the bot did, fps per 50 m
+  cell, hitches, places where it got stuck, script errors.
+- **Driving only**: `autoplay minutes=5 drive_every=3`.
+- **A map change**: edit `tools/map/` or `maps/<map>/`, then
+  `$P tools/map/building_photo.py rebuild <map>` and
+  `godot --headless --path godot --import`; commit the regenerated
+  `godot/city/<map>.*` files with the change.
+- **The player says "this is slow"**: F5 leaves a recording;
+  `$P tools/devagent/perf_report.py <perf_log>`.
 
 ## Showing the agent something in the game
 

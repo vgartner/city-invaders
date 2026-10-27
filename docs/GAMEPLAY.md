@@ -153,7 +153,7 @@ wheel flies forward and back.
 - **Drag and drop**: press on the selected object and drag - a model placed
   by hand moves over the ground, a wall photo slides on its wall (kept with
   File > Save). Items on the ground and trees are picked like any object.
-- **F1** sends everything selected to Claude as references.
+- **F1** sends everything selected to the AI assistant as references.
 - **Photos on walls**: click a building, *Put a photo on this wall...*,
   choose any picture - it covers that side of the building at once (no
   rebuild). Click the photo: the inspector slides it along the wall, moves

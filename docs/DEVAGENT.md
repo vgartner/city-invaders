@@ -38,7 +38,7 @@ Clients:
 
 ## Talking to the assistant from the game
 
-With the DevAgent on, **F1** opens "Message to Claude": Enter sends it (with
+With the DevAgent on, **F1** opens "Message to the AI assistant": Enter sends it (with
 the map, your position and what you selected in design mode - all of it
 when several objects are selected, as `selections`), Esc closes.
 The assistant reads them with `inbox`, or runs
@@ -54,7 +54,11 @@ building with its OSM id and link) and a picture of the screen
 
 ## Developer keys
 
-Only with the DevAgent on (a player's game has none of them):
+Only with the DevAgent on (a player's game has none of them). The game
+started this way (`./run-godot.sh`, port 24690) shows them once in a
+"Developer keys" panel with an OK button (Enter or Esc close it too); a
+test instance on another port doesn't, and the panel closes by itself as
+soon as a script starts driving the game (`start_solo`, `hold_keys`, ...).
 
 | Key | |
 |---|---|
