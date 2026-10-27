@@ -11,3 +11,7 @@
 *.wav  filter=lfs diff=lfs merge=lfs -text
 *.ogv  filter=lfs diff=lfs merge=lfs -text
 *.osm  filter=lfs diff=lfs merge=lfs -text
+
+# README / docs screenshots stay as plain git objects: GitHub only shows LFS
+# images it stores itself, and this LFS server is our own.
+docs/images/** -filter -diff -merge -text
