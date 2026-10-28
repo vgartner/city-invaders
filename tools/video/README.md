@@ -99,13 +99,7 @@ Approved edit history and audits: [gameplay video handover](../../docs/handovers
 
 The approved v3 was recorded in the **Gasômetro map, Porto Alegre**, around the
 Usina do Gasômetro and Guaíba waterfront, using the isolated `gameplay-video`
-working tree. Its full video is stored locally at:
-
-```text
-~/Documents/Codex/2026-10-14/referenced-chatgpt-conversation-this-is-an/outputs/gameplay_video/full_3min_v3/city_invaders_gameplay_3min.mp4
-```
-
-The adjacent `FINAL_QA.json`, `chapters.json` and per-shot folders contain the
-validation, chapter plan, clips and take logs. This machine-specific output path
-is historical delivery information; future recordings should choose a fresh
-output folder rather than overwrite it.
+working tree (180 s, 1920x1080, 60 fps, 12 chapters). The video and its
+`FINAL_QA.json`, `chapters.json` and per-shot folders (clips, take logs) were
+delivered to the owner outside the repository. Future recordings choose a
+fresh output folder rather than overwrite an earlier one.

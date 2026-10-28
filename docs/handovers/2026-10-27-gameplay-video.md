@@ -120,8 +120,7 @@ coming from the current map (`tablet.gd` / the tablet's UI).
 
 ## Phase-one implementation (Codex, 2026-10-27)
 
-Implemented on branch `gameplay-video`, in the isolated worktree
-`~/Documents/Codex/city-invaders-gameplay-video`.
+Implemented on branch `gameplay-video`, in an isolated git worktree.
 No owner map edits were copied, reverted or committed. See the new "Making a
 gameplay video" section in DEVAGENT.md for commands and scope.
 
