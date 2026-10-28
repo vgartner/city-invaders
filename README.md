@@ -36,6 +36,38 @@ city in the world can be imported as a new map.
 
 The full rules, keys and numbers are in [docs/GAMEPLAY.md](docs/GAMEPLAY.md).
 
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/harvester-gasometro.jpg" alt="The armoured combine harvester waits near the start of every phase"><br><sub>The armoured combine harvester waits near the start of every phase</sub></td>
+    <td width="50%"><img src="docs/images/harvester-driving.jpg" alt="Driving it through the Gasômetro: real facade photos, the corner map, a ship overhead"><br><sub>Driving it through the Gasômetro: real facade photos, the corner map, a ship overhead</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/images/mech-bus.jpg" alt="A URB-H9 mech next to an articulated bus - any vehicle can be taken"><br><sub>A URB-H9 mech next to an articulated bus - any vehicle can be taken</sub></td>
+    <td width="50%"><img src="docs/images/bus-driving.jpg" alt="Driving the bus down the Avenida Loureiro da Silva, the Usina behind"><br><sub>Driving the bus down the Avenida Loureiro da Silva, the Usina behind</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/images/bus-street.jpg" alt="Vehicles knock street lamps over"><br><sub>Vehicles knock street lamps over</sub></td>
+    <td width="50%"><img src="docs/images/street-signs-ambulance.jpg" alt="Street name signs from OpenStreetMap at every corner"><br><sub>Street name signs from OpenStreetMap at every corner</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/images/street-mercado-fruki.jpg" alt="A Fruki at a market's door; shops you can walk into"><br><sub>A Fruki at a market's door; shops you can walk into</sub></td>
+    <td width="50%"><img src="docs/images/lacador-gasometro.jpg" alt="The Laçador statue, robots on the lawn, the Guaíba on the left"><br><sub>The Laçador statue, robots on the lawn, the Guaíba on the left</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/images/acampamento-farroupilha.jpg" alt="The Acampamento Farroupilha: fogo de chão, musicians on the stage, the flag"><br><sub>The Acampamento Farroupilha: fogo de chão, musicians on the stage, the flag</sub></td>
+    <td width="50%"><img src="docs/images/tablet-gasometro.jpg" alt="The field tablet: GPS, radio, Bah the AI assistant, TchêTube..."><br><sub>The field tablet: GPS, radio, Bah the AI assistant, TchêTube...</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/images/tablet-gps.jpg" alt="The GPS: robots, shops and repair shops, routes along the streets"><br><sub>The GPS: robots, shops and repair shops, routes along the streets</sub></td>
+    <td width="50%"><img src="docs/images/chimarrao-editor.jpg" alt="A chimarrão (healing) placed in a park with the map editor"><br><sub>A chimarrão (healing) placed in a park with the map editor</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/images/editor-aerial-centro.jpg" alt="The editor flying over the Gasômetro towards the Centro"><br><sub>The editor flying over the Gasômetro towards the Centro</sub></td>
+  </tr>
+</table>
+
 ## Maps
 
 | Map | Where (Porto Alegre) |
