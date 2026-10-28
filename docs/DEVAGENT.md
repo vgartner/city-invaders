@@ -402,7 +402,7 @@ python3 tools/devagent/stage.py drone_lasso
 
 Presets live in `godot/data/video_scenes.json`:
 
-- `usina_walk`: pistol, Fruki/pala props, a 12 s walking/look-up take near the Usina.
+- `usina_walk`: pistol, a 14 s walking/look-up take near the Usina, then real Fruki and pala pickups.
 - `street_battle`: armed troopers and ammo in the long east-west street. `--drop`
   separately requests a gameplay dropship; its valid landing zone is selected by
   normal game logic, not fixed in the shot. Result 1 = dropship requested, 0 =
@@ -435,6 +435,18 @@ use the shortest yaw arc and smooth easing; no position writes or interpolation
 resets happen during a take. `scripted_control` defaults off and is released on
 finish/cancel. This is a scripted rehearsal, not footage of a human playing.
 
+After a 6 s opening at normal walking speed, `approach` cues walk to the two
+staged items using their nav-projected positions. The camera can look independently of the
+walking direction. Acceleration and distance-based braking keep approaches
+smooth. `speed_mps` is the unboosted pace; Fruki's actual speed bonus remains
+active, so the player visibly accelerates after collecting the can (5 m/s
+unboosted, 7 m/s boosted, except the eased starts and final braking). No item
+is granted by the stage: the ordinary pickup
+`body_entered` handler grants it, plays its sound and displays the game's toast.
+Setup resets armour/adrenaline eligibility. The take log records `collected`
+events (time, armour, adrenaline) and `missing_pickups`, so reaching the end of
+the timeline alone is not evidence that both items were collected.
+
 Movie Maker writes fixed-rate frames and audio independently of wall-clock
 render speed. Test a short independent shot before a full 2–3 minute montage:
 
@@ -446,7 +458,7 @@ DEVAGENT_PORT=24691 godot --path godot --windowed --resolution 1920x1080 \
 
 Keep that port free. Do not use `--headless` for the visual capture. The output
 includes menu/loading/settle footage: trim to the `VIDEO_TAKE_START` frame marker,
-then the 12 s take. Actual output resolution is reported by Movie Maker; the
+then the duration specified by the preset (currently 14 s). Actual output resolution is reported by Movie Maker; the
 staged movie capture matches the window to its 1920x1080 base viewport to avoid
 a cropped HUD on macOS/Retina.
 `VIDEO_TAKE_END` gives a JSON log in `user://devagent/takes/` containing per-tick
@@ -462,5 +474,7 @@ Official reference: https://docs.godotengine.org/en/stable/tutorials/animation/c
 
 Regression checks: `python3 -m unittest discover -s tools/devagent -p test_stage.py`
 and `godot --headless --fixed-fps 60 --path godot ../tools/bench/test_video_take.tscn`.
-The latter exercises the actual player's collision movement and verifies 720
-continuous physics samples, bounded motion/aim, eased endpoints and cancellation.
+The latter exercises a fixed 12 s locomotion fixture through the actual player's
+collision movement: 720 continuous physics samples, bounded motion/aim, eased
+endpoints, cancellation, and approach direction/speed under the Fruki bonus.
+Live-map capture separately verifies both pickup grants.

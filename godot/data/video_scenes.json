@@ -1,6 +1,6 @@
 {
   "usina_walk": {
-    "title": "Usina: a player-paced walk and look around",
+    "title": "Usina: walk, look around and collect Fruki and pala",
     "map": "gasometro",
     "position": [
       0,
@@ -11,27 +11,27 @@
     "pitch": 5,
     "weapon": "pistol",
     "settle_s": 2,
-    "guide": "Walk towards the Usina, look up at the chimney. This scene also has a 12-second scripted walking take.",
+    "guide": "A 14-second take at normal walking speed: approach the Usina, glance up at the chimney, collect Fruki, then visibly accelerate towards the pala with the real adrenaline bonus.",
     "pickups": [
       {
         "kind": "fruki",
         "offset": [
-          2,
+          3.5,
           0,
-          -7
+          -12.5
         ]
       },
       {
         "kind": "pala",
         "offset": [
-          -2,
+          0.5,
           0,
-          -10
+          -17.5
         ]
       }
     ],
     "take": {
-      "duration_s": 12,
+      "duration_s": 14,
       "look": [
         {
           "t": 0,
@@ -39,32 +39,82 @@
           "pitch": 5
         },
         {
-          "t": 4,
+          "t": 2,
           "yaw": -8,
           "pitch": 9
         },
         {
-          "t": 8,
+          "t": 4,
           "yaw": -34,
           "pitch": 50
         },
         {
-          "t": 12,
+          "t": 6,
           "yaw": -20,
           "pitch": 12
+        },
+        {
+          "t": 7,
+          "yaw": -38,
+          "pitch": -28
+        },
+        {
+          "t": 9,
+          "yaw": -38,
+          "pitch": -50
+        },
+        {
+          "t": 10,
+          "yaw": 31,
+          "pitch": -28
+        },
+        {
+          "t": 11.8,
+          "yaw": 31,
+          "pitch": -55
+        },
+        {
+          "t": 13.2,
+          "yaw": 0,
+          "pitch": -5
+        },
+        {
+          "t": 14,
+          "yaw": 0,
+          "pitch": 8
         }
       ],
       "walk": [
         {
           "start": 0.7,
-          "end": 5.2,
+          "end": 2.8,
           "direction": [
             0,
             -1
           ],
-          "ramp_s": 0.65,
-          "speed_fraction": 0.45
+          "ramp_s": 0.35,
+          "speed_fraction": 1.0
         }
+      ],
+      "approach": [
+        {
+          "start": 7,
+          "end": 9.5,
+          "pickup": "fruki",
+          "speed_mps": 5,
+          "ramp_s": 0.35
+        },
+        {
+          "start": 10,
+          "end": 12.8,
+          "pickup": "pala",
+          "speed_mps": 5,
+          "ramp_s": 0.35
+        }
+      ],
+      "expect_pickups": [
+        "fruki",
+        "pala"
       ]
     }
   },

@@ -47,7 +47,26 @@ func _run() -> void:
 	add_child(stage)
 	stage._player = player
 	stage.scene_name = "usina_walk"
-	stage.scene = Stage.catalogue()["usina_walk"]
+	stage.scene = Stage.catalogue()["usina_walk"].duplicate(true)
+	stage.scene.take.duration_s = 12
+	stage.scene.take.walk = [{"start":0.7,"end":5.2,"direction":[0,-1],"ramp_s":0.65,"speed_fraction":0.45}]
+	stage.scene.take.look = [{"t":0,"yaw":0,"pitch":5},{"t":4,"yaw":-8,"pitch":9},{"t":8,"yaw":-34,"pitch":50},{"t":12,"yaw":-20,"pitch":12}]
+	stage.scene.take.approach = []
+	stage.scene.take.expect_pickups = []
+	# World-space approaches must preserve direction under yaw and retain the real Fruki bonus.
+	stage._pickup_targets["test"] = player.position + Vector3(4,0,-4)
+	var approach := {"start":0.0,"end":5.0,"pickup":"test","speed_mps":1.5,"ramp_s":0.7}
+	assert(stage._approach(approach,0).is_zero_approx())
+	player.rotation.y = deg_to_rad(80)
+	var base := stage._approach(approach,1)
+	var world := player.global_basis * Vector3(base.x,0,base.y)
+	assert(world.normalized().is_equal_approx(Vector3(1,0,-1).normalized()))
+	assert(is_equal_approx(base.length() * player.WALK_SPEED,1.5))
+	player._adrenaline = 12
+	var boosted := stage._approach(approach,1)
+	assert(is_equal_approx(boosted.length() * player.WALK_SPEED * Tune.adrenaline_speed,1.5 * Tune.adrenaline_speed))
+	player._adrenaline = 0
+	player.rotation.y = 0
 	await get_tree().physics_frame
 	stage.play()
 	while stage.running: await get_tree().physics_frame

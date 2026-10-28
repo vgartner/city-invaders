@@ -149,3 +149,30 @@ Remaining: scripted combat/interaction/flight shots, a free flyover camera,
 precise dropship choreography, full montage/titles and the optional tablet place
 name fix. The dropship helper is exposed, but its complete arrival/unloading was
 not included in the tested sample. World/traffic RNG is still live.
+
+
+## Pickup continuation and pacing revision (2026-10-28)
+
+The owner requested real Fruki/pala collection, then rejected the first slow
+32 s rehearsal and explicitly required Fruki to increase movement speed.
+The final `usina_walk` preset is **14 s**. It uses normal 5 m/s movement and
+retains the real 1.4x adrenaline multiplier (7 m/s after Fruki); no compensation
+cancels the booster. Starts/braking stay eased, and looking remains continuous.
+The items are moved ahead of the initial walking path so the camera can show
+them before collecting them. Normal pickup collision grants them; stage code
+only observes collection for telemetry. Setup resets armour and adrenaline to
+make repeated preparations eligible for both items.
+
+Final rendered Movie Maker run: Fruki collected at 7.8667 s (12 s adrenaline),
+pala at 10.8667 s (armour 100), `missing_pickups=[]`. Horizontal telemetry peaks
+were 5.003 m/s before and 7.014 m/s after Fruki. 840 take samples, maximum 3D
+step 0.11951 m, no consecutive identical encoded input frames. Native movement,
+world-space approach direction, real booster speed, restored controls and four
+Python scene/safety tests passed. Existing five-resource exit warning remains;
+no runtime script error occurred in the final capture.
+
+Final movie and QA: Codex workspace `outputs/gameplay_video/pickups_fast/`,
+`usina_fruki_pala.mp4` (1080p, 60 fps, 14 s, audio), raw AVI, per-tick JSON,
+frame images and validation logs. The `pickups/` folder is the superseded slow
+draft. Rendering can run slower than real time in the window; the exported
+fixed-60-fps movie plays at simulation speed. No world movement tuning changed.

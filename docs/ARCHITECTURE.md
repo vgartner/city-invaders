@@ -190,3 +190,13 @@ camera easing are sampled on the game clock; no wall-clock RPC loop drives the
 motion. Per-tick take logs and movie frame markers support encoded-video QA.
 This is phase one: four manually playable setups and one scripted walking test,
 not a complete automated trailer director, cinematic flyover or combat sequence.
+
+The Usina video take now continues through two physical pickup approaches.
+Stage-owned item positions are remembered after their removal; approach cues
+steer ordinary analog input in world space with eased starts and braking.
+Collection telemetry observes the pickup signal after its own handler, rather
+than calling `give`; `missing_pickups` distinguishes a finished timeline from
+a successful interaction rehearsal. The player's Fruki speed multiplier applies
+normally: staging never cancels
+the booster. The 14 s take uses normal walking pace and gains 40% speed after
+the can, with shorter pauses and distance-based braking near each item.

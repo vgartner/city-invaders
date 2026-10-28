@@ -16,6 +16,8 @@ var _start_frame := 0
 var _start_drawn := 0
 var _player: Node3D
 var _quit_on_end := false
+var _pickup_targets: Dictionary = {}
+var _collected: Array = []
 
 static func catalogue() -> Dictionary:
 	var value: Variant = JSON.parse_string(FileAccess.get_file_as_string(SCENES))
@@ -98,6 +100,9 @@ func prepare(name: String) -> Dictionary:
 	if _player._drone: _player._land_drone()
 	_player.set_meta("god", true)
 	_player.health = 100
+	# Reset collection eligibility for a repeatable rehearsal, before the take.
+	_player.armor = 0
+	_player._adrenaline = 0.0
 	var pos: Array = wanted["position"]
 	var at := _ground(main, Vector3(pos[0], pos[1], pos[2]))
 	_player.global_position = at + Vector3(0, 0.15, 0)
@@ -118,7 +123,10 @@ func prepare(name: String) -> Dictionary:
 	for spec in wanted.get("pickups", []):
 		var offset: Array = spec["offset"]
 		var p := _ground(main, at + Vector3(offset[0], offset[1], offset[2]))
-		_created.append(weakref(main._spawn_pickup(spec["kind"], p, false)))
+		var pickup: Area3D = main._spawn_pickup(spec["kind"], p, false)
+		_created.append(weakref(pickup))
+		_pickup_targets[spec["kind"]] = pickup.global_position
+		pickup.body_entered.connect(_pickup_entered.bind(pickup))
 	for spec in wanted.get("enemies", []):
 		var offset: Array = spec["offset"]
 		var p := _ground(main, at + Vector3(offset[0], 0, offset[2])) + Vector3(0, offset[1] + 0.2, 0)
@@ -128,12 +136,33 @@ func prepare(name: String) -> Dictionary:
 	preparing = false
 	return status()
 
+func _pickup_entered(body: Node, pickup: Area3D) -> void:
+	# Pickup's own handler runs first. Observe its normal grant/removal, never give items here.
+	if running and body == _player and pickup.is_queued_for_deletion():
+		_collected.append({"kind":pickup.kind,"t":elapsed,"armor":_player.armor,
+			"adrenaline_s":_player._adrenaline})
+
+func _approach(cue: Dictionary, t: float) -> Vector2:
+	if t <= float(cue["start"]) or t >= float(cue["end"]): return Vector2.ZERO
+	var target: Vector3 = _pickup_targets.get(cue["pickup"], _player.global_position)
+	var offset := target - _player.global_position
+	offset.y = 0.0
+	var distance := offset.length()
+	if distance <= 0.12: return Vector2.ZERO
+	var speed := float(cue["speed_mps"]) * minf(
+		smooth_weight((t - float(cue["start"])) / float(cue.get("ramp_s",0.7))),
+		smooth_weight(distance / 1.2))
+	# Player physics applies Fruki's real speed multiplier to this normal input.
+	var local := _player.global_basis.inverse() * offset.normalized()
+	return Vector2(local.x,local.z) * speed / _player.WALK_SPEED
+
 func clear() -> void:
 	stop()
 	for ref in _created:
 		var node: Node = ref.get_ref()
 		if is_instance_valid(node): node.queue_free()
 	_created.clear()
+	_pickup_targets.clear()
 	if not _saved.is_empty():
 		var main: Node3D = agent._main()
 		main.director.set_process(_saved["director"])
@@ -157,6 +186,7 @@ func play(quit_on_end := false) -> Dictionary:
 		return {"__error":"The walking take needs a live player on foot"}
 	elapsed = 0.0
 	_samples = []
+	_collected = []
 	_start_frame = Engine.get_process_frames()
 	_start_drawn = Engine.get_frames_drawn()
 	_quit_on_end = quit_on_end
@@ -179,6 +209,7 @@ func _physics_process(delta: float) -> void:
 	_player.head.rotation.x = look.y
 	var movement := Vector2.ZERO
 	for cue in take.get("walk", []): movement += walking(cue, elapsed)
+	for cue in take.get("approach", []): movement += _approach(cue, elapsed)
 	_player.scripted_move = movement.limit_length()
 	_samples.append({"t":elapsed,"position":[_player.position.x,_player.position.y,_player.position.z],
 		"yaw":look.x,"pitch":look.y,"move":[movement.x,movement.y],"frame":Engine.get_process_frames()})
@@ -193,7 +224,11 @@ func stop(completed := false) -> void:
 	set_physics_process(false)
 	if not running: return
 	running = false
+	var missing: Array = []
+	for kind in scene.get("take",{}).get("expect_pickups",[]):
+		if not _collected.any(func(event: Dictionary) -> bool: return event["kind"] == kind): missing.append(kind)
 	last = {"scene":scene_name,"completed":completed,"seconds":elapsed,
+		"collected":_collected,"missing_pickups":missing,
 		"start_process_frame":_start_frame,"start_drawn_frame":_start_drawn,
 		"end_process_frame":Engine.get_process_frames(),"samples":_samples}
 	var dir := "user://devagent/takes"
@@ -202,7 +237,7 @@ func stop(completed := false) -> void:
 	var file := FileAccess.open(path, FileAccess.WRITE)
 	file.store_string(JSON.stringify(last))
 	last["log"] = ProjectSettings.globalize_path(path)
-	print("VIDEO_TAKE_END ", JSON.stringify({"completed":completed,"log":last["log"],"seconds":elapsed}))
+	print("VIDEO_TAKE_END ", JSON.stringify({"completed":completed,"log":last["log"],"seconds":elapsed,"collected":_collected,"missing_pickups":missing}))
 	if completed and _quit_on_end: get_tree().quit.call_deferred()
 
 func status() -> Dictionary:
