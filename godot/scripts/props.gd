@@ -208,6 +208,8 @@ func _register_body(d: Dictionary, body: StaticBody3D) -> void:
 var _leaf_mat: StandardMaterial3D
 var _bark_mat: StandardMaterial3D
 var _falling_leaf: QuadMesh
+var _leaf_heat := 0.0     # recent shots into crowns, decays 4 per second
+var _leaf_heat_t := 0.0
 ## tree crowns: an area on their own layer that only shots look for (it blocks
 ## nothing); a shot through it or into the trunk shakes leaves loose
 const FOLIAGE_LAYER := 128
@@ -304,8 +306,18 @@ func _tree(pos: Vector3) -> void:
 
 ## Every peer: leaves shaken loose at `at` (a shot through a crown); the
 ## nearest crown gives a little shudder.
-func leaves(at: Vector3, count := 22) -> void:
+func leaves(at: Vector3, count := 12) -> void:
 	_tree_mats()
+	# A machine-gun burst hits the same crown many times a second; past the
+	# first shots it only adds a few leaves, so a burst doesn't fill the air.
+	var now := Time.get_ticks_msec() / 1000.0
+	_leaf_heat = maxf(0.0, _leaf_heat - (now - _leaf_heat_t) * 4.0)
+	_leaf_heat_t = now
+	_leaf_heat += 1.0
+	if _leaf_heat > 3.0:
+		count = 3
+	if get_tree().get_nodes_in_group("falling_leaves").size() >= 10:
+		return
 	if _falling_leaf == null:
 		# a single drawn leaf: pointed oval with a midrib
 		var img := Image.create(32, 32, false, Image.FORMAT_RGBA8)
@@ -317,7 +329,7 @@ func leaves(at: Vector3, count := 22) -> void:
 				if abs(u) < w:
 					var shade: float = 0.85 + 0.15 * (1.0 - abs(u) / max(w, 0.01))
 					var rib := 0.8 if abs(u) < 0.06 else 1.0
-					img.set_pixel(x, y, Color(0.55 * shade * rib, 0.68 * shade * rib, 0.2 * shade, 1.0))
+					img.set_pixel(x, y, Color(shade * rib, shade * rib, shade, 1.0))
 		var m := StandardMaterial3D.new()
 		m.albedo_texture = ImageTexture.create_from_image(img)
 		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
@@ -327,14 +339,14 @@ func leaves(at: Vector3, count := 22) -> void:
 		m.vertex_color_use_as_albedo = true
 		m.roughness = 0.9
 		_falling_leaf = QuadMesh.new()
-		_falling_leaf.size = Vector2(0.2, 0.25)
+		_falling_leaf.size = Vector2(0.11, 0.14)
 		_falling_leaf.material = m
 	var parts := CPUParticles3D.new()
 	parts.mesh = _falling_leaf
 	parts.amount = count
 	parts.one_shot = true
 	parts.explosiveness = 0.7
-	parts.lifetime = 4.0
+	parts.lifetime = 3.0
 	parts.direction = Vector3.DOWN
 	parts.spread = 120.0
 	parts.initial_velocity_min = 0.4
@@ -350,13 +362,16 @@ func leaves(at: Vector3, count := 22) -> void:
 	parts.emission_sphere_radius = 0.6
 	parts.scale_amount_min = 0.7
 	parts.scale_amount_max = 1.3
-	parts.color = Color(1, 1, 1)
-	parts.hue_variation_min = -0.08
-	parts.hue_variation_max = 0.06
+	# the crowns' greens, dark enough not to read as light spots in the sun
+	var ramp := Gradient.new()
+	ramp.set_color(0, Color(0.16, 0.27, 0.08))
+	ramp.set_color(1, Color(0.33, 0.4, 0.13))
+	parts.color_initial_ramp = ramp
 	parts.position = at
+	parts.add_to_group("falling_leaves")
 	add_child(parts)
 	parts.emitting = true
-	get_tree().create_timer(4.5).timeout.connect(parts.queue_free)
+	get_tree().create_timer(3.5).timeout.connect(parts.queue_free)
 	var best: Array = []
 	var bd := 5.0
 	for c in crowns:
