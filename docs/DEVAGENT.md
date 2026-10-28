@@ -521,3 +521,26 @@ showcase, not an autonomous road-following/performance test. Normal map/world
 collisions remain enabled. The drone shot starts with zero captured drones; its
 lasso result and successful launch are required before assembly. A previously
 failed lasso take is retained only under `superseded/` in the working outputs.
+
+
+### Prepared encounters and scene transitions
+
+The revised presentation prepares all robots before recording. The five encounter
+presets use `enemies` plus `prestage_enemies=true`, an 8 s settle, and actual
+walking cues to approach each encounter. Preparation temporarily suspends those
+actors' physics and removes their robot group membership so nearby police cannot
+destroy a waiting cast. At take start, their original group/physics state is
+restored; normal AI, collisions and damage then run. Spawn effects have already
+finished outside the selected movie frames. `prepared_enemy_count` is retained in
+the take log. The battle, grenade and mech shots use different starting locations.
+The action director no longer has a runtime enemy-spawn action. The presentation
+contract rejects `spawn`/`dropship` timeline events, preventing the old sequence
+of materialising enemies in front of a stationary player.
+
+Final assembly re-encodes the joined video with 0.3 s fades to/from black at each
+scene boundary, plus short audio ramps. These fades stay inside each shot, keeping
+exactly 180 s and 60 fps. Frame extraction now requests exact timestamps, avoiding
+nearby keyframes when checking a cut. The revised capture lives in `full_3min_v2/`
+in the Codex outputs; the original video is preserved for comparison. Unchanged
+source clips can be copied into the fresh output directory before running the
+renderer, while revised encounters are recorded again.

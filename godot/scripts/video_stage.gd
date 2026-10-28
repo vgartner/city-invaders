@@ -20,6 +20,7 @@ var _pickup_targets: Dictionary = {}
 var _collected: Array = []
 var _actions: Node
 var _take_origin := Vector3.ZERO
+var _prepared_actors: Array = []
 
 static func catalogue() -> Dictionary:
 	var value: Variant = JSON.parse_string(FileAccess.get_file_as_string(SCENES))
@@ -133,7 +134,12 @@ func prepare(name: String) -> Dictionary:
 		var offset: Array = spec["offset"]
 		var p := _ground(main, at + Vector3(offset[0], 0, offset[2])) + Vector3(0, offset[1] + 0.2, 0)
 		agent._m_spawn_enemy({"x":p.x,"y":p.y,"z":p.z,"variant":spec["variant"]})
-		_created.append(weakref(main.enemies_root.get_child(main.enemies_root.get_child_count() - 1)))
+		var actor: Node3D = main.enemies_root.get_child(main.enemies_root.get_child_count() - 1)
+		_created.append(weakref(actor))
+		if wanted.get("prestage_enemies",false):
+			_prepared_actors.append({"ref":weakref(actor),"physics":actor.is_physics_processing(),"robots":actor.is_in_group("robots")})
+			actor.remove_from_group("robots")
+			actor.set_physics_process(false)
 	_take_origin = _player.global_position
 	if wanted.get("take",{}).has("presentation"):
 		_actions = preload("res://scripts/video_actions.gd").new()
@@ -173,6 +179,7 @@ func clear() -> void:
 		var node: Node = ref.get_ref()
 		if is_instance_valid(node): node.queue_free()
 	_created.clear()
+	_prepared_actors.clear()
 	_pickup_targets.clear()
 	if not _saved.is_empty():
 		var main: Node3D = agent._main()
@@ -203,6 +210,13 @@ func play(quit_on_end := false) -> Dictionary:
 	_quit_on_end = quit_on_end
 	_player.scripted_control = true
 	_player.scripted_move = Vector2.ZERO
+	# The spawn effects have already settled outside the recorded take. Release AI,
+	# then approach the existing encounter through ordinary movement physics.
+	for actor in _prepared_actors:
+		var node: Node = actor.ref.get_ref()
+		if is_instance_valid(node):
+			if actor.robots: node.add_to_group("robots")
+			node.set_physics_process(actor.physics)
 	running = true
 	if is_instance_valid(_actions): _actions.begin()
 	set_physics_process(true)
@@ -244,6 +258,7 @@ func stop(completed := false) -> void:
 		"collected":_collected,"missing_pickups":missing,
 		"events":_actions.ledger if is_instance_valid(_actions) else [],
 		"player_state":{"drones":_player.drones,"score":_player.score,"armor":_player.armor},
+		"prepared_enemy_count":_prepared_actors.size(),
 		"start_process_frame":_start_frame,"start_drawn_frame":_start_drawn,
 		"end_process_frame":Engine.get_process_frames(),"samples":_samples}
 	var dir := "user://devagent/takes"

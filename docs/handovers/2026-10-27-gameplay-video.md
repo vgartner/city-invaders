@@ -229,3 +229,30 @@ Godot exit-resource warnings are retained; no final take had a runtime script
 error. This is a staged presentation with god mode and a disabled Director,
 using the game build in this worktree, not a performance benchmark or an
 uninterrupted human playthrough. No changes were merged into the owner's tree.
+
+
+## Encounter continuity revision (2026-10-28)
+
+The owner liked the full video but rejected stationary shooting with enemies
+materialising in front of the player. Revised five encounters: battle, grenades,
+mech, drone and rescue. All enemies are prepared before recording and settled for
+8 s; no timeline spawn/dropship actions remain. The stage temporarily withholds
+actor physics/robot group membership during preparation, then restores normal AI
+at take start. The player walks into the existing encounters. Battle, grenades
+and mech start at separate locations; measured approaches cover about 41.8 m,
+9.7 m and 10.8 m respectively. Fruki pacing and the other approved clips remain.
+
+Assembly adds 0.3 s fades at scene boundaries and short audio ramps within the
+existing shot durations. A two-clip native test decoded 1,440 frames at 60 fps
+for 24 s with audio; the exact 10 s boundary was RGB (0,0,0). Exact-time preview
+requests avoid mistaking a nearby decoded keyframe for the actual black frame.
+Outputs use `outputs/gameplay_video/full_3min_v2/`; original `full_3min/` remains.
+
+
+Revised delivery audit: `full_3min_v2/city_invaders_gameplay_3min.mp4`, about
+342 MiB, exactly 180 s and 10,800 decoded frames at 1920x1080/60 fps with one audio
+track. Encounter telemetry records 5/3/3/1/1 prepared groups and zero spawn events
+in all five refilmed shots. Final cut at 46 s was checked at an exact timestamp
+and is near-black; the 48 s frame shows the new street encounter. The prior
+full video is untouched. Five Python contract/safety tests and the native movement
+regression pass; final take parsing/runtime checks found no GDScript errors.

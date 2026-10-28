@@ -300,14 +300,14 @@
     "title": "Film Battle",
     "map": "gasometro",
     "position": [
-      85,
-      3,
+      95,
+      4,
       277
     ],
     "yaw": 90,
     "pitch": 0,
     "weapon": "machinegun",
-    "settle_s": 3,
+    "settle_s": 8,
     "guide": "Scripted presentation shot; use only the isolated test instance.",
     "take": {
       "duration_s": 22,
@@ -326,14 +326,24 @@
       "presentation": true,
       "fight": [
         {
-          "start": 1,
-          "end": 20
+          "start": 3,
+          "end": 21
         }
       ],
       "walk": [
         {
-          "start": 2,
-          "end": 3.8,
+          "start": 0.5,
+          "end": 4.5,
+          "direction": [
+            0,
+            -1
+          ],
+          "ramp_s": 0.35,
+          "speed_fraction": 1
+        },
+        {
+          "start": 6,
+          "end": 7.8,
           "direction": [
             1,
             0
@@ -342,8 +352,8 @@
           "speed_fraction": 0.35
         },
         {
-          "start": 3.8,
-          "end": 5.6,
+          "start": 7.8,
+          "end": 9.6,
           "direction": [
             -1,
             0
@@ -358,152 +368,109 @@
             0,
             -1
           ],
-          "ramp_s": 0.4,
-          "speed_fraction": 0.7
+          "ramp_s": 0.35,
+          "speed_fraction": 1
         }
       ],
       "events": [
         {
-          "t": 0,
-          "action": "spawn",
-          "variant": "trooper",
-          "offset": [
-            -20,
-            0,
-            0
-          ]
-        },
-        {
-          "t": 0,
-          "action": "spawn",
-          "variant": "trooper",
-          "offset": [
-            -28,
-            0,
-            2
-          ]
-        },
-        {
-          "t": 4,
-          "action": "dropship"
-        },
-        {
-          "t": 7,
-          "action": "spawn",
-          "variant": "trooper",
-          "offset": [
-            -30,
-            0,
-            -2
-          ]
-        },
-        {
           "t": 11,
           "action": "reload"
-        },
-        {
-          "t": 14,
-          "action": "spawn",
-          "variant": "trooper",
-          "offset": [
-            -38,
-            0,
-            0
-          ]
-        },
-        {
-          "t": 17,
-          "action": "spawn",
-          "variant": "trooper",
-          "offset": [
-            -25,
-            0,
-            2
-          ]
         }
       ]
-    }
+    },
+    "prestage_enemies": true,
+    "enemies": [
+      {
+        "variant": "trooper",
+        "offset": [
+          -30,
+          0,
+          2
+        ]
+      },
+      {
+        "variant": "trooper",
+        "offset": [
+          -45,
+          0,
+          -3
+        ]
+      },
+      {
+        "variant": "trooper",
+        "offset": [
+          -55,
+          0,
+          2
+        ]
+      },
+      {
+        "variant": "trooper",
+        "offset": [
+          -65,
+          0,
+          -1
+        ]
+      },
+      {
+        "variant": "trooper",
+        "offset": [
+          -75,
+          0,
+          4
+        ]
+      }
+    ]
   },
   "film_grenades": {
     "title": "Film Grenades",
     "map": "gasometro",
     "position": [
-      35,
-      5,
-      95
+      106,
+      9,
+      106
     ],
-    "yaw": 0,
+    "yaw": -24,
     "pitch": 0,
     "weapon": "machinegun",
-    "settle_s": 3,
+    "settle_s": 8,
     "guide": "Scripted presentation shot; use only the isolated test instance.",
     "take": {
       "duration_s": 16,
       "look": [
         {
           "t": 0,
-          "yaw": 0,
-          "pitch": 16
+          "yaw": -24,
+          "pitch": 3
         },
         {
-          "t": 2,
-          "yaw": 0,
-          "pitch": 16
+          "t": 2.8,
+          "yaw": -24,
+          "pitch": 10
         },
         {
           "t": 5,
-          "yaw": 0,
-          "pitch": 22
+          "yaw": -24,
+          "pitch": 16
         },
         {
           "t": 8,
-          "yaw": 0,
+          "yaw": -24,
           "pitch": 22
         },
         {
           "t": 16,
-          "yaw": 0,
+          "yaw": -24,
           "pitch": 10
         }
       ],
       "presentation": true,
       "events": [
         {
-          "t": 0,
-          "action": "spawn",
-          "variant": "trooper",
-          "offset": [
-            -2,
-            0,
-            -18
-          ]
-        },
-        {
-          "t": 0,
-          "action": "spawn",
-          "variant": "trooper",
-          "offset": [
-            2,
-            0,
-            -18
-          ]
-        },
-        {
-          "t": 1,
+          "t": 3,
           "action": "grenade",
           "kind": "bergamota"
-        },
-        {
-          "t": 5,
-          "action": "spawn",
-          "variant": "swarm",
-          "offset": [
-            0,
-            0,
-            -16
-          ],
-          "height": 5,
-          "count": 6
         },
         {
           "t": 7,
@@ -516,76 +483,128 @@
           "start": 9,
           "end": 16
         }
+      ],
+      "walk": [
+        {
+          "start": 0.5,
+          "end": 2.8,
+          "direction": [
+            0,
+            -1
+          ],
+          "ramp_s": 0.35,
+          "speed_fraction": 1
+        }
       ]
-    }
+    },
+    "prestage_enemies": true,
+    "enemies": [
+      {
+        "variant": "trooper",
+        "offset": [
+          7,
+          0,
+          -23
+        ]
+      },
+      {
+        "variant": "trooper",
+        "offset": [
+          11,
+          0,
+          -27
+        ]
+      },
+      {
+        "variant": "swarm",
+        "offset": [
+          15,
+          5,
+          -32
+        ]
+      }
+    ]
   },
   "film_mech": {
     "title": "Film Mech",
     "map": "gasometro",
     "position": [
-      35,
-      5,
-      95
+      60,
+      6,
+      205
     ],
-    "yaw": 0,
+    "yaw": 180,
     "pitch": 0,
     "weapon": "canhao",
-    "settle_s": 3,
+    "settle_s": 8,
     "guide": "Scripted presentation shot; use only the isolated test instance.",
     "take": {
       "duration_s": 16,
       "look": [
         {
           "t": 0,
-          "yaw": 0,
-          "pitch": 0
+          "yaw": 160,
+          "pitch": 2
+        },
+        {
+          "t": 3,
+          "yaw": 180,
+          "pitch": 3
         },
         {
           "t": 16,
-          "yaw": 0,
-          "pitch": 0
+          "yaw": 185,
+          "pitch": 5
         }
       ],
       "presentation": true,
-      "events": [
-        {
-          "t": 0,
-          "action": "spawn",
-          "variant": "mech",
-          "offset": [
-            0,
-            0,
-            -25
-          ]
-        },
-        {
-          "t": 8,
-          "action": "spawn",
-          "variant": "trooper",
-          "offset": [
-            -5,
-            0,
-            -18
-          ]
-        },
-        {
-          "t": 9,
-          "action": "spawn",
-          "variant": "trooper",
-          "offset": [
-            5,
-            0,
-            -19
-          ]
-        }
-      ],
+      "events": [],
       "fight": [
         {
-          "start": 1,
+          "start": 3,
           "end": 15
         }
+      ],
+      "walk": [
+        {
+          "start": 0.5,
+          "end": 3,
+          "direction": [
+            0,
+            -1
+          ],
+          "ramp_s": 0.35,
+          "speed_fraction": 1
+        }
       ]
-    }
+    },
+    "prestage_enemies": true,
+    "enemies": [
+      {
+        "variant": "mech",
+        "offset": [
+          0,
+          0,
+          34
+        ]
+      },
+      {
+        "variant": "trooper",
+        "offset": [
+          -7,
+          0,
+          31
+        ]
+      },
+      {
+        "variant": "trooper",
+        "offset": [
+          8,
+          0,
+          37
+        ]
+      }
+    ]
   },
   "film_drone": {
     "title": "Film Drone",
@@ -598,7 +617,7 @@
     "yaw": 0,
     "pitch": 18,
     "weapon": "laco",
-    "settle_s": 3,
+    "settle_s": 8,
     "guide": "Scripted presentation shot; use only the isolated test instance.",
     "take": {
       "duration_s": 20,
@@ -632,18 +651,7 @@
       "presentation": true,
       "events": [
         {
-          "t": 0,
-          "action": "spawn",
-          "variant": "drone",
-          "offset": [
-            0,
-            0,
-            -13
-          ],
-          "height": 5
-        },
-        {
-          "t": 2,
+          "t": 2.5,
           "action": "lasso"
         },
         {
@@ -654,7 +662,7 @@
       "fight": [
         {
           "start": 0.3,
-          "end": 2.3,
+          "end": 3,
           "fire": false
         }
       ],
@@ -669,9 +677,32 @@
           "end": 18,
           "fire": true
         }
+      ],
+      "walk": [
+        {
+          "start": 0.2,
+          "end": 1.2,
+          "direction": [
+            0,
+            -1
+          ],
+          "ramp_s": 0.35,
+          "speed_fraction": 1
+        }
       ]
     },
-    "drones": 0
+    "drones": 0,
+    "prestage_enemies": true,
+    "enemies": [
+      {
+        "variant": "drone",
+        "offset": [
+          0,
+          5,
+          -18
+        ]
+      }
+    ]
   },
   "film_rescue": {
     "title": "Film Rescue",
@@ -684,7 +715,7 @@
     "yaw": 180,
     "pitch": -5,
     "weapon": "machinegun",
-    "settle_s": 3,
+    "settle_s": 8,
     "guide": "Scripted presentation shot; use only the isolated test instance.",
     "take": {
       "duration_s": 14,
@@ -715,16 +746,6 @@
         {
           "t": 4,
           "action": "open_container"
-        },
-        {
-          "t": 8,
-          "action": "spawn",
-          "variant": "collector",
-          "offset": [
-            5,
-            0,
-            9
-          ]
         }
       ],
       "walk": [
@@ -744,6 +765,17 @@
       0,
       0,
       4
+    ],
+    "prestage_enemies": true,
+    "enemies": [
+      {
+        "variant": "collector",
+        "offset": [
+          12,
+          0,
+          14
+        ]
+      }
     ]
   },
   "film_vehicle": {

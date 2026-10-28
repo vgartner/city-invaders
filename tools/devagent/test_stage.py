@@ -53,6 +53,7 @@ class StageTests(unittest.TestCase):
             events = take.get('events', [])
             self.assertEqual([e['t'] for e in events], sorted(e['t'] for e in events))
             self.assertTrue(all(0 <= e['t'] < take['duration_s'] for e in events))
+            self.assertFalse(any(e['action'] in ['spawn','dropship'] for e in events))
 
     def test_player_port_is_protected_before_connecting(self):
         with patch('sys.argv', ['stage.py', 'usina_walk', '--port', '24690']), patch('stage.DevAgent') as client:

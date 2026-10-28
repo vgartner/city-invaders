@@ -213,3 +213,11 @@ only for that shot. Cleanup releases virtual actions and restores the player
 camera/HUD; final offline capture preserves its last visual frame until quit.
 `tools/video/presentation.json` is the exact 180 s edit; `render_presentation.py`
 and native `media.swift` create independent clips and validate the joined MP4.
+
+
+Presentation encounters are now setup-time actors, not timed spawns. The stage
+holds their physics/group membership during the unrecorded settle, restores both
+at take start, and logs their count. Combat shots include walking approaches and
+separate locations; the action dispatcher cannot create enemies mid-take. Native
+assembly uses a 60 fps video composition with in-shot 0.3 s opacity ramps and audio
+ramps, preserving total duration. Ordinary game spawn rules remain unchanged.

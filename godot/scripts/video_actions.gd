@@ -139,10 +139,6 @@ func fight(delta: float, shoot: bool) -> void:
 func perform(event: Dictionary) -> void:
 	var result := "ok"
 	match event.action:
-		"spawn":
-			var at: Vector3 = stage._ground(main,stage._take_origin+vec(event.offset)) + Vector3(0,event.get("height",0.2),0)
-			stage.agent._m_spawn_enemy({"x":at.x,"y":at.y,"z":at.z,"variant":event.variant,"n":event.get("count",6)})
-			stage._created.append(weakref(main.enemies_root.get_child(main.enemies_root.get_child_count()-1)))
 		"grenade":
 			player.grenade = event.kind
 			player._throw_grenade()

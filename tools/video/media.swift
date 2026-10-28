@@ -68,16 +68,38 @@ if args[1] == "encode" {
  let v = composition.addMutableTrack(withMediaType:.video,preferredTrackID:kCMPersistentTrackID_Invalid)!
  let a = composition.addMutableTrack(withMediaType:.audio,preferredTrackID:kCMPersistentTrackID_Invalid)!
  var cursor = CMTime.zero
+ var instructions:[AVMutableVideoCompositionInstruction] = []
+ let mix = AVMutableAudioMixInputParameters(track:a)
+ let fade = CMTime(value:18,timescale:60)
+ let audioFade = CMTime(value:8,timescale:60)
  for path in args.dropFirst(3) {
   let asset = AVURLAsset(url:URL(fileURLWithPath:path)), duration = AVURLAsset(url:URL(fileURLWithPath:path)).duration
   try v.insertTimeRange(CMTimeRange(start:.zero,duration:duration),of:asset.tracks(withMediaType:.video)[0],at:cursor)
   guard let sound = asset.tracks(withMediaType:.audio).first else {fatalError("Missing clip audio")}
   try a.insertTimeRange(CMTimeRange(start:.zero,duration:duration),of:sound,at:cursor)
-  cursor = CMTimeAdd(cursor,duration)
+  let end = CMTimeAdd(cursor,duration)
+  let layer = AVMutableVideoCompositionLayerInstruction(assetTrack:v)
+  layer.setOpacityRamp(fromStartOpacity:0,toEndOpacity:1,timeRange:CMTimeRange(start:cursor,duration:fade))
+  layer.setOpacity(1,at:CMTimeAdd(cursor,fade))
+  layer.setOpacityRamp(fromStartOpacity:1,toEndOpacity:0,timeRange:CMTimeRange(start:CMTimeSubtract(end,fade),duration:fade))
+  let instruction = AVMutableVideoCompositionInstruction()
+  instruction.timeRange = CMTimeRange(start:cursor,duration:duration)
+  instruction.backgroundColor = CGColor(gray:0,alpha:1)
+  instruction.layerInstructions = [layer];instructions.append(instruction)
+  mix.setVolumeRamp(fromStartVolume:0,toEndVolume:1,timeRange:CMTimeRange(start:cursor,duration:audioFade))
+  mix.setVolume(1,at:CMTimeAdd(cursor,audioFade))
+  mix.setVolumeRamp(fromStartVolume:1,toEndVolume:0,timeRange:CMTimeRange(start:CMTimeSubtract(end,audioFade),duration:audioFade))
+  cursor = end
  }
- let exporter = AVAssetExportSession(asset:composition,presetName:AVAssetExportPresetPassthrough)!
+ let videoComposition = AVMutableVideoComposition()
+ videoComposition.renderSize = CGSize(width:1920,height:1080)
+ videoComposition.frameDuration = CMTime(value:1,timescale:60)
+ videoComposition.instructions = instructions
+ let audioMix = AVMutableAudioMix();audioMix.inputParameters = [mix]
+ let exporter = AVAssetExportSession(asset:composition,presetName:AVAssetExportPreset1920x1080)!
+ exporter.videoComposition = videoComposition;exporter.audioMix = audioMix
  exporter.outputURL = URL(fileURLWithPath:args[2]);exporter.outputFileType = .mp4;exporter.shouldOptimizeForNetworkUse = true;finish(exporter)
- print("Joined duration \(CMTimeGetSeconds(cursor))")
+ print("Joined duration \(CMTimeGetSeconds(cursor)) with 0.3 s fades, 60 fps")
 } else if args[1] == "audit" {
  let asset = AVURLAsset(url:URL(fileURLWithPath:args[2]))
  let video = asset.tracks(withMediaType:.video)[0]
@@ -91,6 +113,7 @@ if args[1] == "encode" {
 } else if args[1] == "frame" {
  let asset = AVURLAsset(url:URL(fileURLWithPath:args[2]))
  let generator = AVAssetImageGenerator(asset:asset)
+ generator.requestedTimeToleranceBefore = .zero;generator.requestedTimeToleranceAfter = .zero
  let image = try generator.copyCGImage(at:CMTime(seconds:Double(args[3])!,preferredTimescale:600),actualTime:nil)
  let destination = CGImageDestinationCreateWithURL(URL(fileURLWithPath:args[4]) as CFURL,"public.png" as CFString,1,nil)!
  CGImageDestinationAddImage(destination,image,nil);CGImageDestinationFinalize(destination)
