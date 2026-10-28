@@ -18,6 +18,8 @@ var _player: Node3D
 var _quit_on_end := false
 var _pickup_targets: Dictionary = {}
 var _collected: Array = []
+var _actions: Node
+var _take_origin := Vector3.ZERO
 
 static func catalogue() -> Dictionary:
 	var value: Variant = JSON.parse_string(FileAccess.get_file_as_string(SCENES))
@@ -132,6 +134,11 @@ func prepare(name: String) -> Dictionary:
 		var p := _ground(main, at + Vector3(offset[0], 0, offset[2])) + Vector3(0, offset[1] + 0.2, 0)
 		agent._m_spawn_enemy({"x":p.x,"y":p.y,"z":p.z,"variant":spec["variant"]})
 		_created.append(weakref(main.enemies_root.get_child(main.enemies_root.get_child_count() - 1)))
+	_take_origin = _player.global_position
+	if wanted.get("take",{}).has("presentation"):
+		_actions = preload("res://scripts/video_actions.gd").new()
+		add_child(_actions)
+		_actions.setup(self)
 	await get_tree().create_timer(float(wanted.get("settle_s", 8))).timeout
 	preparing = false
 	return status()
@@ -158,6 +165,10 @@ func _approach(cue: Dictionary, t: float) -> Vector2:
 
 func clear() -> void:
 	stop()
+	if is_instance_valid(_actions):
+		_actions.finish()
+		_actions.queue_free()
+	_actions = null
 	for ref in _created:
 		var node: Node = ref.get_ref()
 		if is_instance_valid(node): node.queue_free()
@@ -193,6 +204,7 @@ func play(quit_on_end := false) -> Dictionary:
 	_player.scripted_control = true
 	_player.scripted_move = Vector2.ZERO
 	running = true
+	if is_instance_valid(_actions): _actions.begin()
 	set_physics_process(true)
 	print("VIDEO_TAKE_START ", JSON.stringify({"scene":scene_name,"process_frame":_start_frame,"drawn_frame":_start_drawn}))
 	return status()
@@ -211,8 +223,9 @@ func _physics_process(delta: float) -> void:
 	for cue in take.get("walk", []): movement += walking(cue, elapsed)
 	for cue in take.get("approach", []): movement += _approach(cue, elapsed)
 	_player.scripted_move = movement.limit_length()
+	if is_instance_valid(_actions): _actions.tick(elapsed,delta)
 	_samples.append({"t":elapsed,"position":[_player.position.x,_player.position.y,_player.position.z],
-		"yaw":look.x,"pitch":look.y,"move":[movement.x,movement.y],"frame":Engine.get_process_frames()})
+		"yaw":_player.rotation.y,"pitch":_player.pitch,"move":[movement.x,movement.y],"frame":Engine.get_process_frames()})
 	elapsed += delta
 	if elapsed + 1e-6 >= float(take["duration_s"]):
 		stop(true)
@@ -229,6 +242,8 @@ func stop(completed := false) -> void:
 		if not _collected.any(func(event: Dictionary) -> bool: return event["kind"] == kind): missing.append(kind)
 	last = {"scene":scene_name,"completed":completed,"seconds":elapsed,
 		"collected":_collected,"missing_pickups":missing,
+		"events":_actions.ledger if is_instance_valid(_actions) else [],
+		"player_state":{"drones":_player.drones,"score":_player.score,"armor":_player.armor},
 		"start_process_frame":_start_frame,"start_drawn_frame":_start_drawn,
 		"end_process_frame":Engine.get_process_frames(),"samples":_samples}
 	var dir := "user://devagent/takes"
@@ -238,6 +253,7 @@ func stop(completed := false) -> void:
 	file.store_string(JSON.stringify(last))
 	last["log"] = ProjectSettings.globalize_path(path)
 	print("VIDEO_TAKE_END ", JSON.stringify({"completed":completed,"log":last["log"],"seconds":elapsed,"collected":_collected,"missing_pickups":missing}))
+	if is_instance_valid(_actions) and not (completed and _quit_on_end): _actions.finish()
 	if completed and _quit_on_end: get_tree().quit.call_deferred()
 
 func status() -> Dictionary:

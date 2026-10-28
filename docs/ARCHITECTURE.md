@@ -200,3 +200,16 @@ a successful interaction rehearsal. The player's Fruki speed multiplier applies
 normally: staging never cancels
 the booster. The 14 s take uses normal walking pace and gains 40% speed after
 the can, with shorter pauses and distance-based braking near each item.
+
+
+The full presentation adds `video_actions.gd`, a dev-only child of the stage,
+created only for a preset with `take.presentation`. It dispatches sorted actions
+on physics time, aims gradually and sends the ordinary virtual fire/drive/fly
+inputs. Native gameplay handles all damage, grenades, lasso capture, drone rays,
+vehicle physics and container release. Container interaction checks normal player
+reach; the player begins outside the combine's collision volume. Cinematic shots
+use a separate camera with eased position/look-target keys and hide HUD layers
+only for that shot. Cleanup releases virtual actions and restores the player
+camera/HUD; final offline capture preserves its last visual frame until quit.
+`tools/video/presentation.json` is the exact 180 s edit; `render_presentation.py`
+and native `media.swift` create independent clips and validate the joined MP4.

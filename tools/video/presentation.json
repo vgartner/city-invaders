@@ -1,0 +1,78 @@
+{
+  "duration_s": 180,
+  "fps": 60,
+  "shots": [
+    {
+      "scene": "film_opening",
+      "duration_s": 10,
+      "title": "Porto Alegre",
+      "subtitle": "City Invaders"
+    },
+    {
+      "scene": "usina_walk",
+      "duration_s": 14,
+      "title": "Preparar a resistência",
+      "subtitle": "Fruki, adrenalina e pala"
+    },
+    {
+      "scene": "film_battle",
+      "duration_s": 22,
+      "title": "A invasão chegou",
+      "subtitle": "Combate nas ruas"
+    },
+    {
+      "scene": "film_grenades",
+      "duration_s": 16,
+      "title": "Bergamota de aço e Porongo EMP",
+      "subtitle": "Contra robôs e enxames"
+    },
+    {
+      "scene": "film_mech",
+      "duration_s": 16,
+      "title": "Armas da invasão",
+      "subtitle": "O canhão do mech"
+    },
+    {
+      "scene": "film_drone",
+      "duration_s": 20,
+      "title": "Laçar, capturar e pilotar",
+      "subtitle": "Reconhecimento e combate aéreo"
+    },
+    {
+      "scene": "film_rescue",
+      "duration_s": 14,
+      "title": "Resgatar é resistir",
+      "subtitle": "Liberte os civis"
+    },
+    {
+      "scene": "film_vehicle",
+      "duration_s": 16,
+      "title": "Resistência campeira",
+      "subtitle": "Colheitadeira blindada"
+    },
+    {
+      "scene": "film_camp",
+      "duration_s": 12,
+      "title": "A cidade tem vida",
+      "subtitle": "Acampamento Farroupilha"
+    },
+    {
+      "scene": "film_lacador",
+      "duration_s": 12,
+      "title": "Nossa terra, nossa história",
+      "subtitle": "Monumento ao Laçador"
+    },
+    {
+      "scene": "film_tablet",
+      "duration_s": 16,
+      "title": "Tablet de campo",
+      "subtitle": "GPS, rádio e Bah"
+    },
+    {
+      "scene": "film_closing",
+      "duration_s": 12,
+      "title": "CITY INVADERS",
+      "subtitle": "Porto Alegre resiste"
+    }
+  ]
+}

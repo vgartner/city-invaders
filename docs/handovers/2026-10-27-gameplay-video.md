@@ -176,3 +176,56 @@ Final movie and QA: Codex workspace `outputs/gameplay_video/pickups_fast/`,
 frame images and validation logs. The `pickups/` folder is the superseded slow
 draft. Rendering can run slower than real time in the window; the exported
 fixed-60-fps movie plays at simulation speed. No world movement tuning changed.
+
+
+## Full presentation continuation (2026-10-28)
+
+The owner clarified that the deliverable must be three minutes, not a sample.
+The edit is now `tools/video/presentation.json`: 12 independently reproducible
+shots totalling 180 s (10,800 frames at 60 fps). The dev-only action director
+covers real trigger combat, grenades/swarm, mech cannon, laço/drone flight and
+rays, container rescue, combine controls/grain fire, camp, Laçador, tablet apps,
+and free-camera opening/closing. All tests use port 24691 in the isolated
+`gameplay-video` worktree. The original 14 s pickup scene retains 5/7 m/s pacing.
+
+Normal rendered rehearsals checked every setup and screenshots. A failed combine
+entry exposed overlap between player and body: its setup now parks 7 m away,
+within the normal 10 m entry range, and a repeat verified real vehicle ownership
+and movement. A four-person container rescue was verified; final choreography
+also walks into normal interaction range before invoking release. No damage,
+health or speed tuning was changed. Cinematic motion is explicitly a free camera,
+not a claim of player flight. Staged enemy spawns/equipment are preparation.
+
+Use the complete render command in DEVAGENT.md. It compiles a native macOS media
+helper, renders short shots, indexes the raw AVI, encodes H.264/AAC with chapter
+captions, audits every decoded clip, and joins only after all 12 succeed. It
+retains scene JSON/logs/audits/preview frames; it removes only its own raw/silent
+intermediates after successful clip QA to bound disk use. No third-party media,
+models or music were downloaded. Existing game sounds/music are recorded.
+
+
+Final refinement notes: the first drone take was rejected because it launched a
+spare after missing the lasso. Timed actions now execute after the current tick's
+aim, the drone is aimed at its real centre, and the shot starts with zero spares.
+The corrected take records `lasso=drone`, `drone=flying`, one captured drone and
+150 points. Assembly now rejects failed lasso/launch/vehicle/rescue outcomes.
+The combine's long straight drive was also rejected: the old handover's road
+index/coordinates do not describe a safe continuous corridor in this map build.
+The final shot uses the verified clear initial stretch, brakes before obstacles,
+then shows normal grain fire and a smoothly orbited chase view. Nearby AI traffic
+is cleared only for this rehearsal. World collisions are never disabled; this
+is not a fix or benchmark for general autonomous traffic.
+
+
+Delivered file: Codex workspace
+`outputs/gameplay_video/full_3min/city_invaders_gameplay_3min.mp4` (about 312 MiB).
+Final native decode audit: **180.000 s, 10,800 frames, 1920x1080, 60 fps, one audio
+track**. The joined file was sampled at drone flight, combine motion and the
+closing title; all 12 source clips were separately decoded and previewed. The
+final output folder includes chapters, LEIA-ME, per-shot logs, take JSON, capture
+QA, decoded previews and FINAL_QA.json. Five Python tests and the native 12 s
+movement/cancellation regression passed. Existing macOS Metal load-fence and
+Godot exit-resource warnings are retained; no final take had a runtime script
+error. This is a staged presentation with god mode and a disabled Director,
+using the game build in this worktree, not a performance benchmark or an
+uninterrupted human playthrough. No changes were merged into the owner's tree.

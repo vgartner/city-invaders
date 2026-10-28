@@ -224,5 +224,882 @@
         ]
       }
     ]
+  },
+  "film_opening": {
+    "title": "Film Opening",
+    "map": "gasometro",
+    "position": [
+      0,
+      4,
+      62
+    ],
+    "yaw": 0,
+    "pitch": 0,
+    "weapon": "machinegun",
+    "settle_s": 3,
+    "guide": "Scripted presentation shot; use only the isolated test instance.",
+    "take": {
+      "duration_s": 10,
+      "look": [
+        {
+          "t": 0,
+          "yaw": 0,
+          "pitch": 0
+        },
+        {
+          "t": 10,
+          "yaw": 0,
+          "pitch": 0
+        }
+      ],
+      "presentation": true,
+      "camera": [
+        {
+          "t": 0,
+          "pos": [
+            140,
+            110,
+            130
+          ],
+          "target": [
+            15,
+            42,
+            10
+          ]
+        },
+        {
+          "t": 5,
+          "pos": [
+            70,
+            55,
+            90
+          ],
+          "target": [
+            15,
+            30,
+            8
+          ]
+        },
+        {
+          "t": 10,
+          "pos": [
+            8,
+            14,
+            65
+          ],
+          "target": [
+            0,
+            13,
+            0
+          ]
+        }
+      ]
+    }
+  },
+  "film_battle": {
+    "title": "Film Battle",
+    "map": "gasometro",
+    "position": [
+      85,
+      3,
+      277
+    ],
+    "yaw": 90,
+    "pitch": 0,
+    "weapon": "machinegun",
+    "settle_s": 3,
+    "guide": "Scripted presentation shot; use only the isolated test instance.",
+    "take": {
+      "duration_s": 22,
+      "look": [
+        {
+          "t": 0,
+          "yaw": 90,
+          "pitch": 0
+        },
+        {
+          "t": 22,
+          "yaw": 90,
+          "pitch": 0
+        }
+      ],
+      "presentation": true,
+      "fight": [
+        {
+          "start": 1,
+          "end": 20
+        }
+      ],
+      "walk": [
+        {
+          "start": 2,
+          "end": 3.8,
+          "direction": [
+            1,
+            0
+          ],
+          "ramp_s": 0.3,
+          "speed_fraction": 0.35
+        },
+        {
+          "start": 3.8,
+          "end": 5.6,
+          "direction": [
+            -1,
+            0
+          ],
+          "ramp_s": 0.3,
+          "speed_fraction": 0.35
+        },
+        {
+          "start": 10,
+          "end": 14,
+          "direction": [
+            0,
+            -1
+          ],
+          "ramp_s": 0.4,
+          "speed_fraction": 0.7
+        }
+      ],
+      "events": [
+        {
+          "t": 0,
+          "action": "spawn",
+          "variant": "trooper",
+          "offset": [
+            -20,
+            0,
+            0
+          ]
+        },
+        {
+          "t": 0,
+          "action": "spawn",
+          "variant": "trooper",
+          "offset": [
+            -28,
+            0,
+            2
+          ]
+        },
+        {
+          "t": 4,
+          "action": "dropship"
+        },
+        {
+          "t": 7,
+          "action": "spawn",
+          "variant": "trooper",
+          "offset": [
+            -30,
+            0,
+            -2
+          ]
+        },
+        {
+          "t": 11,
+          "action": "reload"
+        },
+        {
+          "t": 14,
+          "action": "spawn",
+          "variant": "trooper",
+          "offset": [
+            -38,
+            0,
+            0
+          ]
+        },
+        {
+          "t": 17,
+          "action": "spawn",
+          "variant": "trooper",
+          "offset": [
+            -25,
+            0,
+            2
+          ]
+        }
+      ]
+    }
+  },
+  "film_grenades": {
+    "title": "Film Grenades",
+    "map": "gasometro",
+    "position": [
+      35,
+      5,
+      95
+    ],
+    "yaw": 0,
+    "pitch": 0,
+    "weapon": "machinegun",
+    "settle_s": 3,
+    "guide": "Scripted presentation shot; use only the isolated test instance.",
+    "take": {
+      "duration_s": 16,
+      "look": [
+        {
+          "t": 0,
+          "yaw": 0,
+          "pitch": 16
+        },
+        {
+          "t": 2,
+          "yaw": 0,
+          "pitch": 16
+        },
+        {
+          "t": 5,
+          "yaw": 0,
+          "pitch": 22
+        },
+        {
+          "t": 8,
+          "yaw": 0,
+          "pitch": 22
+        },
+        {
+          "t": 16,
+          "yaw": 0,
+          "pitch": 10
+        }
+      ],
+      "presentation": true,
+      "events": [
+        {
+          "t": 0,
+          "action": "spawn",
+          "variant": "trooper",
+          "offset": [
+            -2,
+            0,
+            -18
+          ]
+        },
+        {
+          "t": 0,
+          "action": "spawn",
+          "variant": "trooper",
+          "offset": [
+            2,
+            0,
+            -18
+          ]
+        },
+        {
+          "t": 1,
+          "action": "grenade",
+          "kind": "bergamota"
+        },
+        {
+          "t": 5,
+          "action": "spawn",
+          "variant": "swarm",
+          "offset": [
+            0,
+            0,
+            -16
+          ],
+          "height": 5,
+          "count": 6
+        },
+        {
+          "t": 7,
+          "action": "grenade",
+          "kind": "porongo"
+        }
+      ],
+      "fight": [
+        {
+          "start": 9,
+          "end": 16
+        }
+      ]
+    }
+  },
+  "film_mech": {
+    "title": "Film Mech",
+    "map": "gasometro",
+    "position": [
+      35,
+      5,
+      95
+    ],
+    "yaw": 0,
+    "pitch": 0,
+    "weapon": "canhao",
+    "settle_s": 3,
+    "guide": "Scripted presentation shot; use only the isolated test instance.",
+    "take": {
+      "duration_s": 16,
+      "look": [
+        {
+          "t": 0,
+          "yaw": 0,
+          "pitch": 0
+        },
+        {
+          "t": 16,
+          "yaw": 0,
+          "pitch": 0
+        }
+      ],
+      "presentation": true,
+      "events": [
+        {
+          "t": 0,
+          "action": "spawn",
+          "variant": "mech",
+          "offset": [
+            0,
+            0,
+            -25
+          ]
+        },
+        {
+          "t": 8,
+          "action": "spawn",
+          "variant": "trooper",
+          "offset": [
+            -5,
+            0,
+            -18
+          ]
+        },
+        {
+          "t": 9,
+          "action": "spawn",
+          "variant": "trooper",
+          "offset": [
+            5,
+            0,
+            -19
+          ]
+        }
+      ],
+      "fight": [
+        {
+          "start": 1,
+          "end": 15
+        }
+      ]
+    }
+  },
+  "film_drone": {
+    "title": "Film Drone",
+    "map": "gasometro",
+    "position": [
+      -40,
+      3,
+      100
+    ],
+    "yaw": 0,
+    "pitch": 18,
+    "weapon": "laco",
+    "settle_s": 3,
+    "guide": "Scripted presentation shot; use only the isolated test instance.",
+    "take": {
+      "duration_s": 20,
+      "look": [
+        {
+          "t": 0,
+          "yaw": 0,
+          "pitch": 18
+        },
+        {
+          "t": 5,
+          "yaw": 0,
+          "pitch": 18
+        },
+        {
+          "t": 9,
+          "yaw": 0,
+          "pitch": -10
+        },
+        {
+          "t": 16,
+          "yaw": -45,
+          "pitch": -15
+        },
+        {
+          "t": 20,
+          "yaw": -55,
+          "pitch": -18
+        }
+      ],
+      "presentation": true,
+      "events": [
+        {
+          "t": 0,
+          "action": "spawn",
+          "variant": "drone",
+          "offset": [
+            0,
+            0,
+            -13
+          ],
+          "height": 5
+        },
+        {
+          "t": 2,
+          "action": "lasso"
+        },
+        {
+          "t": 5,
+          "action": "drone"
+        }
+      ],
+      "fight": [
+        {
+          "start": 0.3,
+          "end": 2.3,
+          "fire": false
+        }
+      ],
+      "fly": [
+        {
+          "start": 5.5,
+          "end": 9,
+          "up": true
+        },
+        {
+          "start": 9,
+          "end": 18,
+          "fire": true
+        }
+      ]
+    },
+    "drones": 0
+  },
+  "film_rescue": {
+    "title": "Film Rescue",
+    "map": "gasometro",
+    "position": [
+      35,
+      5,
+      95
+    ],
+    "yaw": 180,
+    "pitch": -5,
+    "weapon": "machinegun",
+    "settle_s": 3,
+    "guide": "Scripted presentation shot; use only the isolated test instance.",
+    "take": {
+      "duration_s": 14,
+      "look": [
+        {
+          "t": 0,
+          "yaw": 180,
+          "pitch": -5
+        },
+        {
+          "t": 4,
+          "yaw": 180,
+          "pitch": -5
+        },
+        {
+          "t": 9,
+          "yaw": 150,
+          "pitch": -12
+        },
+        {
+          "t": 14,
+          "yaw": 200,
+          "pitch": -5
+        }
+      ],
+      "presentation": true,
+      "events": [
+        {
+          "t": 4,
+          "action": "open_container"
+        },
+        {
+          "t": 8,
+          "action": "spawn",
+          "variant": "collector",
+          "offset": [
+            5,
+            0,
+            9
+          ]
+        }
+      ],
+      "walk": [
+        {
+          "start": 0.8,
+          "end": 1.8,
+          "direction": [
+            0,
+            -1
+          ],
+          "ramp_s": 0.2,
+          "speed_fraction": 0.4
+        }
+      ]
+    },
+    "container_offset": [
+      0,
+      0,
+      4
+    ]
+  },
+  "film_vehicle": {
+    "title": "Film Vehicle",
+    "map": "gasometro",
+    "position": [
+      75,
+      3,
+      277
+    ],
+    "yaw": 90,
+    "pitch": 0,
+    "weapon": "machinegun",
+    "settle_s": 3,
+    "guide": "Scripted presentation shot; use only the isolated test instance.",
+    "take": {
+      "duration_s": 16,
+      "look": [
+        {
+          "t": 0,
+          "yaw": 90,
+          "pitch": 0
+        },
+        {
+          "t": 16,
+          "yaw": 90,
+          "pitch": 0
+        }
+      ],
+      "presentation": true,
+      "events": [
+        {
+          "t": 0.1,
+          "action": "enter_vehicle"
+        },
+        {
+          "t": 5,
+          "action": "grain"
+        },
+        {
+          "t": 7,
+          "action": "grain"
+        },
+        {
+          "t": 9,
+          "action": "grain"
+        }
+      ],
+      "drive": [
+        {
+          "start": 1,
+          "end": 5.5
+        },
+        {
+          "start": 5.5,
+          "end": 16,
+          "brake": true
+        }
+      ],
+      "vehicle_look": [
+        {
+          "t": 0,
+          "yaw": 0,
+          "pitch": 0
+        },
+        {
+          "t": 7,
+          "yaw": 0,
+          "pitch": 0
+        },
+        {
+          "t": 10,
+          "yaw": 35,
+          "pitch": 5
+        },
+        {
+          "t": 13,
+          "yaw": -25,
+          "pitch": 5
+        },
+        {
+          "t": 16,
+          "yaw": 0,
+          "pitch": 0
+        }
+      ]
+    },
+    "vehicle_kind": "harvester"
+  },
+  "film_camp": {
+    "title": "Film Camp",
+    "map": "gasometro",
+    "position": [
+      49,
+      7,
+      145
+    ],
+    "yaw": 0,
+    "pitch": 0,
+    "weapon": "machinegun",
+    "settle_s": 3,
+    "guide": "Scripted presentation shot; use only the isolated test instance.",
+    "take": {
+      "duration_s": 12,
+      "look": [
+        {
+          "t": 0,
+          "yaw": 0,
+          "pitch": 0
+        },
+        {
+          "t": 12,
+          "yaw": 0,
+          "pitch": 0
+        }
+      ],
+      "presentation": true,
+      "camera": [
+        {
+          "t": 0,
+          "pos": [
+            65,
+            14,
+            153
+          ],
+          "target": [
+            49,
+            9,
+            129
+          ]
+        },
+        {
+          "t": 6,
+          "pos": [
+            48,
+            12,
+            144
+          ],
+          "target": [
+            49,
+            8,
+            123
+          ]
+        },
+        {
+          "t": 12,
+          "pos": [
+            43,
+            11,
+            139
+          ],
+          "target": [
+            49,
+            8,
+            123
+          ]
+        }
+      ]
+    }
+  },
+  "film_lacador": {
+    "title": "Film Lacador",
+    "map": "gasometro",
+    "position": [
+      -65,
+      3,
+      145
+    ],
+    "yaw": 0,
+    "pitch": 0,
+    "weapon": "machinegun",
+    "settle_s": 3,
+    "guide": "Scripted presentation shot; use only the isolated test instance.",
+    "take": {
+      "duration_s": 12,
+      "look": [
+        {
+          "t": 0,
+          "yaw": 0,
+          "pitch": 0
+        },
+        {
+          "t": 12,
+          "yaw": 0,
+          "pitch": 0
+        }
+      ],
+      "presentation": true,
+      "camera": [
+        {
+          "t": 0,
+          "pos": [
+            -78,
+            7,
+            145
+          ],
+          "target": [
+            -70.48,
+            6,
+            134.41
+          ]
+        },
+        {
+          "t": 6,
+          "pos": [
+            -69,
+            8,
+            144
+          ],
+          "target": [
+            -70.48,
+            6,
+            134.41
+          ]
+        },
+        {
+          "t": 12,
+          "pos": [
+            -60,
+            7,
+            138
+          ],
+          "target": [
+            -70.48,
+            6,
+            134.41
+          ]
+        }
+      ]
+    }
+  },
+  "film_tablet": {
+    "title": "Film Tablet",
+    "map": "gasometro",
+    "position": [
+      0,
+      4,
+      62
+    ],
+    "yaw": 0,
+    "pitch": 0,
+    "weapon": "pistol",
+    "settle_s": 3,
+    "guide": "Scripted presentation shot; use only the isolated test instance.",
+    "take": {
+      "duration_s": 16,
+      "look": [
+        {
+          "t": 0,
+          "yaw": 0,
+          "pitch": 0
+        },
+        {
+          "t": 16,
+          "yaw": 0,
+          "pitch": 0
+        }
+      ],
+      "presentation": true,
+      "events": [
+        {
+          "t": 0.3,
+          "action": "tablet",
+          "app": "home"
+        },
+        {
+          "t": 3,
+          "action": "tablet",
+          "app": "gps"
+        },
+        {
+          "t": 7,
+          "action": "tablet",
+          "app": "radio"
+        },
+        {
+          "t": 10,
+          "action": "tablet",
+          "app": "bah"
+        },
+        {
+          "t": 14,
+          "action": "close_tablet"
+        }
+      ]
+    }
+  },
+  "film_closing": {
+    "title": "Film Closing",
+    "map": "gasometro",
+    "position": [
+      0,
+      4,
+      62
+    ],
+    "yaw": 0,
+    "pitch": 0,
+    "weapon": "machinegun",
+    "settle_s": 3,
+    "guide": "Scripted presentation shot; use only the isolated test instance.",
+    "take": {
+      "duration_s": 12,
+      "look": [
+        {
+          "t": 0,
+          "yaw": 0,
+          "pitch": 0
+        },
+        {
+          "t": 12,
+          "yaw": 0,
+          "pitch": 0
+        }
+      ],
+      "presentation": true,
+      "camera": [
+        {
+          "t": 0,
+          "pos": [
+            40,
+            30,
+            75
+          ],
+          "target": [
+            0,
+            16,
+            0
+          ]
+        },
+        {
+          "t": 6,
+          "pos": [
+            100,
+            80,
+            140
+          ],
+          "target": [
+            10,
+            25,
+            10
+          ]
+        },
+        {
+          "t": 12,
+          "pos": [
+            170,
+            125,
+            210
+          ],
+          "target": [
+            15,
+            35,
+            10
+          ]
+        }
+      ]
+    }
   }
 }

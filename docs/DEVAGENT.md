@@ -478,3 +478,46 @@ The latter exercises a fixed 12 s locomotion fixture through the actual player's
 collision movement: 720 continuous physics samples, bounded motion/aim, eased
 endpoints, cancellation, and approach direction/speed under the Fruki bonus.
 Live-map capture separately verifies both pickup grants.
+
+
+### Complete three-minute presentation
+
+`tools/video/presentation.json` orders twelve independent shots totalling exactly
+180 s at 60 fps. `video_actions.gd` adds simulation-time actions to the staging
+system: gradual target tracking and real triggers, grenades, laço, drone flight
+and fire, a reachable container rescue, vehicle entry/controls/grain fire and
+tablet apps. Free-camera paths are reserved for location shots. Enemy spawns,
+starting equipment and framing are explicitly staged; this is a scripted demo,
+not a recording of an unscripted human session. Ordinary game movement tuning
+and combat damage are unchanged.
+
+On macOS, with Godot on PATH and port 24691 free:
+
+```bash
+python3 tools/video/render_presentation.py --output /absolute/output/full_3min
+```
+
+The tool compiles the bundled Swift source against native AVFoundation, records
+one bounded AVI at a time, trims menu/loading/setup frames using the take marker,
+encodes H.264 with the game's audio and short chapter captions, then assembles
+`city_invaders_gameplay_3min.mp4`. Every clip is decoded to verify frame count and
+audio before assembly; the final audit requires 10,800 frames, 180 s and one audio
+track. This is offline capture, not an FPS benchmark. Native API deprecation
+warnings are harmless; runtime GDScript errors abort the job. Existing resource
+warnings on Godot exit are retained in each log.
+
+`--only film_battle film_drone` renders selected takes for review without joining.
+Completed clips with their audit file are reused. To revise a completed scene,
+use a fresh output folder or move its old clip/audit aside first. Raw AVI, silent
+video and temporary audio made by this tool are removed only after that clip's
+verification; `--keep-raw` retains them. It never removes other outputs or source
+assets. JSON take/capture audits and three preview frames remain per clip. The
+pipeline needs about 1.5 GB free for each bounded shot, plus final MP4 storage.
+
+The combine shot reserves a clear staging corridor by removing nearby AI traffic,
+accelerates over a short verified stretch, brakes before fixed obstacles, and
+uses the normal chase-camera orbit and grain-gun aim. It is a staged action
+showcase, not an autonomous road-following/performance test. Normal map/world
+collisions remain enabled. The drone shot starts with zero captured drones; its
+lasso result and successful launch are required before assembly. A previously
+failed lasso take is retained only under `superseded/` in the working outputs.

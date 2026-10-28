@@ -12,7 +12,7 @@ import stage
 class StageTests(unittest.TestCase):
     def test_presets_and_timeline(self):
         scenes = json.loads((Path(__file__).parents[2] / 'godot/data/video_scenes.json').read_text())
-        self.assertEqual(set(scenes), {'usina_walk', 'street_battle', 'grenades_swarm', 'drone_lasso'})
+        self.assertTrue({'usina_walk', 'street_battle', 'grenades_swarm', 'drone_lasso'} <= set(scenes))
         for scene in scenes.values():
             self.assertEqual(scene['map'], 'gasometro')
             self.assertEqual(len(scene['position']), 3)
@@ -24,7 +24,7 @@ class StageTests(unittest.TestCase):
             self.assertEqual(times[0], 0)
             self.assertEqual(times[-1], take['duration_s'])
             self.assertTrue(all(b > a for a, b in zip(times, times[1:])))
-            for cue in take['walk']:
+            for cue in take.get('walk', []):
                 self.assertTrue(0 <= cue['start'] < cue['end'] <= take['duration_s'])
                 self.assertTrue(0 < cue['ramp_s'] <= (cue['end'] - cue['start']) / 2)
                 self.assertTrue(0 < cue['speed_fraction'] <= 1)
@@ -41,6 +41,18 @@ class StageTests(unittest.TestCase):
         for cue in take['approach']:
             self.assertTrue(0 < cue['speed_mps'] <= 5)
             self.assertTrue(0 <= cue['start'] < cue['end'] <= take['duration_s'])
+
+    def test_full_presentation_is_exactly_three_minutes(self):
+        root = Path(__file__).parents[2]
+        plan = json.loads((root / 'tools/video/presentation.json').read_text())
+        scenes = json.loads((root / 'godot/data/video_scenes.json').read_text())
+        self.assertEqual(sum(s['duration_s'] for s in plan['shots']), 180)
+        for shot in plan['shots']:
+            take = scenes[shot['scene']]['take']
+            self.assertEqual(shot['duration_s'], take['duration_s'])
+            events = take.get('events', [])
+            self.assertEqual([e['t'] for e in events], sorted(e['t'] for e in events))
+            self.assertTrue(all(0 <= e['t'] < take['duration_s'] for e in events))
 
     def test_player_port_is_protected_before_connecting(self):
         with patch('sys.argv', ['stage.py', 'usina_walk', '--port', '24690']), patch('stage.DevAgent') as client:
