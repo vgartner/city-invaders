@@ -240,6 +240,12 @@ func _physics_process(delta: float) -> void:
 	if is_instance_valid(_actions): _actions.tick(elapsed,delta)
 	_samples.append({"t":elapsed,"position":[_player.position.x,_player.position.y,_player.position.z],
 		"yaw":_player.rotation.y,"pitch":_player.pitch,"move":[movement.x,movement.y],"frame":Engine.get_process_frames()})
+	if is_instance_valid(_player._drone):
+		var at: Vector3 = _player._drone.global_position
+		_samples[-1]["drone"] = [at.x,at.y,at.z]
+	if is_instance_valid(_actions) and is_instance_valid(_actions._drone_target):
+		var target: Node3D = _actions._drone_target
+		_samples[-1]["drone_target"] = {"position":[target.position.x,target.position.y,target.position.z],"health":target.health}
 	elapsed += delta
 	if elapsed + 1e-6 >= float(take["duration_s"]):
 		stop(true)
@@ -257,7 +263,7 @@ func stop(completed := false) -> void:
 	last = {"scene":scene_name,"completed":completed,"seconds":elapsed,
 		"collected":_collected,"missing_pickups":missing,
 		"events":_actions.ledger if is_instance_valid(_actions) else [],
-		"player_state":{"drones":_player.drones,"score":_player.score,"armor":_player.armor},
+		"player_state":{"drones":_player.drones,"score":_player.score,"armor":_player.armor,"parts":_player.parts.duplicate()},
 		"prepared_enemy_count":_prepared_actors.size(),
 		"start_process_frame":_start_frame,"start_drawn_frame":_start_drawn,
 		"end_process_frame":Engine.get_process_frames(),"samples":_samples}

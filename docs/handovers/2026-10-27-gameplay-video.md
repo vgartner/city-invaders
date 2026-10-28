@@ -256,3 +256,42 @@ in all five refilmed shots. Final cut at 46 s was checked at an exact timestamp
 and is near-black; the 48 s frame shows the new street encounter. The prior
 full video is untouched. Five Python contract/safety tests and the native movement
 regression pass; final take parsing/runtime checks found no GDScript errors.
+
+## Encounter refinement (2026-10-28, v3)
+
+The user approved v2 and requested natural circuit collection after kills,
+flying above the Usina to reach the far-side robot, and grenade throws closer
+to enemies. Only battle, grenade and drone shots are replaced; all twelve shot
+durations and the total 180 seconds remain unchanged, with v2 preserved.
+
+- Battle: fight first, then use a world-space pickup approach to circuits that
+  the normal robot death handler actually dropped. Freshly created pickups are
+  observed after their own grant handler. Carried parts are logged.
+- Grenades: guide the view before each throw using the existing 11 m/s speed
+  and upward impulse, aiming short of approaching feet to allow for bounce.
+  Physics, fuse, damage and EMP rules are unchanged. The last observed distance
+  to a living robot before each burst is recorded (one physics tick precision).
+- Drone: launch the actually captured drone, climb vertically using ascent/run
+  inputs, advance to a point above the northern side of the roof, then hover,
+  aim and fire normally at an already present far-side trooper. Position and
+  target health samples prove progress and hits; collisions remain enabled.
+
+Headless rehearsal collected four circuits; grenade burst distances were
+3.93 m (Bergamota) and 1.41 m (Porongo). Drone altitude reached 58.78 m and
+crossed from z=96.76 to z=-19.23; its fire reduced the far-side target's health.
+These rehearsals are interaction checks, not performance measurements.
+
+Another agent occupied test port 24691 during the first capture attempt and
+the window exited before the take. The recorder now supports `--port`, rejects
+24690, and v3 recording uses 24693. Do not stop the other agent's game.
+Output: `outputs/gameplay_video/full_3min_v3/` alongside preserved v1/v2.
+
+Final v3 delivery: `full_3min_v3/city_invaders_gameplay_3min.mp4`, 343 MiB,
+1920×1080, exactly 180 s / 10,800 frames at 60 fps, one audio track. The final
+recorded battle collects four circuits. With moving-target lead, recorded
+burst distances are 5.80 m / 3.62 m (inside the 6 m blast / 9 m EMP radii).
+The drone crosses above the roof at 58.78 m altitude and damages the far-side
+trooper (minimum observed health 8). All three new clips have zero identical
+adjacent source frames, audible PCM, and no script/parse errors. Six scene-data
+and owner-port tests pass; the new renderer port guard rejects 24690 before
+starting anything. Both the prior grenade attempt and all v1/v2 videos remain.

@@ -20,6 +20,22 @@ ROOT = Path(__file__).resolve().parents[2]
 PLAN = Path(__file__).with_name('presentation.json')
 
 
+def verify_refinements(take):
+    """Require actual simulation outcomes for the three revised shots."""
+    if take['scene'] == 'film_battle':
+        assert any(p['kind'] == 'circuit' for p in take['collected']), 'No dropped circuit collected'
+        assert take['player_state']['parts']['circuit'] > 0
+    if take['scene'] == 'film_grenades':
+        bursts = {e['kind']: e for e in take['events'] if e['action'] == 'grenade_burst'}
+        for kind, radius in [('bergamota', 6), ('porongo', 9)]:
+            assert bursts[kind]['nearest_robot_before_burst_m'] < radius, bursts
+    if take['scene'] == 'film_drone':
+        flight = [s['drone'] for s in take['samples'] if 'drone' in s]
+        assert max(p[1] for p in flight) > 50 and flight[-1][2] < -15, 'Drone did not cross above the Usina'
+        health = [s['drone_target']['health'] for s in take['samples'] if 'drone_target' in s]
+        assert min(health) < health[0], 'Far-side robot was not hit by the drone'
+
+
 def movie_index(raw, log, duration, folder):
     images, audio = [], []
     meta = {}
@@ -56,6 +72,7 @@ def movie_index(raw, log, duration, folder):
         frames = images[start:start + duration * meta['fps']]
         assert len(frames) == duration * meta['fps'], 'Incomplete movie'
         assert not take['missing_pickups'], take['missing_pickups']
+        verify_refinements(take)
         for event in take.get('events', []):
             if event['action'] == 'lasso':
                 assert event['result'] == 'drone', 'The lasso did not capture a real target'
@@ -103,7 +120,10 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--only', nargs='*')
     parser.add_argument('--keep-raw', action='store_true')
+    parser.add_argument('--port', type=int, default=24691, help='Isolated test-game port; never 24690')
     args = parser.parse_args()
+    if args.port == 24690:
+        parser.error("The player port is reserved; use a separate test instance")
     out = args.output.resolve(); out.mkdir(parents=True, exist_ok=True)
     plan = json.loads(PLAN.read_text())
     assert sum(s['duration_s'] for s in plan['shots']) == 180
@@ -121,13 +141,13 @@ def main():
         if shutil.disk_usage(out).free < 1_500_000_000:
             raise RuntimeError('Need at least 1.5 GB free to render the next bounded shot')
         try:
-            with socket.create_connection(('127.0.0.1',24691), timeout=.5):
-                raise RuntimeError('Port 24691 already belongs to another game')
+            with socket.create_connection(('127.0.0.1',args.port), timeout=.5):
+                raise RuntimeError(f'Port {args.port} already belongs to another game')
         except (ConnectionRefusedError, socket.timeout):
             pass
         raw = folder/'raw.avi'; log = folder/'game.log'
         print('RENDER', index+1, shot['scene'], shot['duration_s'], flush=True)
-        env = dict(os.environ, DEVAGENT_PORT='24691')
+        env = dict(os.environ, DEVAGENT_PORT=str(args.port))
         with log.open('w') as f:
             subprocess.run(['godot','--path',str(ROOT/'godot'),'--windowed','--resolution','1920x1080',
                 '--write-movie',str(raw),'--fixed-fps','60','--ignore-error-breaks','--',
@@ -157,6 +177,7 @@ def main():
     # A successful interaction, not merely a complete frame count, is required.
     for clip in clips:
         take = json.loads((clip.parent / 'take.json').read_text())
+        verify_refinements(take)
         for event in take.get('events', []):
             expected = {'lasso': 'drone', 'drone': 'flying', 'enter_vehicle': 'true', 'open_container': '0 remaining'}.get(event['action'])
             if expected is not None:

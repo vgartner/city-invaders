@@ -55,6 +55,22 @@ class StageTests(unittest.TestCase):
             self.assertTrue(all(0 <= e['t'] < take['duration_s'] for e in events))
             self.assertFalse(any(e['action'] in ['spawn','dropship'] for e in events))
 
+    def test_revised_encounters_require_loot_and_clear_roof_before_advancing(self):
+        scenes = json.loads((Path(__file__).parents[2] / 'godot/data/video_scenes.json').read_text())
+        battle = scenes['film_battle']['take']
+        self.assertIn('circuit', battle['expect_pickups'])
+        self.assertGreaterEqual(battle['loot'][0]['start'], battle['fight'][-1]['end'])
+        flight = scenes['film_drone']['take']['fly']
+        self.assertFalse(flight[0]['forward'])
+        self.assertTrue(flight[0]['up'])
+        self.assertGreaterEqual(flight[1]['start'], flight[0]['end'])
+        self.assertLess(flight[1]['destination'][2], -15)
+        self.assertTrue(flight[-1]['aim_target'])
+        self.assertTrue(flight[-1]['fire'])
+        grenades = scenes['film_grenades']['take']
+        for event in grenades['events']:
+            self.assertTrue(any(c['start'] < event['t'] < c['end'] for c in grenades['grenade_aim']))
+
     def test_player_port_is_protected_before_connecting(self):
         with patch('sys.argv', ['stage.py', 'usina_walk', '--port', '24690']), patch('stage.DevAgent') as client:
             with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as stopped:

@@ -221,3 +221,11 @@ at take start, and logs their count. Combat shots include walking approaches and
 separate locations; the action dispatcher cannot create enemies mid-take. Native
 assembly uses a 60 fps video composition with in-shot 0.3 s opacity ramps and audio
 ramps, preserving total duration. Ordinary game spawn rules remain unchanged.
+
+Presentation-only `loot`, `grenade_aim` and extended `fly` cues steer ordinary
+player inputs to collect natural drops, aim real grenade arcs, and climb clear
+of the Usina before crossing it. The action director observes normal outcomes;
+it never grants circuit pickups or applies combat damage itself. Per-tick logs
+include drone paths and far-side target health. The offline renderer requires
+these interaction outcomes before accepting the revised encounter clips and
+allows an alternate isolated port when the default test game is occupied.

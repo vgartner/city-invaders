@@ -544,3 +544,14 @@ nearby keyframes when checking a cut. The revised capture lives in `full_3min_v2
 in the Codex outputs; the original video is preserved for comparison. Unchanged
 source clips can be copied into the fresh output directory before running the
 renderer, while revised encounters are recorded again.
+
+The v3 encounter takes collect natural robot drops (`loot` cues), aim both
+throws with the real 11 m/s launch arc, and fly the captured drone vertically
+before advancing above the Usina roof. The drone then aims at a pre-staged
+far-side trooper; neither damage nor pickup grants are faked. Drop observers
+attach after the normal pickup handler. Take logs include carried parts,
+grenade-to-robot distances immediately before each burst, drone positions and
+target health. `render_presentation.py` checks these outcomes as well as video
+frames/audio. Use `--port 24693` (or another free test port) when 24691 belongs
+to another session; 24690 is rejected. Keep revised captures in a new output
+folder: existing verified clips are deliberately reused without source hashes.

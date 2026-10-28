@@ -327,7 +327,7 @@
       "fight": [
         {
           "start": 3,
-          "end": 21
+          "end": 15
         }
       ],
       "walk": [
@@ -363,7 +363,7 @@
         },
         {
           "start": 10,
-          "end": 14,
+          "end": 12,
           "direction": [
             0,
             -1
@@ -377,6 +377,15 @@
           "t": 11,
           "action": "reload"
         }
+      ],
+      "loot": [
+        {
+          "start": 15,
+          "end": 22
+        }
+      ],
+      "expect_pickups": [
+        "circuit"
       ]
     },
     "prestage_enemies": true,
@@ -442,27 +451,12 @@
         {
           "t": 0,
           "yaw": -24,
-          "pitch": 3
-        },
-        {
-          "t": 2.8,
-          "yaw": -24,
-          "pitch": 10
-        },
-        {
-          "t": 5,
-          "yaw": -24,
-          "pitch": 16
-        },
-        {
-          "t": 8,
-          "yaw": -24,
-          "pitch": 22
+          "pitch": 0
         },
         {
           "t": 16,
           "yaw": -24,
-          "pitch": 10
+          "pitch": 0
         }
       ],
       "presentation": true,
@@ -494,6 +488,18 @@
           ],
           "ramp_s": 0.35,
           "speed_fraction": 1
+        }
+      ],
+      "grenade_aim": [
+        {
+          "start": 2.1,
+          "end": 3.1,
+          "lead_s": 1.5
+        },
+        {
+          "start": 6,
+          "end": 7.1,
+          "lead_s": 1.0
         }
       ]
     },
@@ -633,19 +639,19 @@
           "pitch": 18
         },
         {
-          "t": 9,
-          "yaw": 0,
-          "pitch": -10
-        },
-        {
-          "t": 16,
-          "yaw": -45,
+          "t": 8.2,
+          "yaw": -19,
           "pitch": -15
         },
         {
+          "t": 16,
+          "yaw": -19,
+          "pitch": -25
+        },
+        {
           "t": 20,
-          "yaw": -55,
-          "pitch": -18
+          "yaw": -19,
+          "pitch": -40
         }
       ],
       "presentation": true,
@@ -668,13 +674,27 @@
       ],
       "fly": [
         {
-          "start": 5.5,
-          "end": 9,
-          "up": true
+          "start": 5.2,
+          "end": 8.2,
+          "forward": false,
+          "up": true,
+          "fast": true
         },
         {
-          "start": 9,
-          "end": 18,
+          "start": 8.2,
+          "end": 15.3,
+          "fast": true,
+          "destination": [
+            0,
+            58,
+            -20
+          ]
+        },
+        {
+          "start": 15.3,
+          "end": 20,
+          "forward": false,
+          "aim_target": true,
           "fire": true
         }
       ],
@@ -700,6 +720,14 @@
           0,
           5,
           -18
+        ]
+      },
+      {
+        "variant": "trooper",
+        "offset": [
+          45,
+          0,
+          -135
         ]
       }
     ]
