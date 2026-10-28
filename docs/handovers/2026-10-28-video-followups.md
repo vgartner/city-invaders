@@ -165,9 +165,19 @@ the local video. No videos or large media are committed. These are offline
 presentation checks, not comparable performance benchmarks. Godot's pre-existing
 resource/exit warnings remain in the logs; none are claimed fixed here.
 
-Publication: the four initial fixes were pushed to `main` through de35ff9.
-The v4 framing, subsequent QA regressions and delivery documentation are committed
-locally on `video-followups`. Automatic approval review rejected the additional
-main publication as lacking explicit user authorization. No further publication
-attempt was made; it requires the owner's approval. The delivered video and QA
-are complete independently of that optional publication.
+Publication: the four initial fixes were pushed to `main` through the commit
+now named `65eb108` in the rewritten history. Additional publication was initially
+blocked by automatic approval review. The owner then explicitly authorised the
+procedure in `2026-10-28-main-rewritten.md`: move the four remaining commits onto
+rewritten `origin/main`, reset author/committer to the vgartner identity, test,
+and publish as a fast-forward. That authorisation supersedes the earlier block.
+
+The four commits were reapplied without conflicts, with author and committer
+`Vilson Cristiano Gärtner <vgartner@gmail.com>` and no co-author trailers or AI
+signatures. Their video source contents are unchanged. Generated video helper
+`.uid` files are now versioned once, following the existing script UID convention.
+After rebasing, all seven scene tests, five encoder/interaction QA tests and the
+native video-take test pass. The native test reports 8.6625 m of movement, a
+0.03750 m maximum frame step and a 0.20312 degree maximum turn; no script/parse
+errors are present. The v4 video and its existing QA remain valid because the
+rebase changes ancestry/identity rather than its recording implementation.
