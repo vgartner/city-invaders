@@ -66,7 +66,9 @@ Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) first; it maps the scripts.
    [AGENTS.md](AGENTS.md); for a map, also a few minutes of the autoplay bot
    and its report.
 4. Commit with an English message that says what and why; update the docs
-   the change touches in the same commit.
+   the change touches in the same commit. Use the email of your GitHub
+   account (`git config --local user.email`), and leave AI co-author trailers
+   or signatures out: commits carry only your GitHub identity.
 5. Push the branch to your fork and open a pull request: what it does, how
    you tested it, screenshots for anything visible. Credit every photo and
    model you used.

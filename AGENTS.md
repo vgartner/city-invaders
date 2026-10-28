@@ -33,6 +33,13 @@ root with `tools/.venv/bin/python` (the examples below write it as `$P`).
   index below). The docs are how the next person - or agent - learns the
   project; nothing important may live only in a chat or an agent's memory.
 - **One topic per commit**, with a message that says what changed and why.
+- **Commits and pull requests carry only the contributor's GitHub identity.**
+  No `Co-Authored-By:` trailers for an AI agent, no "Generated with ..."
+  lines or AI signatures in commit messages, pull request descriptions or
+  code comments - even if your agent's defaults add them. The README already
+  says the project is built with AI help. Commit with the email of the
+  person's GitHub account (`git config --local user.email ...` in this
+  repository), so GitHub credits the right account.
 - **GDScript warnings are errors** in this project: give a variable a type
   where the parser can't infer it (`var x: Vector3 = ...` from a Variant).
 - **No material you have no right to use**: no Google Maps / Street View
