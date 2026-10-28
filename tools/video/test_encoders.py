@@ -73,11 +73,13 @@ class PortableEncoderTests(unittest.TestCase):
             self.assertAlmostEqual(audit['container_duration_s'], 2, places=3)
             self.assertEqual(audit['audio_tracks'], 1)
             mastered = root/'mastered.mp4'
-            audio = master(final, mastered)
+            audio = master(final, mastered, 2)
             verify(audio['after'])
             self.assertLessEqual(audio['after']['true_peak_dbtp'], -1.0)
             self.assertAlmostEqual(audio['after']['integrated_lufs'], -16, delta=1)
-            self.assertEqual(backend.audit(mastered)['frames'], 60)
+            mastered_audit = backend.audit(mastered)
+            self.assertEqual(mastered_audit['frames'], 60)
+            self.assertAlmostEqual(mastered_audit['container_duration_s'], 2, places=3)
             boundary = root/'cut.png'
             backend.frame(final, 1, boundary)
             self.assertLess(max(ImageStat.Stat(Image.open(boundary).convert('RGB')).mean), 2)

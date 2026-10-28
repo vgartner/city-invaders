@@ -40,7 +40,7 @@ def verify(values):
         raise RuntimeError('Encoded audio is outside -16 LUFS ±1 LU: '+str(values))
 
 
-def master(source, destination):
+def master(source, destination, duration_s):
     folder = destination.parent
     before, stats = measure(source, folder/'audio_before.log')
     attempts = []
@@ -54,7 +54,8 @@ def master(source, destination):
         with (folder/f'audio_master_attempt_{i}.log').open('w') as log:
             subprocess.run([audio_tool(), '-hide_banner', '-nostdin', '-y', '-i', str(source),
                             '-map', '0:v:0', '-map', '0:a:0', '-c:v', 'copy', '-af', graph,
-                            '-ar', '48000', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart',
+                            '-ar', '48000', '-c:a', 'aac', '-b:a', '192k', '-t', str(duration_s),
+                            '-movflags', '+faststart',
                             str(output)], stdout=log, stderr=subprocess.STDOUT, check=True)
         after, _ = measure(output, folder/f'audio_master_measure_{i}.log')
         attempts.append(dict(limiter_ceiling_dbtp=ceiling, measured=after))

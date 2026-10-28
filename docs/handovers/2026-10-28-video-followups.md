@@ -119,3 +119,8 @@ foliage. Headless route rehearsal has three vehicle kills. The tablet chapter
 starts on its home screen, exposing the map label supplied by the updated game.
 All v4 chapters are captured from the fresh current-main worktree; v3 source
 clips are not copied. Final output and measured QA follow after assembly.
+
+A stricter audio-master regression test found AAC padding extending a generated
+2 s fixture to 2.005 s. Mastering now receives the edit's exact duration and
+limits the muxed output to it; the test checks the mastered container duration
+as well as loudness and decoded video frames. The corrected round trip passes.

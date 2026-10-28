@@ -210,7 +210,7 @@ def main():
             portable.join(clips, assembled)
         else:
             run([media,'join',assembled,*clips],out/'join.log')
-        master(assembled, final)
+        master(assembled, final, plan["duration_s"])
     audio_values, _ = measure(final, out/'audio_final_measure.log')
     verify(audio_values)
     if portable:
