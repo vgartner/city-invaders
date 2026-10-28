@@ -558,3 +558,8 @@ target health. `render_presentation.py` checks these outcomes as well as video
 frames/audio. Use `--port 24693` (or another free test port) when 24691 belongs
 to another session; 24690 is rejected. Keep revised captures in a new output
 folder: existing verified clips are deliberately reused without source hashes.
+
+Clearing a video stage restores the original player's god-mode metadata,
+including whether the metadata existed at all. The snapshot keeps a weak player
+reference, so changing rounds cannot apply the old player's state to a new one.
+The native video-take test covers absent, false and true prior states.

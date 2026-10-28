@@ -87,7 +87,8 @@ func prepare(name: String) -> Dictionary:
 	scene = wanted
 	_saved = {"director":main.director.is_processing(), "swarm_cd":main._swarm_cd,"dynamic_resolution":main.dynamic_resolution,
 		"scale":main.get_viewport().scaling_3d_scale,"window_size":get_window().size,
-		"master_mute":AudioServer.is_bus_mute(0)}
+		"master_mute":AudioServer.is_bus_mute(0),
+		"player":weakref(_player),"god_present":_player.has_meta("god"),"god":_player.get_meta("god",false)}
 	if OS.has_feature("movie"):
 		# Match the capture viewport, avoiding a cropped HUD on macOS/Retina.
 		get_window().size = Vector2i(int(ProjectSettings.get_setting("display/window/size/viewport_width")),
@@ -183,6 +184,12 @@ func clear() -> void:
 	_pickup_targets.clear()
 	if not _saved.is_empty():
 		var main: Node3D = agent._main()
+		var staged_player: Node = _saved["player"].get_ref()
+		if is_instance_valid(staged_player):
+			if _saved["god_present"]:
+				staged_player.set_meta("god", _saved["god"])
+			else:
+				staged_player.remove_meta("god")
 		main.director.set_process(_saved["director"])
 		main._swarm_cd = _saved["swarm_cd"]
 		main.dynamic_resolution = _saved["dynamic_resolution"]

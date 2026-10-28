@@ -1,6 +1,9 @@
 extends Node3D
 const Stage := preload("res://scripts/video_stage.gd")
 var paused := false
+var director := Node.new()
+var _swarm_cd := 1.0
+var dynamic_resolution := false
 class QuietPlayer:
 	extends "res://scripts/player.gd"
 	func _ready() -> void:
@@ -97,6 +100,22 @@ func _run() -> void:
 	Settings.virtual.erase("forward")
 	var normal_distance := Vector2(player.global_position.x-before.x,player.global_position.z-before.z).length()
 	assert(normal_distance > 2.3 and normal_distance < 2.7, "Normal walking input must still work after the take")
+	# Clearing a stage must preserve absent, false and true pre-existing god metadata.
+	for previous in [null, false, true]:
+		if previous == null:
+			player.remove_meta("god")
+		else:
+			player.set_meta("god", previous)
+		stage._saved = {"player": weakref(player), "god_present": player.has_meta("god"),
+			"god": player.get_meta("god", false), "director": false, "swarm_cd": 1.0,
+			"dynamic_resolution": false, "scale": 1.0, "master_mute": true}
+		player.set_meta("god", true)
+		stage.clear()
+		assert(player.has_meta("god") == (previous != null))
+		assert(player.get_meta("god", false) == (previous if previous != null else false))
+		assert(stage._saved.is_empty())
+		stage.clear()
+	director.free()
 	print("Video take passed: distance=",travelled," max step=",max_step," max turn deg=",rad_to_deg(max_turn))
 	for node in get_children(): node.queue_free()
 	for node in Sfx.get_children(): node.queue_free()
