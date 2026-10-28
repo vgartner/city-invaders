@@ -82,3 +82,17 @@ repository.
 Items 1-4 committed and pushed to `main` (tests passing, docs updated),
 items 5-6 delivered as the v4 video with its QA, and a short report of
 what was tested and how.
+
+## Implementation progress
+
+1. God-mode restoration: saved the original player's metadata presence/value
+   through a weak reference. Native simulation covers absent/false/true states,
+   repeat clearing, smooth movement and restored ordinary input; scene tests pass.
+2. Portable encoding: FFmpeg/FFprobe with Pillow captions, selected automatically
+   without native macOS tools or explicitly with `--encoder ffmpeg`. Generated
+   audiovisual fixtures pass marker trimming, caption encoding, decoded frame /
+   duration / dimension / audio checks and a black fade at the chapter boundary.
+3. Style: expanded one-line control flow and statement chains, and spaced
+   dictionaries/operators in the two video helpers and their DevAgent wrappers.
+   Non-whitespace tokens were preserved (semicolon separators become newlines).
+   Godot parse/native simulation and the six scene-contract tests remain passing.
