@@ -6,7 +6,8 @@ Commons photos on the facades, real terrain. Robots invade Porto Alegre;
 protect the people, drive whatever you find, drink a chimarrão.
 
 Made with [Godot 4.7](https://godotengine.org). Solo or online co-op. Any
-city in the world can be imported as a new map.
+city in the world can be imported as a new map - **bring your own city into
+the game, and help build it**: see [Build it with us](#build-it-with-us).
 
 ![Robots and a mech coming down a street of the Centro Histórico](docs/images/gameplay-centro.jpg)
 
@@ -114,6 +115,40 @@ How a real city becomes a map, step by step: [docs/MAP_PIPELINE.md](docs/MAP_PIP
 
 ![The map editor over the Usina do Gasômetro: the palette, the object inspector](docs/images/editor-gasometro.jpg)
 
+## Build it with us
+
+City Invaders is open source and made to grow with its players. You don't
+need to be a game developer to leave your mark:
+
+- **Your city.** Any place mapped in OpenStreetMap becomes a playable map:
+  your street, your neighbourhood, your town's square and landmarks, with
+  real street photos on the facades. One command, or *Studio > Import a new
+  city* in the game.
+- **New phases.** Chain maps into a campaign across a city, set each phase's
+  goals and its exit to the next.
+- **Make a map feel like the real place.** Your own photos of the facades,
+  the right building heights, the landmark everybody knows, the shop on the
+  corner, the people and music on the square - with the in-game map editor
+  (F2), and shared as a mod.
+- **The game itself.** Weapons, robots, vehicles, gadgets, the tablet's apps,
+  the AI of people and robots, performance, the online services.
+- **Models, sounds and art** under a free licence, especially the places and
+  culture of your region.
+
+**Work with an AI agent.** Much of this game was built with AI coding agents
+(Claude Code, Codex), and yours is welcome: Claude Code, Codex, Cursor,
+Gemini or any other. Point it at [AGENTS.md](AGENTS.md) - the rules, how to
+import a city, how to test in the game through the DevAgent (the agent can
+play the game, look at it and check its own work), and an index of the
+repository. Setup per tool is in [docs/AGENTS.md](docs/AGENTS.md).
+
+**Send it as a pull request.** Fork the repository, make your change on a
+branch, test it in the game, and open a pull request with a short
+description and screenshots. We review every contribution and merge it into
+the game once it is ready. How, and what a new city's pull request
+contains: [CONTRIBUTING.md](CONTRIBUTING.md). Ideas and bugs are welcome as
+issues too.
+
 ## Quick start
 
 You need [Git LFS](https://git-lfs.com) (`brew install git-lfs`, then
@@ -153,11 +188,7 @@ keys, listed in a panel when the first round starts:
 | F3 | god mode |
 | F5 | record performance; the assistant analyses the log |
 
-Much of the game was built with AI coding agents (Claude Code and Codex),
-and any agent can contribute: [AGENTS.md](AGENTS.md) has the rules, how to
-test in the game and an index of the repository; setup per tool (Codex,
-Claude Code, Cursor, Gemini CLI) is in [docs/AGENTS.md](docs/AGENTS.md).
-People start with [CONTRIBUTING.md](CONTRIBUTING.md).
+How to work with an AI agent and send changes: [Build it with us](#build-it-with-us).
 
 ## Documentation
 

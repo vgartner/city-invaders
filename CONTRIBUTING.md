@@ -16,9 +16,17 @@ Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) first; it maps the scripts.
 
 ## What to contribute
 
-- **A new city or neighbourhood**: a `maps/<map>/build.json`, the data
-  download steps you used, and an entry in `MAPS` (`godot/scripts/main.gd`).
-  Keep maps around 400 x 400 m.
+- **A new city or neighbourhood**: `tools/map/new_city.py "Place, District"`
+  (or *Studio > Import a new city*) builds it and lists it in
+  `godot/city/maps.json`; keep each phase around 400 x 400 m. Step by step,
+  including the Mapillary token for the facade photos:
+  [AGENTS.md, "Importing a new city"](AGENTS.md#importing-a-new-city).
+- **New phases and campaigns**: a city's phases run eastwards, each one's
+  exit leading into the next (`--phases N`); goals per phase in its menu entry.
+- **Gameplay and mechanics**: weapons and items are data
+  ([docs/ENTITIES.md](docs/ENTITIES.md)); robots, vehicles and the player are
+  scripts ([docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). Describe the idea in
+  an issue first if it changes how the game plays.
 - **Facade photos and building heights**: your own photos only (or freely
   licensed ones), through `tools/map/building_photo.py`; they live in
   `maps/<map>/user/`.
@@ -44,3 +52,35 @@ Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) first; it maps the scripts.
   can drive it from a script (`hold_keys`, `audit_ground`, `errors`).
 - One topic per pull request, with a short description and, for visual
   changes, a screenshot.
+
+## Sending a pull request
+
+1. Fork the repository on GitHub and clone your fork (with Git LFS installed).
+2. Make a branch for one topic: `git checkout -b my-city-pelotas`.
+3. Change, then **test in the game** - for an AI agent, the loop in
+   [AGENTS.md](AGENTS.md); for a map, also a few minutes of the autoplay bot
+   and its report.
+4. Commit with an English message that says what and why; update the docs
+   the change touches in the same commit.
+5. Push the branch to your fork and open a pull request: what it does, how
+   you tested it, screenshots for anything visible. Credit every photo and
+   model you used.
+6. We review it, may ask for changes, and merge it once it is ready.
+
+### Large files and Git LFS
+
+Models, textures, sounds and some map data go through Git LFS to the
+project's own server, which anyone can read but only maintainers can write.
+A pull request from a fork therefore carries **text files only**:
+
+- **A new city**: commit its sources - `maps/<map>/build.json`, `data/osm.json`,
+  `data/terrain.json`, the `facades/*.json` and `mapillary/` listings,
+  `user/*.json` and `facades/commons_credits.txt` - and the `godot/city/maps.json`
+  entry, but not the generated `godot/city/<map>.*` files or images
+  (`git add` those paths only). A maintainer rebuilds the map from your
+  sources with the same command and adds the generated files.
+- **Models, images or sounds**: attach them to the pull request as a zip (or
+  a link), with their source and licence; a maintainer adds them. If you
+  contribute assets regularly, ask in the pull request for write access to
+  the LFS server.
+

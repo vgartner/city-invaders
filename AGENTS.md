@@ -124,7 +124,9 @@ Details: [docs/MAP_PIPELINE.md](docs/MAP_PIPELINE.md).
    is ~100 MB or more through Git LFS): `git add maps/<map>/ godot/city/<map>*
    godot/city/maps.json` - `.gitignore` already keeps the photo downloads
    and build caches out. Add a line to the README's maps table if it ships
-   with the game.
+   with the game. Working from a fork (no write access to the LFS server)?
+   Commit the text sources only and let a maintainer add the generated
+   files - see CONTRIBUTING.md, "Large files and Git LFS".
 
 ## Talking with the player in the game
 
