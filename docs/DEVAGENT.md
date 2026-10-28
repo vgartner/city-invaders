@@ -563,3 +563,10 @@ Clearing a video stage restores the original player's god-mode metadata,
 including whether the metadata existed at all. The snapshot keeps a weak player
 reference, so changing rounds cannot apply the old player's state to a new one.
 The native video-take test covers absent, false and true prior states.
+
+The video renderer also supports `--encoder ffmpeg` (FFmpeg/FFprobe on PATH,
+plus Pillow for captions); automatic selection uses it when the macOS native
+utilities are unavailable. It consumes the same indexed take frames and trimmed
+PCM, preserves captions/fades, and verifies decoded video/audio and dimensions.
+See `tools/video/README.md` for dependencies and `tools/video/test_encoders.py`
+for the generated-media acceptance test.

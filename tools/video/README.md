@@ -49,8 +49,9 @@ the player's game and must not be used for staging, playback or shutdown.
 The default test port is 24691; use another free port if it is occupied. Never
 close another agent's or the player's game to clear it.
 
-The current macOS workflow needs Godot on PATH and the system Swift/AVFoundation
-runtime. No external media download is needed:
+The workflow needs Godot on PATH. macOS uses the system Swift/AVFoundation
+runtime by default; Linux/Windows use FFmpeg (see below). No external media
+download is needed:
 
 ```bash
 python3 tools/video/render_presentation.py \
@@ -103,3 +104,22 @@ working tree (180 s, 1920x1080, 60 fps, 12 chapters). The video and its
 `FINAL_QA.json`, `chapters.json` and per-shot folders (clips, take logs) were
 delivered to the owner outside the repository. Future recordings choose a
 fresh output folder rather than overwrite an earlier one.
+
+## Portable encoder
+
+`--encoder auto` keeps AVFoundation on macOS when both `swiftc` and `avconvert`
+are present, and otherwise selects FFmpeg. Use `--encoder ffmpeg` to force the
+portable path on any platform. Install `ffmpeg` and `ffprobe` on PATH, with
+libx264/AAC support, and Pillow in the Python environment (already part of the
+repository's tool dependencies). Captions use a local system font; `--font`
+accepts a TrueType/OpenType file if the system font cannot be found. No font or
+media downloads are performed by the recorder.
+
+FFmpeg receives only the Movie Maker JPEG frames selected by the logged take
+markers, plus the precisely trimmed PCM WAV. It burns chapter captions, encodes
+H.264/AAC, applies each shot's video/audio fades, and concatenates without
+changing the edit's duration. FFprobe counts decoded frames and FFmpeg strictly
+decodes video and audio; duration, resolution, frame rate and audio are checked
+just as on the native path. The AVFoundation implementation remains available
+with `--encoder avfoundation`. Encoder tests use generated audiovisual fixtures
+and exercise the portable path even on macOS.

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Render independent fixed-time shots and assemble an exact 180-second MP4 on macOS.
-Uses a separate game on port 24691, native AVFoundation, and no downloaded media.
+"""Render independent fixed-time shots and assemble an exact 180-second MP4.
+Uses an isolated game, AVFoundation or FFmpeg, and no downloaded media.
 Existing completed clips are reused; raw intermediates made here are discarded after QA.
 """
 import argparse
@@ -15,6 +15,7 @@ import socket
 import struct
 import subprocess
 import wave
+from ffmpeg_backend import FFmpegBackend, select_encoder
 
 ROOT = Path(__file__).resolve().parents[2]
 PLAN = Path(__file__).with_name('presentation.json')
@@ -119,6 +120,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--only', nargs='*')
+    parser.add_argument('--encoder', choices=['auto', 'avfoundation', 'ffmpeg'], default='auto')
+    parser.add_argument('--font', type=Path, help='Caption TrueType/OpenType font for FFmpeg')
     parser.add_argument('--keep-raw', action='store_true')
     parser.add_argument('--port', type=int, default=24691, help='Isolated test-game port; never 24690')
     args = parser.parse_args()
@@ -127,8 +130,10 @@ def main():
     out = args.output.resolve(); out.mkdir(parents=True, exist_ok=True)
     plan = json.loads(PLAN.read_text())
     assert sum(s['duration_s'] for s in plan['shots']) == 180
+    encoder = select_encoder(args.encoder)
+    portable = FFmpegBackend(args.font) if encoder == 'ffmpeg' else None
     media = out / 'media'
-    if not media.exists():
+    if not portable and not media.exists():
         run(['/usr/bin/swiftc', '-O', ROOT/'tools/video/media.swift', '-o', media], out/'compile.log')
     clips = []
     for index, shot in enumerate(plan['shots']):
@@ -157,19 +162,29 @@ def main():
         if 'SCRIPT ERROR' in text or 'Parse Error' in text:
             raise RuntimeError('Runtime script error in '+str(log))
         movie_index(raw, log, shot['duration_s'], folder)
-        run(['/usr/bin/avconvert','--source',folder/'audio.wav','--output',folder/'audio.m4a',
-             '--preset','PresetAppleM4A'],folder/'audio.log')
-        assert (folder/'audio.m4a').exists()
-        run([media,'encode',raw,folder/'index.json',folder/'video.mp4',folder/'audio.m4a',clip,
-             shot['title'],shot['subtitle']],folder/'encode.log')
-        run([media,'audit',clip],folder/'audit.json')
-        audit = json.loads((folder/'audit.json').read_text())
+        if portable:
+            portable.encode(raw, folder/'index.json', folder/'audio.wav', clip, shot['title'], shot['subtitle'])
+            audit = portable.audit(clip)
+            (folder/'audit.json').write_text(json.dumps(audit))
+        else:
+            run(['/usr/bin/avconvert','--source',folder/'audio.wav','--output',folder/'audio.m4a',
+                 '--preset','PresetAppleM4A'],folder/'audio.log')
+            assert (folder/'audio.m4a').exists()
+            run([media,'encode',raw,folder/'index.json',folder/'video.mp4',folder/'audio.m4a',clip,
+                 shot['title'],shot['subtitle']],folder/'encode.log')
+            run([media,'audit',clip],folder/'audit.json')
+            audit = json.loads((folder/'audit.json').read_text())
         assert audit['frames'] == shot['duration_s']*60 and audit['audio_tracks'] == 1
+        assert audit['width'] == 1920 and audit['height'] == 1080 and abs(audit['fps']-60) < 0.001
+        assert abs(audit['duration_s']-shot['duration_s']) < 0.001
         for t in (2,shot['duration_s']/2,shot['duration_s']-2):
-            run([media,'frame',clip,str(t),folder/f'frame_{t:g}.png'],folder/'frame.log')
+            if portable:
+                portable.frame(clip, t, folder/f'frame_{t:g}.png')
+            else:
+                run([media,'frame',clip,str(t),folder/f'frame_{t:g}.png'],folder/'frame.log')
         if not args.keep_raw:
             for path in (raw, folder/'video.mp4',folder/'audio.wav',folder/'audio.m4a'):
-                path.unlink()
+                path.unlink(missing_ok=True)
         print('DONE',shot['scene'],audit,flush=True)
     if args.only:
         return
@@ -183,10 +198,18 @@ def main():
             if expected is not None:
                 assert event['result'] == expected, (clip.parent.name, event)
     if not final.exists():
-        run([media,'join',final,*clips],out/'join.log')
-    run([media,'audit',final],out/'FINAL_QA.json')
+        if portable:
+            portable.join(clips, final)
+        else:
+            run([media,'join',final,*clips],out/'join.log')
+    if portable:
+        (out/'FINAL_QA.json').write_text(json.dumps(portable.audit(final)))
+    else:
+        run([media,'audit',final],out/'FINAL_QA.json')
     audit = json.loads((out/'FINAL_QA.json').read_text())
     assert audit['duration_s'] == 180 and audit['frames'] == 10800 and audit['audio_tracks'] == 1, audit
+    assert audit['width'] == 1920 and audit['height'] == 1080 and abs(audit['fps']-60) < 0.001, audit
+    assert abs(audit.get('container_duration_s', 180)-180) < 0.001, audit
     shutil.copy(PLAN,out/'chapters.json')
     print('FINAL',final,audit,flush=True)
 
