@@ -61,6 +61,9 @@ keep their originals until the owner deletes them.
   then `$P tools/bench/autoplay_report.py` - what the bot did, fps per 50 m
   cell, hitches, places where it got stuck, script errors.
 - **Driving only**: `autoplay minutes=5 drive_every=3`.
+- **A new city**: the step-by-step recipe in [AGENTS.md](../AGENTS.md#importing-a-new-city)
+  (the place and size from the person, their Mapillary token, `new_city.py`,
+  checks in the game, credits, commit).
 - **A map change**: edit `tools/map/` or `maps/<map>/`, then
   `$P tools/map/building_photo.py rebuild <map>` and
   `godot --headless --path godot --import`; commit the regenerated

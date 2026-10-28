@@ -1,8 +1,12 @@
 # Map pipeline: from a real city to a playable map
 
-A map is generated from open data. The generated files are **not** in git
-(they are large and derived): build them yourself, or download them from a
-release, into `godot/city/`.
+A map is generated from open data. The Porto Alegre maps are in the
+repository (the generated `godot/city/` files and each map's sources in
+`maps/<map>/`, the large ones through Git LFS), so a clone plays at once;
+the photo downloads and build caches are not (`.gitignore`) and are made
+again by a rebuild. A new city is built here, then committed if it should
+ship with the game. For an AI agent doing the import, the step-by-step
+recipe is in [AGENTS.md](../AGENTS.md#importing-a-new-city).
 
 ```
 OpenStreetMap ──► osm.json ──┐

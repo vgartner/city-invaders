@@ -89,6 +89,13 @@ the menu.
 tools/.venv/bin/python tools/map/new_city.py "Bielefeld, Altstadt" --name bielefeld --size 400 --phases 2
 ```
 
+The facade photos come from [Mapillary](https://www.mapillary.com): create
+a free account, register an application under *Dashboard > Developers* and
+put its client token in `.env` at the repository root as
+`MAPILLARY_TOKEN="MLY|..."`. Without it, `--no-photos` builds the city with
+generated facades. An AI agent can do the whole import:
+[AGENTS.md, "Importing a new city"](AGENTS.md#importing-a-new-city).
+
 **Improve a map:**
 
 - **The map editor in the game** (F2 in a round, or *Studio > Edit this

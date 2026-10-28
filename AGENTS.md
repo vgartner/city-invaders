@@ -82,6 +82,47 @@ Compiling is not testing: run the change in the game.
    into: `devagent.py autoplay minutes=10`, then `$P tools/bench/autoplay_report.py`.
 5. `errors` must be empty at the end.
 
+## Importing a new city
+
+Any place with OpenStreetMap data becomes a playable city in one command.
+Details: [docs/MAP_PIPELINE.md](docs/MAP_PIPELINE.md).
+
+1. **Ask the person** which place (a town, or "City, District"), how big
+   (each phase is a square map, 400 m is the norm - larger gets heavy) and
+   how many phases.
+2. **Street photos (Mapillary)** - the facades are textured with Mapillary's
+   free street-level photos. That needs the person's own access token: they
+   create a free account at mapillary.com, register an application under
+   *Dashboard > Developers*, and put its client token in the repository
+   root's `.env` (git-ignored) as `MAPILLARY_TOKEN="MLY|..."` (quoted). An
+   agent doesn't create the account and never prints or commits the token.
+   Without it, run with `--no-photos`: the buildings get generated facades.
+3. **Run**: `$P tools/map/new_city.py "Pelotas, Centro" --name pelotas --size 400 --phases 2`.
+   It geocodes the place (Nominatim), downloads OpenStreetMap, the Overture
+   footprints OSM lacks, the terrain (Copernicus) and the Mapillary listing,
+   builds the facades and one map per phase, imports them into Godot, lists
+   them in `godot/city/maps.json` (the menu reads it) and runs the street
+   audit. `--clean` paints people and cars out of the photos (needs the ML
+   environment, see MAP_PIPELINE). Behind a TLS-inspecting proxy set
+   `SSL_CERT_FILE` / `REQUESTS_CA_BUNDLE` first. The same import runs from
+   the game: *Studio > Import a new city*.
+4. **Check it in the game** (your test instance, port 24691):
+   `start_solo map=<id>`, screenshots of the streets and landmarks,
+   `audit_ground`, `nav_probe landmark_pickups=true` (every fixed item
+   reachable), `autoplay minutes=5` and `tools/bench/autoplay_report.py`
+   (where the bot got stuck, unreachable spots, frame rate per area),
+   `maps/<map>/out/street_audit.json`, and `errors` empty. Report what looks
+   wrong (buildings in the street, floating props, dead ends) - many are
+   fixed in `maps/<map>/user/` or by the map editor (F2).
+5. **Images**: only Mapillary, Wikimedia Commons or the person's own photos
+   - never Google Maps / Street View. Commons photos are credited in
+   `maps/<map>/facades/commons_credits.txt`, made by the import; keep it.
+6. **Commit only if the person wants the city in the repository** (a city
+   is ~100 MB or more through Git LFS): `git add maps/<map>/ godot/city/<map>*
+   godot/city/maps.json` - `.gitignore` already keeps the photo downloads
+   and build caches out. Add a line to the README's maps table if it ships
+   with the game.
+
 ## Talking with the player in the game
 
 With the game running, the player presses **F1** to write to the AI agent
