@@ -169,6 +169,7 @@ People start with [CONTRIBUTING.md](CONTRIBUTING.md).
 | [docs/MAP_PIPELINE.md](docs/MAP_PIPELINE.md) | turning a real city into a map; your own photos, heights and models |
 | [docs/ASSETS.md](docs/ASSETS.md) | model conventions, rigs and clips, the Blender scripts |
 | [docs/DEVAGENT.md](docs/DEVAGENT.md) | driving the game from scripts and AI agents; the autoplay bot |
+| [tools/video/README.md](tools/video/README.md) | gameplay video rules, recording workflow, interaction checks and delivery |
 | [docs/PERFORMANCE.md](docs/PERFORMANCE.md) | frame-rate budget, how to measure, findings |
 | [docs/ONLINE.md](docs/ONLINE.md), [docs/MODDING.md](docs/MODDING.md) | Bah, reports, mods; the server side is in `server/README.md` |
 | [docs/BUILDING.md](docs/BUILDING.md) | exporting a release (Windows `.exe`) |

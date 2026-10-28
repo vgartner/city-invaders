@@ -65,6 +65,9 @@ same port, break each other's work.
 
 Compiling is not testing: run the change in the game.
 
+For gameplay recording requests, read [tools/video/README.md](tools/video/README.md)
+first: it records the approved movement, encounter, interaction and delivery rules.
+
 1. Parse check: `godot --headless --path godot --quit` - no `SCRIPT ERROR` / `Parse Error`.
 2. Your own test game, never the player's:
 

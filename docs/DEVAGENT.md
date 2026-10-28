@@ -482,6 +482,9 @@ Live-map capture separately verifies both pickup grants.
 
 ### Complete three-minute presentation
 
+Read [the gameplay video README](../tools/video/README.md) before staging or
+recording: it contains the reusable rules from the approved edit.
+
 `tools/video/presentation.json` orders twelve independent shots totalling exactly
 180 s at 60 fps. `video_actions.gd` adds simulation-time actions to the staging
 system: gradual target tracking and real triggers, grenades, laço, drone flight
