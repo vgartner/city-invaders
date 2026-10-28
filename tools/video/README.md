@@ -141,3 +141,10 @@ master-bus headroom at runtime to reduce source clipping; clearing the stage
 restores the previous volume/mute settings. Normal gameplay volume is unchanged.
 Previously clipped recordings cannot be repaired by lowering their level;
 re-record from the game when that matters, as in v4.
+
+For v4, keep the approach camera high enough to frame both landmarks and nearby
+pickups, and rehearse the vehicle camera along the actual driven route to avoid
+foreground foliage. A deliberately triggered effect (such as the parked-car
+explosion showcase) must be documented as staged; combat/pickup success still
+comes from real gameplay. Capture every chapter again when updating visible game
+features or capture gain, rather than mixing older game footage into the edit.

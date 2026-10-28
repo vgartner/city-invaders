@@ -31,6 +31,10 @@ def verify_refinements(take):
         bursts = {e['kind']: e for e in take['events'] if e['action'] == 'grenade_burst'}
         for kind, radius in [('bergamota', 6), ('porongo', 9)]:
             assert bursts[kind]['nearest_robot_before_burst_m'] < radius, bursts
+    if take['scene'] == 'film_vehicle':
+        assert any(e['action'] == 'vehicle_kill' and e['by_player'] for e in take['events']), 'No real harvester kill'
+        assert any(e['action'] == 'vehicle_explosion' and e['result'] == 'staged parked-car effect'
+                   for e in take['events']), 'The parked-car explosion showcase did not run'
     if take['scene'] == 'film_drone':
         flight = [s['drone'] for s in take['samples'] if 'drone' in s]
         assert max(p[1] for p in flight) > 50 and flight[-1][2] < -15, 'Drone did not cross above the Usina'

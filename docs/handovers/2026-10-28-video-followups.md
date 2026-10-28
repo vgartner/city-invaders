@@ -101,3 +101,21 @@ what was tested and how.
    -16 LUFS ±1 LU, with AAC headroom and retries from the original mix.
    Movie capture reserves 6 dB on the master bus and restores the prior gain.
    Generated-media round trips, rejection gates and native gain restoration pass.
+
+## v4 framing and current-game recording
+
+The Usina walk keeps pitch between -5 and +20 degrees, showing the facade,
+chimney and pickups instead of mostly grass. Fruki and pala still collect through
+normal movement, with the real speed bonus unchanged. The harvester now follows
+the clear northbound avenue from approximately (44, 300), with a raised chase
+orbit. Three troopers are prepared before recording. Their normal death signals
+log player-attributed vehicle kills; the acceptance gate requires at least one.
+A parked car ahead/right uses the current `explode_fx` at 6.2 s as an explicit
+staged effect showcase, not a claimed robot-triggered explosion.
+
+Rendered pilot checks: both pickups collected; the recorded harvester take has
+two player-attributed robot kills and the explosion visible without foreground
+foliage. Headless route rehearsal has three vehicle kills. The tablet chapter
+starts on its home screen, exposing the map label supplied by the updated game.
+All v4 chapters are captured from the fresh current-main worktree; v3 source
+clips are not copied. Final output and measured QA follow after assembly.

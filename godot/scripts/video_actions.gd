@@ -11,6 +11,7 @@ var _aim_yaw := 0.0
 var _aim_pitch := 0.0
 var container: Node3D
 var vehicle: Node3D
+var parked_car: Node3D
 var _hidden: Array = []
 var _initial_pickups: Dictionary = {}
 var _observed_drops: Dictionary = {}
@@ -51,6 +52,28 @@ func setup(owner_stage: Node) -> void:
 		vehicle = car
 		stage._created.append(weakref(car))
 		print("VIDEO_VEHICLE_SETUP ", car.name, " kind=", car.kind, " at=", car.global_position, " player=", player.position)
+
+	if stage.scene.has("parked_car_offset"):
+		parked_car = main.Car.new()
+		parked_car.name = "VideoParkedCar"
+		for i in main.Car.MODELS.size():
+			if main.Car.kind_of(main.Car.MODELS[i]) == "car":
+				parked_car.model_idx = i
+				break
+		parked_car.graph = main.road_graph
+		parked_car.occupied = false
+		main.traffic_root.add_child(parked_car)
+		parked_car.global_position = stage._ground(main, player.position + vec(stage.scene.parked_car_offset))
+		stage._created.append(weakref(parked_car))
+	if stage.scene.has("vehicle_kind"):
+		for actor in stage._prepared_actors:
+			var enemy: Node = actor.ref.get_ref()
+			if is_instance_valid(enemy) and enemy.has_signal("died"):
+				enemy.died.connect(_vehicle_kill)
+
+
+func _vehicle_kill(enemy: Node3D) -> void:
+	ledger.append({"t": stage.elapsed, "action": "vehicle_kill", "by_player": enemy.killed_by_player})
 
 
 static func vec(value: Array) -> Vector3:
@@ -323,6 +346,12 @@ func perform(event: Dictionary) -> void:
 				var tip := vehicle.find_child("muzzle_auger", true, false) as Node3D
 				var origin: Vector3 = tip.global_position if tip else vehicle.position + Vector3(0, 4.5, 0)
 				vehicle.grain_fire.rpc((player._harvester_aim() - origin).normalized())
+		"vehicle_explosion":
+			if is_instance_valid(parked_car):
+				parked_car.explode_fx.rpc()
+				result = "staged parked-car effect"
+			else:
+				result = "missing parked car"
 		"tablet":
 			if player._tablet:
 				player._tablet.open()

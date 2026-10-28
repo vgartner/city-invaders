@@ -36,52 +36,52 @@
         {
           "t": 0,
           "yaw": 0,
-          "pitch": 5
+          "pitch": 3
         },
         {
           "t": 2,
           "yaw": -8,
-          "pitch": 9
+          "pitch": 4
         },
         {
           "t": 4,
           "yaw": -34,
-          "pitch": 50
+          "pitch": 20
         },
         {
           "t": 6,
           "yaw": -20,
-          "pitch": 12
+          "pitch": 3
         },
         {
           "t": 7,
           "yaw": -38,
-          "pitch": -28
+          "pitch": 0
         },
         {
           "t": 9,
           "yaw": -38,
-          "pitch": -50
+          "pitch": -5
         },
         {
           "t": 10,
           "yaw": 31,
-          "pitch": -28
+          "pitch": 0
         },
         {
           "t": 11.8,
           "yaw": 31,
-          "pitch": -55
+          "pitch": -5
         },
         {
           "t": 13.2,
           "yaw": 0,
-          "pitch": -5
+          "pitch": 2
         },
         {
           "t": 14,
           "yaw": 0,
-          "pitch": 8
+          "pitch": 4
         }
       ],
       "walk": [
@@ -810,26 +810,26 @@
     "title": "Film Vehicle",
     "map": "gasometro",
     "position": [
-      75,
-      3,
-      277
+      51,
+      5,
+      300
     ],
-    "yaw": 90,
+    "yaw": -3,
     "pitch": 0,
     "weapon": "machinegun",
-    "settle_s": 3,
+    "settle_s": 8,
     "guide": "Scripted presentation shot; use only the isolated test instance.",
     "take": {
       "duration_s": 16,
       "look": [
         {
           "t": 0,
-          "yaw": 90,
+          "yaw": -3,
           "pitch": 0
         },
         {
           "t": 16,
-          "yaw": 90,
+          "yaw": -3,
           "pitch": 0
         }
       ],
@@ -842,6 +842,10 @@
         {
           "t": 5,
           "action": "grain"
+        },
+        {
+          "t": 6.2,
+          "action": "vehicle_explosion"
         },
         {
           "t": 7,
@@ -866,32 +870,64 @@
       "vehicle_look": [
         {
           "t": 0,
-          "yaw": 0,
-          "pitch": 0
+          "yaw": -25,
+          "pitch": 18
         },
         {
-          "t": 7,
-          "yaw": 0,
-          "pitch": 0
+          "t": 5,
+          "yaw": -20,
+          "pitch": 16
         },
         {
-          "t": 10,
-          "yaw": 35,
-          "pitch": 5
+          "t": 9,
+          "yaw": 0,
+          "pitch": 12
         },
         {
           "t": 13,
-          "yaw": -25,
-          "pitch": 5
+          "yaw": 25,
+          "pitch": 16
         },
         {
           "t": 16,
-          "yaw": 0,
-          "pitch": 0
+          "yaw": -15,
+          "pitch": 12
         }
       ]
     },
-    "vehicle_kind": "harvester"
+    "vehicle_kind": "harvester",
+    "prestage_enemies": true,
+    "enemies": [
+      {
+        "variant": "trooper",
+        "offset": [
+          -6,
+          0,
+          -16
+        ]
+      },
+      {
+        "variant": "trooper",
+        "offset": [
+          -4.5,
+          0,
+          -25
+        ]
+      },
+      {
+        "variant": "trooper",
+        "offset": [
+          -8,
+          0,
+          -34
+        ]
+      }
+    ],
+    "parked_car_offset": [
+      3,
+      0,
+      -48
+    ]
   },
   "film_camp": {
     "title": "Film Camp",

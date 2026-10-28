@@ -71,6 +71,16 @@ class StageTests(unittest.TestCase):
         for event in grenades['events']:
             self.assertTrue(any(c['start'] < event['t'] < c['end'] for c in grenades['grenade_aim']))
 
+    def test_v4_framing_keeps_landmarks_visible_and_prepares_vehicle_encounter(self):
+        scenes = json.loads((Path(__file__).parents[2] / 'godot/data/video_scenes.json').read_text())
+        self.assertTrue(all(k['pitch'] >= -5 for k in scenes['usina_walk']['take']['look']))
+        vehicle = scenes['film_vehicle']
+        self.assertTrue(vehicle['prestage_enemies'])
+        self.assertGreater(len(vehicle['enemies']), 0)
+        self.assertIn('parked_car_offset', vehicle)
+        self.assertTrue(any(e['action'] == 'vehicle_explosion' for e in vehicle['take']['events']))
+        self.assertEqual(scenes['film_tablet']['take']['events'][0]['app'], 'home')
+
     def test_player_port_is_protected_before_connecting(self):
         with patch('sys.argv', ['stage.py', 'usina_walk', '--port', '24690']), patch('stage.DevAgent') as client:
             with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as stopped:
