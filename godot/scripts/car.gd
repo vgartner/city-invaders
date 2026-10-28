@@ -439,6 +439,55 @@ func vehicle_hit(amount: int) -> void:
 		apply_damage(amount, null)
 
 
+## One layer of an explosion: one-shot spheres whose colour (`ramp`:
+## [[offset, Color], ...], HDR above 1 for the glow) and size (`sizes`:
+## [[offset, factor], ...]) follow their lifetime. Not emitting yet; frees
+## itself when done.
+func _blast_particles(at: Vector3, amount: int, lifetime: float, explosiveness: float, gravity: Vector3,
+		spread: float, v_min: float, v_max: float, damping: float, s_min: float, s_max: float, radius: float,
+		ramp: Array, sizes: Array) -> CPUParticles3D:
+	var parts := CPUParticles3D.new()
+	parts.amount = amount
+	parts.lifetime = lifetime
+	parts.one_shot = true
+	parts.explosiveness = explosiveness
+	parts.direction = Vector3.UP
+	parts.spread = spread
+	parts.initial_velocity_min = v_min
+	parts.initial_velocity_max = v_max
+	parts.damping_min = damping
+	parts.damping_max = damping
+	parts.gravity = gravity
+	parts.scale_amount_min = s_min
+	parts.scale_amount_max = s_max
+	parts.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array(ramp.map(func(r): return r[0]))
+	g.colors = PackedColorArray(ramp.map(func(r): return r[1]))
+	parts.color_ramp = g
+	if not sizes.is_empty():
+		var c := Curve.new()
+		c.max_value = 3.0
+		for k in sizes:
+			c.add_point(Vector2(k[0], k[1]))
+		parts.scale_amount_curve = c
+	var m := SphereMesh.new()
+	m.radius = radius
+	m.height = radius * 2.0
+	m.radial_segments = 12
+	m.rings = 6
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.vertex_color_use_as_albedo = true          # the colour ramp drives colour and alpha
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.material = mat
+	parts.mesh = m
+	get_tree().current_scene.add_child(parts)
+	parts.global_position = at
+	get_tree().create_timer(lifetime + 1.5).timeout.connect(parts.queue_free)
+	return parts
+
+
 @rpc("authority", "call_local", "reliable")
 func explode_fx(burnt_driver := false) -> void:
 	_wrecked = true
@@ -455,32 +504,29 @@ func explode_fx(burnt_driver := false) -> void:
 	var tw := flash.create_tween()
 	tw.tween_property(flash, "light_energy", 0.0, 1.6)
 	tw.tween_callback(flash.queue_free)
-	for spec in [[90, 1.4, Color(1.0, 0.55, 0.1), 0.6, 9.0], [60, 4.0, Color(0.12, 0.11, 0.1), 1.6, 3.0]]:
-		var parts := CPUParticles3D.new()        # fireball, then a column of black smoke
-		parts.amount = spec[0]
-		parts.lifetime = spec[1]
-		parts.one_shot = true
-		parts.explosiveness = 0.9
-		parts.direction = Vector3.UP
-		parts.spread = 80.0
-		parts.initial_velocity_min = spec[4] * 0.5
-		parts.initial_velocity_max = spec[4]
-		parts.gravity = Vector3(0, 1.5, 0)
-		parts.scale_amount_min = spec[3]
-		parts.scale_amount_max = spec[3] * 2.5
-		var m := SphereMesh.new()
-		m.radius = 0.5
-		m.height = 1.0
-		var mat := StandardMaterial3D.new()
-		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		mat.albedo_color = spec[2]
-		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		m.material = mat
-		parts.mesh = m
-		get_tree().current_scene.add_child(parts)
-		parts.global_position = at
-		parts.emitting = true
-		get_tree().create_timer(spec[1] + 1.0).timeout.connect(parts.queue_free)
+	# fireball (white-hot to orange to dark red, growing as it fades; bright
+	# enough for the glow), sparks falling back, then smoke rising and thinning.
+	# Colour and size change over each particle's life - plain spheres of one
+	# colour read as flat discs scattered over the sky. Explosiveness stays
+	# under 1: at exactly 1 these one-shot layers drew nothing
+	var fire := _blast_particles(at, 24, 0.9, 0.95, Vector3(0, 2.0, 0), 180.0, 1.5, 4.5, 3.0, 1.4, 2.6, 0.5,
+			[[0.0, Color(3.0, 2.2, 1.0, 1.0)], [0.2, Color(2.6, 1.0, 0.2, 1.0)], [0.5, Color(1.3, 0.32, 0.05, 0.9)],
+			[0.8, Color(0.25, 0.08, 0.04, 0.5)], [1.0, Color(0.08, 0.06, 0.05, 0.0)]],
+			[[0.0, 0.35], [0.25, 1.0], [1.0, 1.25]])
+	fire.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	fire.emission_sphere_radius = 1.0
+	var sparks := _blast_particles(at, 40, 1.0, 0.95, Vector3(0, -9.8, 0), 70.0, 8.0, 16.0, 0.5, 0.08, 0.14, 0.5,
+			[[0.0, Color(3.0, 2.4, 1.2, 1.0)], [0.6, Color(1.8, 0.6, 0.12, 1.0)], [1.0, Color(0.6, 0.15, 0.05, 0.0)]],
+			[])
+	sparks.emitting = true
+	fire.emitting = true
+	var plume := _blast_particles(at, 40, 5.0, 0.4, Vector3(0, 1.4, 0), 25.0, 1.0, 2.5, 0.3, 1.2, 2.2, 0.5,
+			[[0.0, Color(0.18, 0.16, 0.15, 0.0)], [0.1, Color(0.15, 0.14, 0.13, 0.6)], [0.6, Color(0.12, 0.11, 0.1, 0.45)],
+			[1.0, Color(0.1, 0.1, 0.1, 0.0)]],
+			[[0.0, 0.4], [1.0, 2.6]])
+	plume.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	plume.emission_sphere_radius = 0.8
+	get_tree().create_timer(0.25).timeout.connect(func(): if is_instance_valid(plume): plume.emitting = true)
 	Sfx.play_at("robot_death", at, 10.0, 160.0)
 	Sfx.play_at("prop_break", at, 6.0, 120.0)
 	# the burnt-out wreck
