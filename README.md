@@ -129,11 +129,21 @@ need to be a game developer to leave your mark:
 - **Make a map feel like the real place.** Your own photos of the facades,
   the right building heights, the landmark everybody knows, the shop on the
   corner, the people and music on the square - with the in-game map editor
-  (F2), and shared as a mod.
+  (F2).
 - **The game itself.** Weapons, robots, vehicles, gadgets, the tablet's apps,
   the AI of people and robots, performance, the online services.
 - **Models, sounds and art** under a free licence, especially the places and
   culture of your region.
+
+**Share a mod - no code, no GitHub.** The quickest way to contribute is
+right inside the game. Change a map with the editor (F2): place monuments,
+a camp, street furniture, musicians, items; set the bus lines; put your own
+photos on the walls; remove what doesn't belong. Then *File > Share these
+edits as a mod*: it goes to the City Invaders server, is reviewed, and once
+published every player can install it from *Mods* on the title screen (and
+remove it again, their own edits kept). Mods carry only map edits and
+photos, never code, so installing one is safe. The best mods can become
+part of the official maps. How it works: [docs/MODDING.md](docs/MODDING.md).
 
 **Work with an AI agent.** Much of this game was built with AI coding agents
 (Claude Code, Codex), and yours is welcome: Claude Code, Codex, Cursor,

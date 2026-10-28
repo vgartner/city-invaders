@@ -27,6 +27,11 @@ Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) first; it maps the scripts.
   ([docs/ENTITIES.md](docs/ENTITIES.md)); robots, vehicles and the player are
   scripts ([docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). Describe the idea in
   an issue first if it changes how the game plays.
+- **A mod** (no code, no pull request): change a map with the in-game editor
+  (F2) and share it from *File > Share these edits as a mod*; it is reviewed
+  on the server and then everyone can install it from *Mods*. A good mod can
+  also come into the repository as a pull request of its
+  `maps/<map>/user/` edits. See [docs/MODDING.md](docs/MODDING.md).
 - **Facade photos and building heights**: your own photos only (or freely
   licensed ones), through `tools/map/building_photo.py`; they live in
   `maps/<map>/user/`.
