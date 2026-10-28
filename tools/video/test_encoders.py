@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import patch
 from ffmpeg_backend import FFmpegBackend, select_encoder
 from render_presentation import movie_index
+from audio_master import master, measure, verify
 
 
 @unittest.skipUnless(shutil.which('ffmpeg') and shutil.which('ffprobe') and importlib.util.find_spec('PIL'),
@@ -25,6 +26,12 @@ class PortableEncoderTests(unittest.TestCase):
         with patch('ffmpeg_backend.shutil.which', return_value=None):
             with self.assertRaisesRegex(RuntimeError, 'ffmpeg and ffprobe'):
                 select_encoder('ffmpeg')
+
+    def test_audio_quality_gate_rejects_clipping_and_wrong_loudness(self):
+        with self.assertRaisesRegex(RuntimeError, '-1 dBTP'):
+            verify(dict(true_peak_dbtp=0, integrated_lufs=-16))
+        with self.assertRaisesRegex(RuntimeError, 'LUFS'):
+            verify(dict(true_peak_dbtp=-2, integrated_lufs=-30))
 
     def test_marker_trim_captions_audio_fades_and_decoded_frames(self):
         from PIL import Image, ImageStat
@@ -65,6 +72,12 @@ class PortableEncoderTests(unittest.TestCase):
             self.assertEqual(audit['fps'], 30)
             self.assertAlmostEqual(audit['container_duration_s'], 2, places=3)
             self.assertEqual(audit['audio_tracks'], 1)
+            mastered = root/'mastered.mp4'
+            audio = master(final, mastered)
+            verify(audio['after'])
+            self.assertLessEqual(audio['after']['true_peak_dbtp'], -1.0)
+            self.assertAlmostEqual(audio['after']['integrated_lufs'], -16, delta=1)
+            self.assertEqual(backend.audit(mastered)['frames'], 60)
             boundary = root/'cut.png'
             backend.frame(final, 1, boundary)
             self.assertLess(max(ImageStat.Stat(Image.open(boundary).convert('RGB')).mean), 2)

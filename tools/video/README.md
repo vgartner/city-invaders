@@ -123,3 +123,21 @@ decodes video and audio; duration, resolution, frame rate and audio are checked
 just as on the native path. The AVFoundation implementation remains available
 with `--encoder avfoundation`. Encoder tests use generated audiovisual fixtures
 and exercise the portable path even on macOS.
+
+## Audio finishing and peak safety
+
+Full assembly requires FFmpeg on PATH even when AVFoundation encodes the video:
+its `loudnorm` filter performs a two-pass final audio master at approximately
+**-16 LUFS** and leaves AAC reconstruction headroom. Video is copied unchanged
+during this audio-only finishing pass. The final encoded AAC is then measured
+again; delivery fails above **-1 dBTP**, for non-finite/silent audio, or outside
+-16 LUFS ±1 LU. A lower limiter ceiling is retried from the original mix if AAC
+reconstruction exceeds the peak ceiling. See [FFmpeg's loudnorm reference](https://ffmpeg.org/ffmpeg-filters.html#loudnorm).
+
+`AUDIO_QA.json` preserves the before/after loudness, true peak, loudness range
+and attempted ceilings. `FINAL_QA.json` includes the final measurements beside
+the decoded frame/duration checks. Movie Maker capture also reserves 6 dB of
+master-bus headroom at runtime to reduce source clipping; clearing the stage
+restores the previous volume/mute settings. Normal gameplay volume is unchanged.
+Previously clipped recordings cannot be repaired by lowering their level;
+re-record from the game when that matters, as in v4.

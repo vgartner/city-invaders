@@ -16,6 +16,7 @@ import struct
 import subprocess
 import wave
 from ffmpeg_backend import FFmpegBackend, select_encoder
+from audio_master import audio_tool, master, measure, verify
 
 ROOT = Path(__file__).resolve().parents[2]
 PLAN = Path(__file__).with_name('presentation.json')
@@ -127,6 +128,8 @@ def main():
     args = parser.parse_args()
     if args.port == 24690:
         parser.error("The player port is reserved; use a separate test instance")
+    if not args.only:
+        audio_tool()
     out = args.output.resolve(); out.mkdir(parents=True, exist_ok=True)
     plan = json.loads(PLAN.read_text())
     assert sum(s['duration_s'] for s in plan['shots']) == 180
@@ -197,11 +200,15 @@ def main():
             expected = {'lasso': 'drone', 'drone': 'flying', 'enter_vehicle': 'true', 'open_container': '0 remaining'}.get(event['action'])
             if expected is not None:
                 assert event['result'] == expected, (clip.parent.name, event)
+    assembled = out/'assembled.mp4'
     if not final.exists():
         if portable:
-            portable.join(clips, final)
+            portable.join(clips, assembled)
         else:
-            run([media,'join',final,*clips],out/'join.log')
+            run([media,'join',assembled,*clips],out/'join.log')
+        master(assembled, final)
+    audio_values, _ = measure(final, out/'audio_final_measure.log')
+    verify(audio_values)
     if portable:
         (out/'FINAL_QA.json').write_text(json.dumps(portable.audit(final)))
     else:
@@ -210,6 +217,9 @@ def main():
     assert audit['duration_s'] == 180 and audit['frames'] == 10800 and audit['audio_tracks'] == 1, audit
     assert audit['width'] == 1920 and audit['height'] == 1080 and abs(audit['fps']-60) < 0.001, audit
     assert abs(audit.get('container_duration_s', 180)-180) < 0.001, audit
+    audit['audio'] = audio_values
+    (out/'FINAL_QA.json').write_text(json.dumps(audit, indent=2))
+    assembled.unlink(missing_ok=True)
     shutil.copy(PLAN,out/'chapters.json')
     print('FINAL',final,audit,flush=True)
 

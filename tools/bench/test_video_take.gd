@@ -108,9 +108,11 @@ func _run() -> void:
 			player.set_meta("god", previous)
 		stage._saved = {"player": weakref(player), "god_present": player.has_meta("god"),
 			"god": player.get_meta("god", false), "director": false, "swarm_cd": 1.0,
-			"dynamic_resolution": false, "scale": 1.0, "master_mute": true}
+			"dynamic_resolution": false, "scale": 1.0, "master_mute": true, "master_volume_db": -2.0}
 		player.set_meta("god", true)
+		AudioServer.set_bus_volume_db(0, -6.0)
 		stage.clear()
+		assert(is_equal_approx(AudioServer.get_bus_volume_db(0), -2.0))
 		assert(player.has_meta("god") == (previous != null))
 		assert(player.get_meta("god", false) == (previous if previous != null else false))
 		assert(stage._saved.is_empty())

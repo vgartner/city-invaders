@@ -94,7 +94,7 @@ func prepare(name: String) -> Dictionary:
 	scene = wanted
 	_saved = {"director": main.director.is_processing(), "swarm_cd": main._swarm_cd, "dynamic_resolution": main.dynamic_resolution,
 		"scale": main.get_viewport().scaling_3d_scale, "window_size": get_window().size,
-		"master_mute": AudioServer.is_bus_mute(0),
+		"master_mute": AudioServer.is_bus_mute(0), "master_volume_db": AudioServer.get_bus_volume_db(0),
 		"player": weakref(_player), "god_present": _player.has_meta("god"), "god": _player.get_meta("god", false)}
 	if OS.has_feature("movie"):
 		# Match the capture viewport, avoiding a cropped HUD on macOS/Retina.
@@ -103,6 +103,7 @@ func prepare(name: String) -> Dictionary:
 		main.dynamic_resolution = false
 		main.get_viewport().scaling_3d_scale = 1.0
 		AudioServer.set_bus_mute(0, false)
+		AudioServer.set_bus_volume_db(0, minf(AudioServer.get_bus_volume_db(0), -6.0))
 	main.director.set_process(false)
 	main._swarm_cd = 1e9
 	# Explicit staging replaces the round's robots; never use in a shared round.
@@ -211,6 +212,7 @@ func clear() -> void:
 		main.dynamic_resolution = _saved["dynamic_resolution"]
 		main.get_viewport().scaling_3d_scale = _saved["scale"]
 		AudioServer.set_bus_mute(0, _saved["master_mute"])
+		AudioServer.set_bus_volume_db(0, _saved["master_volume_db"])
 		if OS.has_feature("movie"):
 			get_window().size = _saved["window_size"]
 	_saved.clear()

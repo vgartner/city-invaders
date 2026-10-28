@@ -96,3 +96,8 @@ what was tested and how.
    dictionaries/operators in the two video helpers and their DevAgent wrappers.
    Non-whitespace tokens were preserved (semicolon separators become newlines).
    Godot parse/native simulation and the six scene-contract tests remain passing.
+4. Audio: full assembly now uses two-pass FFmpeg mastering for either video
+   encoder, then measures the encoded AAC. The gate is -1 dBTP maximum and
+   -16 LUFS ±1 LU, with AAC headroom and retries from the original mix.
+   Movie capture reserves 6 dB on the master bus and restores the prior gain.
+   Generated-media round trips, rejection gates and native gain restoration pass.
