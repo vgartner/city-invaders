@@ -132,3 +132,42 @@ replacement rendered take passes, reducing health from 100 to 31 during the
 attack. QA now requires a health reduction within the attack window, with a
 regression test rejecting damage that only occurred before that window.
 The rejected take/logs are retained separately in the local output folder.
+
+## Completed v4 delivery and acceptance
+
+The final local delivery is `full_3min_v4/city_invaders_gameplay_3min.mp4`
+(outside the repository, alongside preserved v3). It is 180.000 s, 1920x1080,
+10,800 decoded frames / 60 fps, one audio track, approximately 341 MiB.
+Final encoded audio measures -15.83 LUFS and -1.27 dBTP, passing the -16 ±1 LU
+and -1 dBTP gates. All twelve current-game clips have zero identical adjacent
+source frames and no script/parse errors; the highest source PCM peak is
+-1.58 dBFS. Exact frame extraction confirms a black scene boundary and the
+updated tablet home label, raised Usina view and visible car explosion.
+
+Validation performed on macOS:
+
+- Seven scene/port/plan tests and five portable encoder / interaction QA tests.
+- Native simulation: movement continuity, ordinary input after cancellation,
+  god metadata absent/false/true restoration, repeat clearing and capture gain.
+- Live rendered game on isolated port 24693: three prior god-mode states restore;
+  DevAgent errors are empty. No player instance on 24690 was driven or stopped.
+- FFmpeg generated-media marker trim, captions, audio, fades, decoded frame counts,
+  loudness/peak gates and exact mastered duration. An additional generated HD
+  encode passes 1920x1080 / 60 fps / 60 frames / one audio track. Linux/Windows
+  machines were not available; the portable path was exercised on macOS.
+- Real recorded interactions: Fruki/pala, four dropped circuits, nearby grenade
+  bursts (4.37 m / 3.04 m), captured-drone flight/hits, rescued container and two
+  player-attributed harvester kills. The car explosion is explicitly staged.
+
+`FINAL_QA.json`, `AUDIO_QA.json`, `ACCEPTANCE_QA.json`, `FFMPEG_HD_QA.json`,
+chapter data, exact-frame previews and per-shot take/capture audits accompany
+the local video. No videos or large media are committed. These are offline
+presentation checks, not comparable performance benchmarks. Godot's pre-existing
+resource/exit warnings remain in the logs; none are claimed fixed here.
+
+Publication: the four initial fixes were pushed to `main` through de35ff9.
+The v4 framing, subsequent QA regressions and delivery documentation are committed
+locally on `video-followups`. Automatic approval review rejected the additional
+main publication as lacking explicit user authorization. No further publication
+attempt was made; it requires the owner's approval. The delivered video and QA
+are complete independently of that optional publication.

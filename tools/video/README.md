@@ -153,3 +153,13 @@ Place an aerial target far enough into open ground that normal AI cannot enter
 a building before the drone arrives. Check damage during the actual attack
 window, rather than accepting damage inflicted earlier by other actors. A take
 whose target is protected by a roof must be rejected and recorded again.
+
+## v4 follow-up delivery
+
+The v4 follow-up records all twelve chapters from the newer game, with the
+raised Usina view, unobstructed harvester route, current vehicle explosion and
+map-labelled tablet home. Its final audit is 180 s / 10,800 frames / 1080p60;
+encoded audio measures -15.83 LUFS and -1.27 dBTP. The full video and QA remain
+outside Git, in the owner's separate `full_3min_v4` output folder. See the
+[follow-up handover](../../docs/handovers/2026-10-28-video-followups.md) for
+validation evidence and the preserved v3 baseline. User approval of v4 is pending.

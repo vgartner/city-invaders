@@ -188,8 +188,8 @@ analog input through the existing movement/collision path. Normal keyboard
 movement is unchanged when the flag is false. Quintic ramps and shortest-arc
 camera easing are sampled on the game clock; no wall-clock RPC loop drives the
 motion. Per-tick take logs and movie frame markers support encoded-video QA.
-This is phase one: four manually playable setups and one scripted walking test,
-not a complete automated trailer director, cinematic flyover or combat sequence.
+The original walking fixture remains a regression test; `video_actions.gd` and
+`tools/video/presentation.json` extend it into the complete scripted edit.
 
 The Usina video take now continues through two physical pickup approaches.
 Stage-owned item positions are remembered after their removal; approach cues
