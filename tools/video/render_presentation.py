@@ -38,8 +38,9 @@ def verify_refinements(take):
     if take['scene'] == 'film_drone':
         flight = [s['drone'] for s in take['samples'] if 'drone' in s]
         assert max(p[1] for p in flight) > 50 and flight[-1][2] < -15, 'Drone did not cross above the Usina'
-        health = [s['drone_target']['health'] for s in take['samples'] if 'drone_target' in s]
-        assert min(health) < health[0], 'Far-side robot was not hit by the drone'
+        health = [s['drone_target']['health'] for s in take['samples']
+                  if 'drone_target' in s and s['t'] >= 15.3]
+        assert len(health) > 1 and min(health) < health[0], 'Far-side robot was not damaged during the drone attack'
 
 
 def movie_index(raw, log, duration, folder):

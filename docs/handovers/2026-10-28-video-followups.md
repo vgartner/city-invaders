@@ -124,3 +124,11 @@ A stricter audio-master regression test found AAC padding extending a generated
 2 s fixture to 2.005 s. Mastering now receives the edit's exact duration and
 limits the muxed output to it; the test checks the mastered container duration
 as well as loudness and decoded video frames. The corrected round trip passes.
+
+The first v4 drone take was correctly rejected: its trooper walked inside the
+Usina and remained protected by the roof (health stayed 100). The target is now
+prepared farther north in the open plaza, with normal AI still enabled. The
+replacement rendered take passes, reducing health from 100 to 31 during the
+attack. QA now requires a health reduction within the attack window, with a
+regression test rejecting damage that only occurred before that window.
+The rejected take/logs are retained separately in the local output folder.

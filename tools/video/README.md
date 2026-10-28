@@ -148,3 +148,8 @@ foreground foliage. A deliberately triggered effect (such as the parked-car
 explosion showcase) must be documented as staged; combat/pickup success still
 comes from real gameplay. Capture every chapter again when updating visible game
 features or capture gain, rather than mixing older game footage into the edit.
+
+Place an aerial target far enough into open ground that normal AI cannot enter
+a building before the drone arrives. Check damage during the actual attack
+window, rather than accepting damage inflicted earlier by other actors. A take
+whose target is protected by a roof must be rejected and recorded again.

@@ -8,8 +8,22 @@ import tempfile
 import unittest
 from unittest.mock import patch
 from ffmpeg_backend import FFmpegBackend, select_encoder
-from render_presentation import movie_index
+from render_presentation import movie_index, verify_refinements
 from audio_master import master, measure, verify
+
+
+class InteractionQATests(unittest.TestCase):
+    def test_drone_damage_must_happen_during_the_attack(self):
+        take = dict(scene='film_drone', samples=[
+            dict(t=0, drone=[0, 55, -20], drone_target=dict(health=100)),
+            dict(t=10, drone=[0, 55, -20], drone_target=dict(health=50)),
+            dict(t=16, drone=[0, 55, -20], drone_target=dict(health=50)),
+            dict(t=19, drone=[0, 55, -20], drone_target=dict(health=50)),
+        ])
+        with self.assertRaisesRegex(AssertionError, 'during the drone attack'):
+            verify_refinements(take)
+        take['samples'][-1]['drone_target']['health'] = 30
+        verify_refinements(take)
 
 
 @unittest.skipUnless(shutil.which('ffmpeg') and shutil.which('ffprobe') and importlib.util.find_spec('PIL'),
