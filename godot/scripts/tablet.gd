@@ -361,6 +361,28 @@ func _r(app: String, key: String, fallback: Array) -> Rect2:
 	return Rect2(a[0], a[1], a[2], a[3])
 
 
+## "Usina do Gasômetro · Porto Alegre": the phase's place (its menu name
+## without "Phase N · ") and its city (the menu's city of this map).
+var _place := ""
+func _place_line() -> String:
+	if _place != "":
+		return _place
+	var main := get_tree().current_scene
+	if main == null or not main.has_method("_map_spec"):
+		return ""
+	var id: String = main.map_id
+	var place := String(main._map_spec(id)[1])
+	if " · " in place:
+		place = place.get_slice(" · ", 1)
+	var city := ""
+	for c in main.available_cities():
+		for m in c[1]:
+			if m[0] == id:
+				city = String(c[0]).get_slice(" (", 0)
+	_place = place if city == "" or city == place else "%s · %s" % [place, city]
+	return _place
+
+
 func _draw_ui() -> void:
 	var f := ThemeDB.fallback_font
 	# the screens' status bar is see-through in the art: a dark strip under it
@@ -369,6 +391,9 @@ func _draw_ui() -> void:
 		"home":
 			_tx("papel_parede_pampa")
 			_tx("inicial_overlay")
+			# where you are, under CENTRAL DE CAMPO: the art had "Centro Histórico ·
+			# Porto Alegre" painted in, on every map
+			_ui.draw_string(f, Vector2(54, 140), _place_line(), HORIZONTAL_ALIGNMENT_LEFT, 640, 17, Color(0.68, 0.73, 0.65))
 			_tchetube_icon(f)
 			var apps: Array = _regions.get("home", {}).get("apps", [])
 			if _sel < apps.size():
