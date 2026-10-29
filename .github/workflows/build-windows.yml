@@ -1,0 +1,142 @@
+# Windows release build, started by hand (Actions > Build Windows > Run workflow).
+# Runs on GitHub's free Linux runner; the result goes to a draft release
+# (release files don't count against the Actions storage quota, artifacts do).
+# Details: docs/BUILDING.md, "Building on GitHub".
+name: Build Windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version for the release name (e.g. 0.2.0)"
+        required: true
+        default: "0.2.0"
+
+permissions:
+  contents: write   # create the draft release
+
+concurrency:
+  group: build-windows
+  cancel-in-progress: false
+
+env:
+  GODOT_VERSION: "4.7.2"
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    steps:
+      # The runner has ~14 GB free; the game sources, Godot's import cache and
+      # the package need more. Drop toolchains this build never uses.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup \
+            /opt/hostedtoolcache/CodeQL /usr/local/share/boost /usr/share/swift
+          sudo docker image prune --all --force > /dev/null
+          df -h /
+
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+
+      # Models, textures and sounds come from the project's own LFS server
+      # (.lfsconfig, public read). Only godot/ is packed into the game.
+      - name: Fetch the game's LFS files
+        run: |
+          git lfs install --local
+          git lfs pull --include "godot/**"
+          du -sh godot
+
+      - name: Cache Godot and its Windows export templates
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot-bin
+            ~/.local/share/godot/export_templates
+          key: godot-${{ env.GODOT_VERSION }}-windows-templates
+
+      - name: Install Godot and the export templates
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          base="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          mkdir -p ~/godot-bin "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          curl -fsSL -o /tmp/godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q /tmp/godot.zip -d ~/godot-bin
+          mv ~/godot-bin/Godot_v${GODOT_VERSION}-stable_linux.x86_64 ~/godot-bin/godot
+          curl -fsSL -o /tmp/templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          # only what a Windows export needs
+          unzip -q -j /tmp/templates.tpz 'templates/version.txt' 'templates/windows_*' \
+            -d "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          rm /tmp/godot.zip /tmp/templates.tpz
+
+      - name: Put Godot on the PATH
+        run: |
+          echo "$HOME/godot-bin" >> "$GITHUB_PATH"
+          ~/godot-bin/godot --version
+
+      # Importing (texture compression) is the slow part; the imported files
+      # are reused while the LFS contents don't change, and partly otherwise.
+      - name: Key for the import cache
+        id: import-key
+        run: echo "hash=$(git lfs ls-files -l -I 'godot/**' | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Godot's import
+        uses: actions/cache@v4
+        with:
+          path: godot/.godot
+          key: import-${{ env.GODOT_VERSION }}-${{ steps.import-key.outputs.hash }}
+          restore-keys: import-${{ env.GODOT_VERSION }}-
+
+      - name: Import the project
+        run: godot --headless --path godot --import 2>&1 | tail -n 40
+
+      - name: Export for Windows
+        run: |
+          mkdir -p build/windows
+          godot --headless --path godot --export-release "Windows Desktop" ../build/windows/CityInvaders.exe 2>&1 | tail -n 40
+          ls -la build/windows
+          test -f build/windows/CityInvaders.exe && test -f build/windows/CityInvaders.pck
+
+      # The package runs in the Linux editor binary: start a round from it and
+      # check the game reports no script errors (docs/BUILDING.md).
+      - name: Smoke test the package
+        env:
+          DEVAGENT_PORT: "24691"
+        run: |
+          godot --headless --main-pack build/windows/CityInvaders.pck -- --devagent > /tmp/game.log 2>&1 &
+          for i in $(seq 1 120); do
+            python3 tools/devagent/devagent.py get_state > /dev/null 2>&1 && break
+            sleep 2
+          done
+          python3 tools/devagent/devagent.py start_solo map=gasometro
+          sleep 30
+          python3 tools/devagent/devagent.py errors | tee /tmp/errors.json
+          python3 tools/devagent/devagent.py quit || true
+          python3 - <<'EOF'
+          import json, sys
+          errors = json.load(open("/tmp/errors.json")).get("errors", [])
+          if errors:
+              sys.exit(f"{len(errors)} errors in the packaged game")
+          EOF
+          ! grep -E "SCRIPT ERROR|Parse Error" /tmp/game.log
+
+      - name: Package
+        run: |
+          cd build/windows
+          zip -q -9 "../CityInvaders-${{ inputs.version }}-windows.zip" CityInvaders*.exe CityInvaders.pck
+          ls -la ..
+          size=$(stat -c %s "../CityInvaders-${{ inputs.version }}-windows.zip")
+          # a release file may be at most 2 GiB
+          if [ "$size" -ge 2147483648 ]; then echo "package is $size bytes, over the 2 GiB release limit"; exit 1; fi
+
+      - name: Draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="v${{ inputs.version }}-build${{ github.run_number }}"
+          gh release create "$tag" "build/CityInvaders-${{ inputs.version }}-windows.zip" \
+            --draft --prerelease --target "${{ github.sha }}" \
+            --title "City Invaders ${{ inputs.version }} (Windows, build ${{ github.run_number }})" \
+            --notes "Windows build of ${{ github.sha }}. Unzip and run CityInvaders.exe (keep CityInvaders.pck next to it). Not code-signed: Windows SmartScreen asks once (More info, Run anyway)."

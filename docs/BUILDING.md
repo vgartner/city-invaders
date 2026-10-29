@@ -32,6 +32,25 @@ The preset packs every resource plus the `*.json` data files (city
 layouts, collections, the people roster), and leaves notes and Blender
 files out. `build/` is ignored by git.
 
+## Building on GitHub
+
+`.github/workflows/build-windows.yml` makes the same Windows build on
+GitHub's free Linux runner. It only runs when started by hand: *Actions >
+Build Windows > Run workflow*, with a version (e.g. `0.2.0`), or
+`gh workflow run build-windows.yml -f version=0.2.0`.
+
+It fetches `godot/`'s LFS files from the project's LFS server, installs
+Godot and the Windows export templates, imports, exports, starts a round
+from the package (`--main-pack`, no errors allowed) and attaches
+`CityInvaders-<version>-windows.zip` to a **draft release**
+`v<version>-build<run>`. Publish the draft to share it.
+
+Kept free on purpose: no automatic trigger, no Actions artifacts (they count
+against the private repository's 500 MB storage; release files don't), and
+caches (Godot and its templates, Godot's import) stay within the 10 GB a
+repository gets. The first run imports every asset and takes much longer
+than later ones.
+
 ## Checking a build without Windows
 
 The exported `.pck` runs in the macOS / Linux editor binary, which shows
