@@ -35,6 +35,7 @@ There are no hand-made scenes: `main.tscn` only holds `main.gd`.
 | `photos.gd` | Photos on walls shown at once: fit to a building side, moved and sized from the inspector, kept in `_photos` |
 | `tune.gd` | Autoload `Tune`: gameplay tuning values (vehicle tilt limits, horn interval, pigeon spook radius, police range, robot sight, poncho absorption, Fruki effect) read live - the DevAgent `tune` changes them in a running game |
 | `settings.gd` | Autoload: key bindings, mute, friendly fire, steering sensitivity, player name (`user://settings.cfg`) |
+| `packs.gd` | Autoload `Packs` (first): in a released game, loads `CityInvaders-maps.pck` (the maps) from next to the executable ([BUILDING.md](BUILDING.md)) |
 | `controls_menu.gd` | Key rebinding UI |
 | `sfx.gd` | Autoload: sound cues |
 | `autoplay_metrics.gd` | Per-run observed player/vehicle travel and activity coverage; separates bot relocations and external discontinuities |

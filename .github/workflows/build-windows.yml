@@ -96,8 +96,10 @@ jobs:
         run: |
           mkdir -p build/windows
           godot --headless --path godot --export-release "Windows Desktop" ../build/windows/CityInvaders.exe 2>&1 | tail -n 40
+          # the maps go in a package of their own (scripts/packs.gd)
+          godot --headless --path godot --export-pack "Windows maps pack" ../build/windows/CityInvaders-maps.pck 2>&1 | tail -n 40
           ls -la build/windows
-          test -f build/windows/CityInvaders.exe && test -f build/windows/CityInvaders.pck
+          test -f build/windows/CityInvaders.exe && test -f build/windows/CityInvaders.pck && test -f build/windows/CityInvaders-maps.pck
 
       # The package runs in the Linux editor binary: start a round from it and
       # check the game reports no script errors (docs/BUILDING.md).
@@ -105,7 +107,7 @@ jobs:
         env:
           DEVAGENT_PORT: "24691"
         run: |
-          godot --headless --main-pack build/windows/CityInvaders.pck -- --devagent > /tmp/game.log 2>&1 &
+          godot --headless --main-pack build/windows/CityInvaders.pck -- --devagent --maps-pack=build/windows/CityInvaders-maps.pck > /tmp/game.log 2>&1 &
           for i in $(seq 1 120); do
             python3 tools/devagent/devagent.py get_state > /dev/null 2>&1 && break
             sleep 2
@@ -120,23 +122,29 @@ jobs:
           if errors:
               sys.exit(f"{len(errors)} errors in the packaged game")
           EOF
-          ! grep -E "SCRIPT ERROR|Parse Error" /tmp/game.log
+          ! grep -E "SCRIPT ERROR|Parse Error|invalid UID" /tmp/game.log
 
+      # Two zips, each under the 2 GiB a release file may be: the game, and
+      # the maps. Both are unzipped into the same folder.
       - name: Package
         run: |
           cd build/windows
-          zip -q -9 "../CityInvaders-${{ inputs.version }}-windows.zip" CityInvaders*.exe CityInvaders.pck
+          v="${{ inputs.version }}"
+          zip -q -9 "../CityInvaders-$v-windows.zip" CityInvaders*.exe CityInvaders.pck
+          zip -q -9 "../CityInvaders-$v-windows-maps.zip" CityInvaders-maps.pck
           ls -la ..
-          size=$(stat -c %s "../CityInvaders-${{ inputs.version }}-windows.zip")
-          # a release file may be at most 2 GiB
-          if [ "$size" -ge 2147483648 ]; then echo "package is $size bytes, over the 2 GiB release limit"; exit 1; fi
+          for z in ../*.zip; do
+            size=$(stat -c %s "$z")
+            if [ "$size" -ge 2147483648 ]; then echo "$z is $size bytes, over the 2 GiB release limit"; exit 1; fi
+          done
 
       - name: Draft release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="v${{ inputs.version }}-build${{ github.run_number }}"
-          gh release create "$tag" "build/CityInvaders-${{ inputs.version }}-windows.zip" \
+          v="${{ inputs.version }}"
+          tag="v$v-build${{ github.run_number }}"
+          gh release create "$tag" "build/CityInvaders-$v-windows.zip" "build/CityInvaders-$v-windows-maps.zip" \
             --draft --prerelease --target "${{ github.sha }}" \
-            --title "City Invaders ${{ inputs.version }} (Windows, build ${{ github.run_number }})" \
-            --notes "Windows build of ${{ github.sha }}. Unzip and run CityInvaders.exe (keep CityInvaders.pck next to it). Not code-signed: Windows SmartScreen asks once (More info, Run anyway)."
+            --title "City Invaders $v (Windows, build ${{ github.run_number }})" \
+            --notes "Windows build of ${{ github.sha }}. Download both zips and unzip them into the same folder, then run CityInvaders.exe (CityInvaders.pck and CityInvaders-maps.pck stay next to it). Not code-signed: Windows SmartScreen asks once (More info, Run anyway)."
