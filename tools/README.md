@@ -10,6 +10,7 @@ Everything outside the game itself, run with the project's Python
 | `bench/` | benchmarks through the DevAgent: a play-through (`play_bench.py`), the autoplay report (`autoplay_report.py`), the kit facades, city mesh cells, the crowd | docs/PERFORMANCE.md |
 | `assets/` | scripts that made or fixed assets: synthesised sounds, animation fixes and gait measuring, liveries and team shirts, foliage, the weapon pickups | docs/ASSETS.md |
 | `blender/` | Blender scripts: the landmarks, vehicles, view-model weapons, facade baking | docs/ASSETS.md |
+| `build/` | releases: export presets and catalog for one package per map (`map_packs.py`), the Windows installer (`installer.iss`) | docs/BUILDING.md |
 
 The machine-learning steps of the facade cleaning (`map/clean_facades.py`,
 `map/crop_landmarks.py`) need torch and run from their own environment

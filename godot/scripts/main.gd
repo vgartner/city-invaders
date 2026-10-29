@@ -413,9 +413,15 @@ static func all_maps() -> Array:
 	return out
 
 
+## A map's spec; a next phase that isn't installed (a released game installs
+## maps one by one) makes this the last phase.
 func _map_spec(id: String) -> Array:
 	for m in all_maps():
 		if m[0] == id:
+			if m[2] != "" and not ResourceLoader.exists("res://city/%s.glb" % m[2]):
+				var last: Array = m.duplicate()
+				last[2] = ""
+				return last
 			return m
 	return [id, id, "", 0]
 
@@ -1076,7 +1082,9 @@ func _selected_map() -> String:
 
 ## Cities for the menu: every chain of phases (a map nobody leads to, then
 ## its "next" maps) is one city: [name, [map spec, ...]].
-const CITY_NAMES := {"gasometro": "Porto Alegre", "poa": "Porto Alegre (whole Centro, free play)"}
+## (centro and mercado head a chain of their own when an earlier phase isn't installed)
+const CITY_NAMES := {"gasometro": "Porto Alegre", "centro": "Porto Alegre", "mercado": "Porto Alegre",
+		"poa": "Porto Alegre (whole Centro, free play)"}
 static func available_cities() -> Array:
 	var maps := available_maps()
 	var by_id := {}

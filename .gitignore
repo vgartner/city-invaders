@@ -28,5 +28,5 @@ maps/*/facades/tex_commons_clean/
 maps/*/facades/commons_clean_contact.png
 
 # exported game builds
-build/
+/build/
 .DS_Store

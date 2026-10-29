@@ -1,6 +1,8 @@
 # Windows release build, started by hand (Actions > Build Windows > Run workflow).
-# Runs on GitHub's free Linux runner; the result goes to a draft release
-# (release files don't count against the Actions storage quota, artifacts do).
+# The game and one package per map are exported on GitHub's free Linux runner
+# and go to a draft release (release files don't count against the Actions
+# storage quota, artifacts do); then a Windows runner builds the setup that
+# downloads them, installs it from a local copy and starts a round from it.
 # Details: docs/BUILDING.md, "Building on GitHub".
 name: Build Windows
 
@@ -25,6 +27,8 @@ env:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
     timeout-minutes: 300
     steps:
       # The runner has ~14 GB free; the game sources, Godot's import cache and
@@ -92,22 +96,26 @@ jobs:
       - name: Import the project
         run: godot --headless --path godot --import 2>&1 | tail -n 40
 
-      - name: Export for Windows
+      - name: Export the game and one package per map
         run: |
-          mkdir -p build/windows
-          godot --headless --path godot --export-release "Windows Desktop" ../build/windows/CityInvaders.exe 2>&1 | tail -n 40
-          # the maps go in a package of their own (scripts/packs.gd)
-          godot --headless --path godot --export-pack "Windows maps pack" ../build/windows/CityInvaders-maps.pck 2>&1 | tail -n 40
-          ls -la build/windows
-          test -f build/windows/CityInvaders.exe && test -f build/windows/CityInvaders.pck && test -f build/windows/CityInvaders-maps.pck
+          mkdir -p build/windows/maps
+          # one "Map <id>" preset per map in godot/city/ (scripts/packs.gd loads them)
+          ids=$(python3 tools/build/map_packs.py presets)
+          godot --headless --path godot --export-release "Windows Desktop" ../build/windows/CityInvaders.exe 2>&1 | tail -n 20
+          for id in $ids; do
+            godot --headless --path godot --export-pack "Map $id" "../build/windows/maps/$id.pck" 2>&1 | tail -n 5
+            test -f "build/windows/maps/$id.pck"
+          done
+          ls -la build/windows build/windows/maps
+          test -f build/windows/CityInvaders.exe && test -f build/windows/CityInvaders.pck
 
-      # The package runs in the Linux editor binary: start a round from it and
-      # check the game reports no script errors (docs/BUILDING.md).
-      - name: Smoke test the package
+      # The packages run in the Linux editor binary: start a round from them and
+      # check the game reports no errors (docs/BUILDING.md).
+      - name: Smoke test the packages
         env:
           DEVAGENT_PORT: "24691"
         run: |
-          godot --headless --main-pack build/windows/CityInvaders.pck -- --devagent --maps-pack=build/windows/CityInvaders-maps.pck > /tmp/game.log 2>&1 &
+          godot --headless --main-pack build/windows/CityInvaders.pck -- --devagent --maps-dir=build/windows/maps > /tmp/game.log 2>&1 &
           for i in $(seq 1 120); do
             python3 tools/devagent/devagent.py get_state > /dev/null 2>&1 && break
             sleep 2
@@ -124,27 +132,93 @@ jobs:
           EOF
           ! grep -E "SCRIPT ERROR|Parse Error|invalid UID" /tmp/game.log
 
-      # Two zips, each under the 2 GiB a release file may be: the game, and
-      # the maps. Both are unzipped into the same folder.
-      - name: Package
+      # Flat files as a release holds them, plus catalog.ini for the setup.
+      - name: Release files
         run: |
-          cd build/windows
-          v="${{ inputs.version }}"
-          zip -q -9 "../CityInvaders-$v-windows.zip" CityInvaders*.exe CityInvaders.pck
-          zip -q -9 "../CityInvaders-$v-windows-maps.zip" CityInvaders-maps.pck
-          ls -la ..
-          for z in ../*.zip; do
-            size=$(stat -c %s "$z")
-            if [ "$size" -ge 2147483648 ]; then echo "$z is $size bytes, over the 2 GiB release limit"; exit 1; fi
+          python3 tools/build/map_packs.py release build/windows build/release "${{ inputs.version }}"
+          ls -la build/release
+          for f in build/release/*; do
+            size=$(stat -c %s "$f")
+            # a release file may be at most 2 GiB
+            if [ "$size" -ge 2147483648 ]; then echo "$f is $size bytes, over the 2 GiB release limit"; exit 1; fi
           done
 
       - name: Draft release
+        id: release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           v="${{ inputs.version }}"
           tag="v$v-build${{ github.run_number }}"
-          gh release create "$tag" "build/CityInvaders-$v-windows.zip" "build/CityInvaders-$v-windows-maps.zip" \
+          gh release create "$tag" build/release/* \
             --draft --prerelease --target "${{ github.sha }}" \
             --title "City Invaders $v (Windows, build ${{ github.run_number }})" \
-            --notes "Windows build of ${{ github.sha }}. Download both zips and unzip them into the same folder, then run CityInvaders.exe (CityInvaders.pck and CityInvaders-maps.pck stay next to it). Not code-signed: Windows SmartScreen asks once (More info, Run anyway)."
+            --notes "Windows build of ${{ github.sha }}.
+
+          **Install:** run CityInvaders-$v-setup.exe. It downloads the game and the maps you choose from this release (CityInvaders.exe, CityInvaders.pck and maps\\CityInvaders-map-*.pck). To add a map later, run it again.
+
+          **By hand:** put CityInvaders.exe and CityInvaders.pck in a folder and the map packages you want in its maps subfolder.
+
+          Not code-signed: Windows SmartScreen asks once (More info, Run anyway)."
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+  # The setup is built on Windows (Inno Setup), then tested for real: it installs
+  # from a local copy of the release files and the installed game starts a round.
+  installer:
+    needs: build
+    runs-on: windows-2025
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ needs.build.outputs.tag }}
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+
+      - name: Build the setup
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress | Out-Null }
+          $url = "https://github.com/${{ github.repository }}/releases/download/$env:TAG/catalog.ini"
+          & $iscc /Q "/DAppVersion=${{ inputs.version }}" "/DCatalogUrl=$url" tools\build\installer.iss
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Get-ChildItem build\installer
+
+      - name: Install from a local copy of the release
+        run: |
+          New-Item -ItemType Directory -Force C:\ci\serve | Out-Null
+          gh release download $env:TAG -R ${{ github.repository }} -D C:\ci\serve
+          Start-Process python -ArgumentList '-m','http.server','8000','--bind','127.0.0.1','--directory','C:\ci\serve'
+          Start-Sleep 3
+          $setup = Get-ChildItem build\installer\*.exe | Select-Object -First 1
+          $p = Start-Process $setup.FullName -Wait -PassThru -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/CURRENTUSER','/DIR=C:\ci\game','/CATALOG=http://127.0.0.1:8000/catalog.ini','/LOG=C:\ci\setup.log'
+          Get-Content C:\ci\setup.log -Tail 40
+          if ($p.ExitCode -ne 0) { Write-Error "setup exited with $($p.ExitCode)"; exit 1 }
+          Get-ChildItem -Recurse C:\ci\game | Format-Table Length, FullName -AutoSize
+          foreach ($f in 'CityInvaders.exe', 'CityInvaders.pck', 'maps\CityInvaders-map-gasometro.pck') {
+            if (-not (Test-Path "C:\ci\game\$f")) { Write-Error "$f was not installed"; exit 1 }
+          }
+
+      - name: Start a round in the installed game
+        env:
+          DEVAGENT_PORT: "24691"
+        run: |
+          Start-Process C:\ci\game\CityInvaders.exe -ArgumentList '--headless','--','--devagent'
+          for ($i = 0; $i -lt 120; $i++) {
+            python tools/devagent/devagent.py get_state *> $null
+            if ($LASTEXITCODE -eq 0) { break }
+            Start-Sleep 2
+          }
+          python tools/devagent/devagent.py start_solo map=gasometro
+          Start-Sleep 30
+          $errors = python tools/devagent/devagent.py errors | Out-String
+          $errors
+          python tools/devagent/devagent.py quit
+          if (($errors | ConvertFrom-Json).errors.Count -gt 0) { Write-Error "errors in the installed game"; exit 1 }
+
+      - name: Add the setup to the release
+        run: gh release upload $env:TAG (Get-ChildItem build\installer\*.exe).FullName -R ${{ github.repository }}
