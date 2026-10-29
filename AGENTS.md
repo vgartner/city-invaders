@@ -40,6 +40,10 @@ root with `tools/.venv/bin/python` (the examples below write it as `$P`).
   says the project is built with AI help. Commit with the email of the
   person's GitHub account (`git config --local user.email ...` in this
   repository), so GitHub credits the right account.
+- **No machine-specific paths or settings** in the repository: no home
+  folders (`/Users/<name>`, `C:\Users\<name>`), no local CA bundle or company
+  proxy. Configure those in your own environment (`SSL_CERT_FILE`,
+  `REQUESTS_CA_BUNDLE`, ...) and write `~` or a placeholder in docs.
 - **GDScript warnings are errors** in this project: give a variable a type
   where the parser can't infer it (`var x: Vector3 = ...` from a Variant).
 - **No material you have no right to use**: no Google Maps / Street View
