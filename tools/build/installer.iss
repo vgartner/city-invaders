@@ -47,6 +47,10 @@ Name: desktopicon; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm
 Source: "{tmp}\CityInvaders.exe"; DestDir: "{app}"; Flags: external ignoreversion skipifsourcedoesntexist
 Source: "{tmp}\CityInvaders.pck"; DestDir: "{app}"; Flags: external ignoreversion skipifsourcedoesntexist
 Source: "{tmp}\CityInvaders-map-*.pck"; DestDir: "{app}\maps"; Flags: external ignoreversion skipifsourcedoesntexist
+; licences and credits, inside the setup (the maps' OSM and photo data need their attribution)
+Source: "..\..\LICENSE"; DestDir: "{app}\licenses"; DestName: "LICENSE-GPL-3.0.txt"; Flags: ignoreversion
+Source: "..\..\docs\LICENSING.md"; DestDir: "{app}\licenses"; Flags: ignoreversion
+Source: "..\..\godot\assets\CREDITS.md"; DestDir: "{app}\licenses"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\City Invaders"; Filename: "{app}\CityInvaders.exe"

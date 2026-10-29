@@ -11,6 +11,21 @@ the game, and help build it**: see [Build it with us](#build-it-with-us).
 
 ![Robots and a mech coming down a street of the Centro Histórico](docs/images/gameplay-centro.jpg)
 
+## Download and play
+
+**Windows 10/11 (64-bit):** get **`CityInvaders-<version>-setup.exe`** from
+the [latest release](https://github.com/vgartner/city-invaders/releases/latest)
+and run it. The setup is small: it downloads the game and the maps you pick
+(about 1.6 GB for the game and the first map) and checks every file. Run it
+again to add a map. It is not code-signed yet, so Windows SmartScreen asks
+once - *More info*, then *Run anyway*.
+
+Each map is its own file in the release (`CityInvaders-map-<id>.pck`): to
+install by hand, put `CityInvaders.exe` and `CityInvaders.pck` in a folder
+and the maps you want in its `maps` subfolder.
+
+macOS and Linux: no package yet - play from the sources ([Quick start](#quick-start)).
+
 ## The game
 
 - **Each phase** asks you to bring down a number of robots and mechs and the
@@ -239,3 +254,4 @@ How to work with an AI agent and send changes: [Build it with us](#build-it-with
 - Elevation: Copernicus GLO-30 DEM
 
 Code: GNU GPL v3 ([LICENSE](LICENSE)); assets and maps: CC BY-SA 4.0; see [docs/LICENSING.md](docs/LICENSING.md).
+The Windows installer puts these licences and the credits in the game's `licenses` folder.

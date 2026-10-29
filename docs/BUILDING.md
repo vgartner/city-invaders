@@ -61,7 +61,9 @@ build/windows build/release <version>` lays out the files flat, as a release
 holds them (`CityInvaders-map-<id>.pck`), and writes the catalog. Setup
 options: `/CATALOG=<url>` (another catalog, e.g. a local server for testing),
 `/MAPS=gasometro,centro` (preselect maps), and Inno's `/VERYSILENT`,
-`/DIR=...`.
+`/DIR=...`. The setup also installs `LICENSE`, `docs/LICENSING.md` and
+`godot/assets/CREDITS.md` into the game's `licenses` folder: the maps carry
+OpenStreetMap and Mapillary data whose licences require the attribution.
 
 The setup downloads from the release without signing in, so it works once
 the release is published and the repository is public. While the repository
@@ -72,13 +74,18 @@ folder, the map packages in its `maps` subfolder.
 
 `.github/workflows/build-windows.yml` makes the release on GitHub. It only
 runs when started by hand: *Actions > Build Windows > Run workflow*, with a
-version (e.g. `0.2.0`), or `gh workflow run build-windows.yml -f version=0.2.0`.
+new version (e.g. `0.3.0`; it refuses one that already has a release), or
+`gh workflow run build-windows.yml -f version=0.3.0`. The version goes into
+the game (`config/version`) and the executable's file version for that
+build; *pre-release* marks the release as one (it is then not the
+"latest" the README links to).
 
 1. **build** (Linux runner): fetches `godot/`'s LFS files from the project's
    LFS server, installs Godot and the Windows export templates, imports,
    exports the game and every map, starts a round from the packages
    (`--main-pack`, no errors or invalid UIDs allowed) and puts the files and
-   `catalog.ini` in a **draft release** `v<version>-build<run>`.
+   `catalog.ini` in a **draft release** `v<version>`, with the install steps, the
+maps and the licences in its notes.
 2. **installer** (Windows runner): builds the setup for that release, installs
    it silently from a local copy of the release files, starts a round in the
    installed game (no errors allowed) and adds the setup to the release.
