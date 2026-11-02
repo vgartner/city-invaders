@@ -11,6 +11,10 @@ from the game's Maps screen.
                                game preset leaves every map out, the macOS and
                                Linux ones keep the first phase, one "Map <id>"
                                preset per map; prints the map ids
+  map_packs.py macos-template GODOT_MACOS_ZIP OUT_ZIP
+                               a copy of Godot's macos.zip template whose
+                               universal runtime is also there as x86_64
+                               (see OTHER_GAME_PRESETS)
   map_packs.py release BUILD OUT VERSION
                                the release files in OUT, flat as a GitHub
                                release holds them: the game files from BUILD,
@@ -23,6 +27,8 @@ Only the Python standard library.
 """
 import hashlib
 import json
+import os
+import zipfile
 import re
 import sys
 from pathlib import Path
@@ -54,9 +60,12 @@ def globs(mid: str) -> str:
 
 
 # The macOS and Linux game presets; their options not listed take Godot's defaults.
-# macOS is x86_64 (Apple Silicon runs it through Rosetta 2): Godot exports
-# universal / arm64 only with ETC2/ASTC textures imported too, which would double
-# the import and push the game package past 2 GiB.
+# macOS: Godot exports a universal / arm64 app only with ETC2/ASTC textures
+# imported too, which would double the import and push the game package past
+# 2 GiB. So the preset says x86_64 and its template (MACOS_TEMPLATE, made by
+# `map_packs.py macos-template`) holds the universal runtime under that name:
+# Apple Silicon runs it natively and reads the desktop (BC) textures, as the
+# editor does there.
 OTHER_GAME_PRESETS = [
     ("macOS", "macOS", "../build/macos/CityInvaders.zip", """binary_format/architecture="x86_64"
 application/bundle_identifier="net.vgdata.cityinvaders"
@@ -65,6 +74,8 @@ application/short_version="{version}"
 application/version="{version}"
 application/copyright="GPL-3.0-or-later"
 codesign/codesign=1
+custom_template/release="{macos_template}"
+custom_template/debug="{macos_template}"
 notarization/notarization=0
 texture_format/s3tc_bptc=true
 texture_format/etc2_astc=false"""),
@@ -121,7 +132,8 @@ def presets() -> None:
     keep = first_phase(ids)
     for name, platform, path, opts in OTHER_GAME_PRESETS:
         exclude = ", ".join([BASE_EXCLUDE] + [globs(m) for m in ids if m != keep])
-        out.append(preset(n, name, platform, path, "*.json", exclude, opts.format(version=version)))
+        opts = opts.format(version=version, macos_template=os.environ.get("MACOS_TEMPLATE", ""))
+        out.append(preset(n, name, platform, path, "*.json", exclude, opts))
         n += 1
     for mid in ids:
         others = [globs(m) for m in ids if m != mid]
@@ -188,9 +200,25 @@ def release(build_dir: str, out_dir: str, version: str) -> None:
     print("\n".join(lines))
 
 
+def macos_template(src: str, dst: str) -> None:
+    with zipfile.ZipFile(src) as zin, zipfile.ZipFile(dst, "w", zipfile.ZIP_DEFLATED) as zout:
+        for info in zin.infolist():
+            data = zin.read(info)
+            zout.writestr(info, data)
+            for kind in ("release", "debug"):
+                if info.filename.endswith(f"godot_macos_{kind}.universal"):
+                    alias = zipfile.ZipInfo(info.filename.replace(".universal", ".x86_64"), info.date_time)
+                    alias.external_attr = info.external_attr       # keep it executable
+                    alias.compress_type = zipfile.ZIP_DEFLATED
+                    zout.writestr(alias, data)
+                    print(f"{alias.filename} <- {info.filename}")
+
+
 if __name__ == "__main__":
     if sys.argv[1:2] == ["presets"]:
         presets()
+    elif sys.argv[1:2] == ["macos-template"] and len(sys.argv) == 4:
+        macos_template(sys.argv[2], sys.argv[3])
     elif sys.argv[1:2] == ["release"] and len(sys.argv) == 5:
         release(sys.argv[2], sys.argv[3], sys.argv[4])
     else:

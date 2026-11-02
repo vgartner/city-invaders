@@ -119,6 +119,10 @@ jobs:
       - name: Export the game and one package per map
         run: |
           mkdir -p build/windows/maps build/macos build/linux
+          # the macOS template with the universal runtime under the x86_64 name (map_packs.py)
+          python3 tools/build/map_packs.py macos-template \
+            "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable/macos.zip" build/macos-template.zip
+          export MACOS_TEMPLATE="$PWD/build/macos-template.zip"
           # one "Map <id>" preset per map in godot/city/ (scripts/packs.gd loads them)
           ids=$(python3 tools/build/map_packs.py presets)
           godot --headless --path godot --export-release "Windows Desktop" ../build/windows/CityInvaders.exe 2>&1 | tail -n 20
@@ -199,9 +203,9 @@ jobs:
 
           **By hand:** put \`CityInvaders.exe\` and \`CityInvaders.pck\` in a folder and the \`CityInvaders-map-*.pck\` files you want in its \`maps\` subfolder.
 
-          ## macOS 11 or newer (Intel, and Apple Silicon through Rosetta 2)
+          ## macOS 11 or newer (Apple Silicon and Intel)
 
-          Download **CityInvaders-$v-macos.zip**, open it and move *City Invaders* to Applications. On Apple Silicon, macOS offers to install Rosetta the first time if it isn't there yet. It comes with Phase 1; the other maps are downloaded from the game's **Maps** screen.
+          Download **CityInvaders-$v-macos.zip**, open it and move *City Invaders* to Applications. It comes with Phase 1; the other maps are downloaded from the game's **Maps** screen.
 
           The app is not notarized by Apple: the first time, macOS refuses to open it. Open *System Settings > Privacy & Security*, find *"City Invaders" was blocked* and click *Open Anyway* (once).
 
@@ -297,8 +301,8 @@ jobs:
       - name: Add the setup to the release
         run: gh release upload $env:TAG (Get-ChildItem build\installer\*.exe).FullName --clobber -R ${{ github.repository }}
 
-  # The macOS app on a real Mac (Apple Silicon, the x86_64 app through Rosetta 2):
-  # its signature holds, it starts, and a round runs with no errors.
+  # The macOS app on a real Mac (Apple Silicon): its signature holds, it starts,
+  # and a round runs with no errors.
   macos:
     needs: build
     runs-on: macos-15
@@ -320,7 +324,7 @@ jobs:
           app=$(find /tmp/app -maxdepth 2 -name '*.app' | head -1)
           echo "app: $app"
           codesign --verify --deep --verbose=2 "$app"
-          /usr/bin/pgrep -q oahd || softwareupdate --install-rosetta --agree-to-license
+          lipo -archs "$(find "$app/Contents/MacOS" -type f -perm +111 | head -1)"
           bin=$(find "$app/Contents/MacOS" -type f -perm +111 | head -1)
           "$bin" --headless -- --devagent > /tmp/mac.log 2>&1 &
           python3 tools/build/smoke_test.py --map gasometro
