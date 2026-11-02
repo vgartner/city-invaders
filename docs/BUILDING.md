@@ -11,7 +11,7 @@ Linux builds can all be made on one Linux or macOS machine.
 | `CityInvaders.pck` | the game: scripts, assets, data (kept outside the executable because it is larger than 1 GB) |
 | `CityInvaders-map-<id>.pck` | one package per map: `res://city/<id>*`, its scene, textures and layouts; installed as `maps/<id>.pck` or downloaded into `user://map_packs/` |
 | `CityInvaders-<version>-setup.exe` | the Windows installer, which downloads the files above |
-| `CityInvaders-<version>-macos.zip` | the macOS app (universal: Apple Silicon and Intel), with the first phase inside |
+| `CityInvaders-<version>-macos.zip` | the macOS app (x86_64; Apple Silicon runs it through Rosetta 2), with the first phase inside |
 | `CityInvaders-<version>-linux-x86_64.tar.gz` | the Linux game, with the first phase inside |
 | `catalog.ini`, `catalog.json` | the maps and game files with sizes and SHA-256, for the installer and for the game's Maps screen |
 
@@ -64,8 +64,10 @@ The Windows game preset packs every resource plus the `*.json` data files
 and leaves notes and Blender files out; the macOS and Linux presets keep the
 first phase (the first map in the menu); each `Map <id>` preset packs only
 `city/<id>.*` and `city/<id>_*`. All of them use the same desktop texture
-compression (S3TC/BPTC, which Apple Silicon reads too), so one map package
-serves every platform. The macOS app gets Godot's built-in ad-hoc
+compression (S3TC/BPTC), so one map package serves every platform. The macOS
+app is x86_64, which Apple Silicon runs through Rosetta 2: Godot exports a
+universal or arm64 app only with ETC2/ASTC textures imported as well, which
+would double the import and push the game package past 2 GiB. The macOS app gets Godot's built-in ad-hoc
 signature; it is not notarized (that needs an Apple Developer account), so
 macOS blocks its first start until *System Settings > Privacy & Security >
 Open Anyway*. `build/` is ignored by git.
@@ -112,8 +114,8 @@ build; *pre-release* marks the release as one (it is then not the
 2. **installer** (Windows runner): builds the setup for that release, installs
    it silently from a local copy of the release files, starts a round in the
    installed game and adds the setup to the release.
-3. **macos** (Apple Silicon runner): checks the app's signature, starts it and
-   plays a round.
+3. **macos** (Apple Silicon runner, the app through Rosetta 2): checks the
+   app's signature, starts it and plays a round.
 
 Publish the draft to share it. Kept free on purpose: no automatic trigger, no
 Actions artifacts (release files don't count against the storage quota),

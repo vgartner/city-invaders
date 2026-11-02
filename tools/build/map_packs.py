@@ -54,8 +54,11 @@ def globs(mid: str) -> str:
 
 
 # The macOS and Linux game presets; their options not listed take Godot's defaults.
+# macOS is x86_64 (Apple Silicon runs it through Rosetta 2): Godot exports
+# universal / arm64 only with ETC2/ASTC textures imported too, which would double
+# the import and push the game package past 2 GiB.
 OTHER_GAME_PRESETS = [
-    ("macOS", "macOS", "../build/macos/CityInvaders.zip", """binary_format/architecture="universal"
+    ("macOS", "macOS", "../build/macos/CityInvaders.zip", """binary_format/architecture="x86_64"
 application/bundle_identifier="net.vgdata.cityinvaders"
 application/name="City Invaders"
 application/short_version="{version}"

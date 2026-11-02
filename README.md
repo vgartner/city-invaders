@@ -24,8 +24,9 @@ Each map is its own file in the release (`CityInvaders-map-<id>.pck`): to
 install by hand, put `CityInvaders.exe` and `CityInvaders.pck` in a folder
 and the maps you want in its `maps` subfolder.
 
-**macOS 11+ (Apple Silicon and Intel):** get `CityInvaders-<version>-macos.zip`,
-open it and move *City Invaders* to Applications. The app is not notarized by
+**macOS 11+ (Intel, and Apple Silicon through Rosetta 2):** get
+`CityInvaders-<version>-macos.zip`, open it and move *City Invaders* to
+Applications. The app is not notarized by
 Apple yet: the first time, open *System Settings > Privacy & Security* and
 click *Open Anyway*.
 
