@@ -1,7 +1,7 @@
 # Building a release
 
-The game is exported with Godot's own export templates; a Windows build can
-be made on macOS or Linux, no Windows machine needed to build it.
+The game is exported with Godot's own export templates; Windows, macOS and
+Linux builds can all be made on one Linux or macOS machine.
 
 ## What a release is
 
@@ -9,8 +9,11 @@ be made on macOS or Linux, no Windows machine needed to build it.
 |---|---|
 | `CityInvaders.exe` | Godot's Windows runtime |
 | `CityInvaders.pck` | the game: scripts, assets, data (kept outside the executable because it is larger than 1 GB) |
-| `maps/<id>.pck` | one package per map: `res://city/<id>*`, its scene, textures and layouts |
-| `CityInvaders-<version>-setup.exe` | the installer, which downloads the files above |
+| `CityInvaders-map-<id>.pck` | one package per map: `res://city/<id>*`, its scene, textures and layouts; installed as `maps/<id>.pck` or downloaded into `user://map_packs/` |
+| `CityInvaders-<version>-setup.exe` | the Windows installer, which downloads the files above |
+| `CityInvaders-<version>-macos.zip` | the macOS app (universal: Apple Silicon and Intel), with the first phase inside |
+| `CityInvaders-<version>-linux-x86_64.tar.gz` | the Linux game, with the first phase inside |
+| `catalog.ini`, `catalog.json` | the maps and game files with sizes and SHA-256, for the installer and for the game's Maps screen |
 
 Each map has a package of its own so a player installs only the maps they
 want and adds others later, and so no file gets near 2 GiB, the most a
@@ -22,7 +25,15 @@ It also registers the maps' UIDs, which the game package's UID table doesn't
 know. A next phase that isn't installed makes the current map the last one
 (`main.gd` `_map_spec`).
 
-## Windows
+The game's **Maps** screen (title screen > Maps, `scripts/map_store.gd`)
+reads `catalog.json` from the release of the game's own version, downloads a
+map into `user://map_packs/`, checks its SHA-256 and loads it at once. The
+macOS and Linux packages carry only the first phase (one file under 2 GiB,
+no installer) and get the others this way; on Windows it adds maps the
+installer left out. `CITY_INVADERS_CATALOG=<url>` points it at another
+catalog (a local server, for testing).
+
+## Exporting
 
 1. Install the export templates for the Godot version the project uses
    (`godot --version`, 4.7.2 at the time of writing): download
@@ -34,7 +45,8 @@ know. A next phase that isn't installed makes the current map the last one
    - Linux: `~/.local/share/godot/export_templates/4.7.2.stable/`
    - Windows: `%APPDATA%\Godot\export_templates\4.7.2.stable\`
 
-   Only `version.txt` and the `windows_*` files are needed for a Windows build.
+   Needed: `version.txt`, the `windows_*` files, `macos.zip` and
+   `linux_release.x86_64`.
 2. Make sure the maps are built and imported (README, Quick start).
 3. Write the export presets for the maps in `godot/city/` (a new city gets
    its preset this way) and export the game and each map:
@@ -43,12 +55,20 @@ know. A next phase that isn't installed makes the current map the last one
    ids=$(python3 tools/build/map_packs.py presets)
    godot --headless --path godot --export-release "Windows Desktop" ../build/windows/CityInvaders.exe
    for id in $ids; do godot --headless --path godot --export-pack "Map $id" ../build/windows/maps/$id.pck; done
+   godot --headless --path godot --export-release "macOS" ../build/macos/CityInvaders.zip
+   godot --headless --path godot --export-release "Linux" ../build/linux/CityInvaders.x86_64
    ```
 
-The game preset packs every resource plus the `*.json` data files
+The Windows game preset packs every resource plus the `*.json` data files
 (collections, the people roster, `city/maps.json`) except the maps' files,
-and leaves notes and Blender files out; each `Map <id>` preset packs only
-`city/<id>.*` and `city/<id>_*`. `build/` is ignored by git.
+and leaves notes and Blender files out; the macOS and Linux presets keep the
+first phase (the first map in the menu); each `Map <id>` preset packs only
+`city/<id>.*` and `city/<id>_*`. All of them use the same desktop texture
+compression (S3TC/BPTC, which Apple Silicon reads too), so one map package
+serves every platform. The macOS app gets Godot's built-in ad-hoc
+signature; it is not notarized (that needs an Apple Developer account), so
+macOS blocks its first start until *System Settings > Privacy & Security >
+Open Anyway*. `build/` is ignored by git.
 
 ## The installer
 
@@ -72,30 +92,34 @@ folder, the map packages in its `maps` subfolder.
 
 ## Building on GitHub
 
-`.github/workflows/build-windows.yml` makes the release on GitHub. It only
-runs when started by hand: *Actions > Build Windows > Run workflow*, with a
-new version (e.g. `0.3.0`; it refuses one that already has a release), or
-`gh workflow run build-windows.yml -f version=0.3.0`. The version goes into
+`.github/workflows/build-release.yml` makes the release on GitHub. It only
+runs when started by hand: *Actions > Build release > Run workflow*, with a
+new version (e.g. `0.3.0`; it refuses one already published, and a draft from an earlier run gets the new files), or
+`gh workflow run build-release.yml -f version=0.3.0`. The version goes into
 the game (`config/version`) and the executable's file version for that
 build; *pre-release* marks the release as one (it is then not the
 "latest" the README links to).
 
 1. **build** (Linux runner): fetches `godot/`'s LFS files from the project's
-   LFS server, installs Godot and the Windows export templates, imports,
-   exports the game and every map, starts a round from the packages
-   (`--main-pack`, no errors or invalid UIDs allowed) and puts the files and
-   `catalog.ini` in a **draft release** `v<version>`, with the install steps, the
-maps and the licences in its notes.
+   LFS server, installs Godot and the export templates, imports, exports the
+   Windows game, every map, the macOS app and the Linux game, and lays out
+   the release files. Tests (`tools/build/smoke_test.py`, no errors or invalid
+   UIDs allowed): a round from the Windows packages in the editor binary; a
+   round in the real Linux game; the Maps screen's download of a map from a
+   local copy of the release, then a round on it after a restart. Then the
+   files go to a **draft release** `v<version>`, with the install steps for
+   each system, the maps and the licences in its notes.
 2. **installer** (Windows runner): builds the setup for that release, installs
    it silently from a local copy of the release files, starts a round in the
-   installed game (no errors allowed) and adds the setup to the release.
+   installed game and adds the setup to the release.
+3. **macos** (Apple Silicon runner): checks the app's signature, starts it and
+   plays a round.
 
 Publish the draft to share it. Kept free on purpose: no automatic trigger, no
-Actions artifacts (they count against the private repository's 500 MB
-storage; release files don't), caches (Godot and its templates, Godot's
-import) within the 10 GB a repository gets. Windows minutes count double on a
-private repository; the installer job is short. The first run imports every
-asset and takes much longer than later ones.
+Actions artifacts (release files don't count against the storage quota),
+caches (Godot and its templates, Godot's import) within the 10 GB a
+repository gets; the runners are free on a public repository. The first run
+imports every asset and takes much longer than later ones.
 
 ## Checking a build without Windows
 
@@ -113,6 +137,9 @@ DEVAGENT_PORT=24691 tools/devagent/devagent.py errors
 - `--maps-dir=<path>` tells the game another folder of map packages (the
   editor binary has no `maps/` next to it).
 - The build is not code-signed: Windows SmartScreen asks for confirmation the
-  first time ("More info", then "Run anyway").
+  first time ("More info", then "Run anyway"); macOS needs "Open Anyway" once.
+- In `--headless` (the dummy renderer), a map loaded while the game runs
+  reports RID errors in a round; with a renderer it plays fine. The tests
+  download a map, start the game again and play it from `user://map_packs/`.
 - The DevAgent stays off in a release unless the game is started with
   `-- --devagent`.

@@ -36,6 +36,7 @@ There are no hand-made scenes: `main.tscn` only holds `main.gd`.
 | `tune.gd` | Autoload `Tune`: gameplay tuning values (vehicle tilt limits, horn interval, pigeon spook radius, police range, robot sight, poncho absorption, Fruki effect) read live - the DevAgent `tune` changes them in a running game |
 | `settings.gd` | Autoload: key bindings, mute, friendly fire, steering sensitivity, player name (`user://settings.cfg`) |
 | `packs.gd` | Autoload `Packs` (first): in a released game, loads each map package `maps/<id>.pck` (from next to the executable and `user://map_packs/`), refusing any with game code ([BUILDING.md](BUILDING.md)) |
+| `map_store.gd` | The title screen's Maps screen: reads the release's `catalog.json`, downloads a map into `user://map_packs/`, checks its SHA-256 and loads it ([BUILDING.md](BUILDING.md)) |
 | `controls_menu.gd` | Key rebinding UI |
 | `sfx.gd` | Autoload: sound cues |
 | `autoplay_metrics.gd` | Per-run observed player/vehicle travel and activity coverage; separates bot relocations and external discontinuities |

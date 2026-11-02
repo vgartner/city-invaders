@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
 """Export presets and the download catalog for a release with one package per map.
 
-A released game is CityInvaders.exe + CityInvaders.pck (the game) and one
-maps/<id>.pck per map (res://city/<id>*), so maps can be installed or added
-on their own (docs/BUILDING.md).
+A released game is the game package and one maps/<id>.pck per map
+(res://city/<id>*), so maps can be installed or added on their own
+(docs/BUILDING.md). On Windows the installer fetches the maps; the macOS and
+Linux packages carry the first phase inside the game and download the others
+from the game's Maps screen.
 
-  map_packs.py presets         rewrite godot/export_presets.cfg: the game
-                               preset leaves every map out, one "Map <id>"
+  map_packs.py presets         rewrite godot/export_presets.cfg: the Windows
+                               game preset leaves every map out, the macOS and
+                               Linux ones keep the first phase, one "Map <id>"
                                preset per map; prints the map ids
   map_packs.py release BUILD OUT VERSION
                                the release files in OUT, flat as a GitHub
                                release holds them: the game files from BUILD,
                                BUILD/maps/<id>.pck as CityInvaders-map-<id>.pck,
-                               and catalog.ini (files, sizes, SHA-256, map
-                               names) that the installer reads
+                               and the catalog (files, sizes, SHA-256, map
+                               names): catalog.ini for the installer,
+                               catalog.json for the game
 
 Only the Python standard library.
 """
@@ -49,30 +53,45 @@ def globs(mid: str) -> str:
     return f"city/{mid}.*, city/{mid}_*"
 
 
-def presets() -> None:
-    ids = map_ids()
-    text = PRESETS.read_text()
-    first = re.split(r"\n(?=\[preset\.1\])", text)[0].rstrip() + "\n"
-    options = first.split("[preset.0.options]", 1)[1]
-    game_exclude = ", ".join([BASE_EXCLUDE] + [globs(m) for m in ids])
-    first = re.sub(r'^exclude_filter=".*"$', f'exclude_filter="{game_exclude}"', first, flags=re.M)
-    out = [first]
-    for n, mid in enumerate(ids, 1):
-        others = [globs(m) for m in ids if m != mid]
-        exclude = ", ".join([BASE_EXCLUDE, NOT_CITY, SHARED] + others)
-        out.append(f'''
+# The macOS and Linux game presets; their options not listed take Godot's defaults.
+OTHER_GAME_PRESETS = [
+    ("macOS", "macOS", "../build/macos/CityInvaders.zip", """binary_format/architecture="universal"
+application/bundle_identifier="net.vgdata.cityinvaders"
+application/name="City Invaders"
+application/short_version="{version}"
+application/version="{version}"
+application/copyright="GPL-3.0-or-later"
+codesign/codesign=1
+notarization/notarization=0
+texture_format/s3tc_bptc=true
+texture_format/etc2_astc=false"""),
+    ("Linux", "Linux", "../build/linux/CityInvaders.x86_64", """binary_format/embed_pck=false
+binary_format/architecture="x86_64"
+texture_format/s3tc_bptc=true
+texture_format/etc2_astc=false"""),
+]
+
+
+def first_phase(ids: list) -> str:
+    """The map the macOS and Linux packages carry: the first in the menu."""
+    return next((m for m in map_names() if m in ids), ids[0])
+
+
+def preset(n: int, name: str, platform: str, path: str, include: str, exclude: str,
+           options: str, runnable: str = "true") -> str:
+    return f'''
 [preset.{n}]
 
-name="Map {mid}"
-platform="Windows Desktop"
-runnable=false
+name="{name}"
+platform="{platform}"
+runnable={runnable}
 advanced_options=false
 dedicated_server=false
 custom_features=""
 export_filter="all_resources"
-include_filter="city/{mid}.*.json"
+include_filter="{include}"
 exclude_filter="{exclude}"
-export_path="../build/windows/maps/{mid}.pck"
+export_path="{path}"
 patches=PackedStringArray()
 encryption_include_filters=""
 encryption_exclude_filters=""
@@ -83,7 +102,30 @@ script_export_mode=2
 
 [preset.{n}.options]
 {options.strip()}
-''')
+'''
+
+
+def presets() -> None:
+    ids = map_ids()
+    text = PRESETS.read_text()
+    first = re.split(r"\n(?=\[preset\.1\])", text)[0].rstrip() + "\n"
+    options = first.split("[preset.0.options]", 1)[1]
+    version = re.search(r'^application/file_version="([^"]*)"', options, re.M).group(1)
+    game_exclude = ", ".join([BASE_EXCLUDE] + [globs(m) for m in ids])
+    first = re.sub(r'^exclude_filter=".*"$', f'exclude_filter="{game_exclude}"', first, flags=re.M)
+    out = [first]
+    n = 1
+    keep = first_phase(ids)
+    for name, platform, path, opts in OTHER_GAME_PRESETS:
+        exclude = ", ".join([BASE_EXCLUDE] + [globs(m) for m in ids if m != keep])
+        out.append(preset(n, name, platform, path, "*.json", exclude, opts.format(version=version)))
+        n += 1
+    for mid in ids:
+        others = [globs(m) for m in ids if m != mid]
+        exclude = ", ".join([BASE_EXCLUDE, NOT_CITY, SHARED] + others)
+        out.append(preset(n, f"Map {mid}", "Windows Desktop", f"../build/windows/maps/{mid}.pck",
+                          f"city/{mid}.*.json", exclude, options, "false"))
+        n += 1
     PRESETS.write_text("".join(out))
     print(" ".join(ids))
 
@@ -133,6 +175,13 @@ def release(build_dir: str, out_dir: str, version: str) -> None:
                   f"size={f.stat().st_size}", f"sha256={sha256(f)}"]
     # UTF-16 with a BOM: Windows' INI reader (the installer's) reads it as Unicode
     (d / "catalog.ini").write_text("\r\n".join(lines) + "\r\n", encoding="utf-16")
+    # the same maps for the game's Maps screen (scripts/map_store.gd)
+    cat = {"version": version, "maps": []}
+    for mid in maps:
+        f = d / f"CityInvaders-map-{mid}.pck"
+        cat["maps"].append({"id": mid, "name": names.get(mid, mid), "file": f.name,
+                            "size": f.stat().st_size, "sha256": sha256(f)})
+    (d / "catalog.json").write_text(json.dumps(cat, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     print("\n".join(lines))
 
 

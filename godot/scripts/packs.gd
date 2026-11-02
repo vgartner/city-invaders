@@ -6,7 +6,8 @@ extends Node
 ## ./run-godot.sh) the maps are already there and nothing is loaded.
 ##
 ## Map packages are looked for in maps/ next to the executable, in
-## user://map_packs/ (maps added later) and where `-- --maps-dir=<path>` says
+## user://map_packs/ (maps downloaded from the Maps screen, scripts/map_store.gd)
+## and where `-- --maps-dir=<path>` says
 ## (checking an export with the editor binary, docs/BUILDING.md).
 
 const USER_DIR := "user://map_packs"
@@ -18,7 +19,9 @@ var loaded: Array[String] = []
 func _init() -> void:
 	if FileAccess.file_exists("res://project.godot"):   # the sources, not a package
 		return
-	var dirs := [OS.get_executable_path().get_base_dir().path_join("maps"), USER_DIR]
+	var exe_dir := OS.get_executable_path().get_base_dir()
+	# maps/ next to the executable; in a macOS app, Contents/Resources/maps
+	var dirs := [exe_dir.path_join("maps"), exe_dir.path_join("../Resources/maps").simplify_path(), USER_DIR]
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--maps-dir="):
 			dirs.push_front(a.trim_prefix("--maps-dir="))
@@ -28,8 +31,14 @@ func _init() -> void:
 		for f in DirAccess.get_files_at(dir):
 			if f.ends_with(".pck") and not loaded.has(f):
 				load_map_pack(dir.path_join(f))
-	if loaded.is_empty():
+	# the macOS and Linux packages carry the first phase inside the game package
+	if loaded.is_empty() and not has_maps():
 		push_error("no map packages found (maps/*.pck next to the game)")
+
+
+## Some map is there (loaded from a package or inside the game package).
+static func has_maps() -> bool:
+	return Array(DirAccess.get_files_at("res://city")).any(func(f): return String(f).ends_with(".glb.import"))
 
 
 ## Loads one map package; it may hold nothing but map files (res://city/

@@ -1,10 +1,11 @@
-# Windows release build, started by hand (Actions > Build Windows > Run workflow).
-# The game and one package per map are exported on GitHub's free Linux runner
-# and go to a draft release (release files don't count against the Actions
-# storage quota, artifacts do); then a Windows runner builds the setup that
-# downloads them, installs it from a local copy and starts a round from it.
+# Release build for Windows, macOS and Linux, started by hand (Actions >
+# Build release > Run workflow). The game, one package per map and the macOS
+# and Linux packages are exported on GitHub's Linux runner and go to a draft
+# release (release files don't count against the Actions storage quota,
+# artifacts do); a Windows runner then builds the setup and installs it, a
+# macOS runner starts the app. Free on a public repository.
 # Details: docs/BUILDING.md, "Building on GitHub".
-name: Build Windows
+name: Build release
 
 on:
   workflow_dispatch:
@@ -22,7 +23,7 @@ permissions:
   contents: write   # create the draft release
 
 concurrency:
-  group: build-windows
+  group: build-release
   cancel-in-progress: false
 
 env:
@@ -52,8 +53,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view "v${{ inputs.version }}" -R "${{ github.repository }}" > /dev/null 2>&1; then
-            echo "release v${{ inputs.version }} already exists: choose a new version"; exit 1
+          # a published release is final; a draft (an earlier run) is replaced
+          draft=$(gh release view "v${{ inputs.version }}" -R "${{ github.repository }}" --json isDraft --jq .isDraft 2>/dev/null || echo none)
+          if [ "$draft" = "false" ]; then
+            echo "release v${{ inputs.version }} is already published: choose a new version"; exit 1
           fi
           # the version shown by the game and written into the executable
           sed -i -E 's/^config\/version=.*/config\/version="${{ inputs.version }}"/' godot/project.godot
@@ -68,14 +71,14 @@ jobs:
           git lfs pull --include "godot/**"
           du -sh godot
 
-      - name: Cache Godot and its Windows export templates
+      - name: Cache Godot and its export templates
         id: godot-cache
         uses: actions/cache@v4
         with:
           path: |
             ~/godot-bin
             ~/.local/share/godot/export_templates
-          key: godot-${{ env.GODOT_VERSION }}-windows-templates
+          key: godot-${{ env.GODOT_VERSION }}-templates-win-mac-linux
 
       - name: Install Godot and the export templates
         if: steps.godot-cache.outputs.cache-hit != 'true'
@@ -86,8 +89,9 @@ jobs:
           unzip -q /tmp/godot.zip -d ~/godot-bin
           mv ~/godot-bin/Godot_v${GODOT_VERSION}-stable_linux.x86_64 ~/godot-bin/godot
           curl -fsSL -o /tmp/templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
-          # only what a Windows export needs
+          # only what the Windows, macOS and Linux exports need
           unzip -q -j /tmp/templates.tpz 'templates/version.txt' 'templates/windows_*' \
+            'templates/macos.zip' 'templates/linux_release.x86_64' 'templates/linux_debug.x86_64' \
             -d "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
           rm /tmp/godot.zip /tmp/templates.tpz
 
@@ -114,10 +118,15 @@ jobs:
 
       - name: Export the game and one package per map
         run: |
-          mkdir -p build/windows/maps
+          mkdir -p build/windows/maps build/macos build/linux
           # one "Map <id>" preset per map in godot/city/ (scripts/packs.gd loads them)
           ids=$(python3 tools/build/map_packs.py presets)
           godot --headless --path godot --export-release "Windows Desktop" ../build/windows/CityInvaders.exe 2>&1 | tail -n 20
+          # macOS and Linux carry the first phase; the Maps screen downloads the others
+          godot --headless --path godot --export-release "macOS" ../build/macos/CityInvaders.zip 2>&1 | tail -n 20
+          godot --headless --path godot --export-release "Linux" ../build/linux/CityInvaders.x86_64 2>&1 | tail -n 20
+          ls -la build/macos build/linux
+          test -f build/macos/CityInvaders.zip && test -f build/linux/CityInvaders.x86_64 && test -f build/linux/CityInvaders.pck
           for id in $ids; do
             godot --headless --path godot --export-pack "Map $id" "../build/windows/maps/$id.pck" 2>&1 | tail -n 5
             test -f "build/windows/maps/$id.pck"
@@ -125,39 +134,54 @@ jobs:
           ls -la build/windows build/windows/maps
           test -f build/windows/CityInvaders.exe && test -f build/windows/CityInvaders.pck
 
-      # The packages run in the Linux editor binary: start a round from them and
-      # check the game reports no errors (docs/BUILDING.md).
-      - name: Smoke test the packages
-        env:
-          DEVAGENT_PORT: "24691"
-        run: |
-          godot --headless --main-pack build/windows/CityInvaders.pck -- --devagent --maps-dir=build/windows/maps > /tmp/game.log 2>&1 &
-          for i in $(seq 1 120); do
-            python3 tools/devagent/devagent.py get_state > /dev/null 2>&1 && break
-            sleep 2
-          done
-          python3 tools/devagent/devagent.py start_solo map=gasometro
-          sleep 30
-          python3 tools/devagent/devagent.py errors | tee /tmp/errors.json
-          python3 tools/devagent/devagent.py quit || true
-          python3 - <<'EOF'
-          import json, sys
-          errors = json.load(open("/tmp/errors.json")).get("errors", [])
-          if errors:
-              sys.exit(f"{len(errors)} errors in the packaged game")
-          EOF
-          ! grep -E "SCRIPT ERROR|Parse Error|invalid UID" /tmp/game.log
-
-      # Flat files as a release holds them, plus catalog.ini for the setup.
+      # Flat files as a release holds them, plus the catalog (catalog.ini for
+      # the setup, catalog.json for the game's Maps screen), the macOS zip and
+      # the Linux tarball.
       - name: Release files
         run: |
-          python3 tools/build/map_packs.py release build/windows build/release "${{ inputs.version }}"
+          v="${{ inputs.version }}"
+          python3 tools/build/map_packs.py release build/windows build/release "$v"
+          cp build/macos/CityInvaders.zip "build/release/CityInvaders-$v-macos.zip"
+          chmod +x build/linux/CityInvaders.x86_64
+          tar -czf "build/release/CityInvaders-$v-linux-x86_64.tar.gz" -C build/linux \
+            --transform 's,^\./,City Invaders/,' ./CityInvaders.x86_64 ./CityInvaders.pck
           ls -la build/release
           for f in build/release/*; do
             size=$(stat -c %s "$f")
             # a release file may be at most 2 GiB
             if [ "$size" -ge 2147483648 ]; then echo "$f is $size bytes, over the 2 GiB release limit"; exit 1; fi
           done
+
+      # The Windows packages run in the Linux editor binary: start a round from
+      # them and check the game reports no errors (docs/BUILDING.md).
+      - name: Test the Windows packages
+        env:
+          DEVAGENT_PORT: "24691"
+        run: |
+          godot --headless --main-pack build/windows/CityInvaders.pck -- --devagent --maps-dir=build/windows/maps > /tmp/game.log 2>&1 &
+          python3 tools/build/smoke_test.py --map gasometro
+          ! grep -E "SCRIPT ERROR|Parse Error|invalid UID" /tmp/game.log
+
+      # The real Linux package (with its own first phase), and the Maps screen's
+      # download: a map fetched from a local copy of the release, checked, played.
+      - name: Test the Linux package and a map download
+        env:
+          DEVAGENT_PORT: "24692"
+          CITY_INVADERS_CATALOG: http://127.0.0.1:8000/catalog.json
+        run: |
+          python3 -m http.server 8000 --bind 127.0.0.1 --directory build/release > /dev/null 2>&1 &
+          mkdir -p /tmp/linux && tar -xzf build/release/*-linux-x86_64.tar.gz -C /tmp/linux
+          game="/tmp/linux/City Invaders/CityInvaders.x86_64"
+          "$game" --headless -- --devagent > /tmp/linux.log 2>&1 &
+          python3 tools/build/smoke_test.py --map gasometro
+          sleep 3
+          # download a map, then play it from user://map_packs/ in a new start
+          "$game" --headless -- --devagent >> /tmp/linux.log 2>&1 &
+          python3 tools/build/smoke_test.py --download mercado
+          sleep 3
+          "$game" --headless -- --devagent >> /tmp/linux.log 2>&1 &
+          python3 tools/build/smoke_test.py --map mercado
+          ! grep -E "SCRIPT ERROR|Parse Error|invalid UID" /tmp/linux.log
 
       - name: Draft release
         id: release
@@ -167,13 +191,23 @@ jobs:
           v="${{ inputs.version }}"
           tag="v$v"
           cat > /tmp/notes.md <<EOF
-          ## Install (Windows 10/11, 64-bit)
+          ## Windows 10/11 (64-bit)
 
           Download **CityInvaders-$v-setup.exe** and run it. It downloads the game and the maps you choose from this release (about 1.6 GB for the game and the first map) and checks every file. To add a map later, run it again.
 
           The setup is not code-signed yet: Windows SmartScreen asks once - *More info*, then *Run anyway*.
 
           **By hand:** put \`CityInvaders.exe\` and \`CityInvaders.pck\` in a folder and the \`CityInvaders-map-*.pck\` files you want in its \`maps\` subfolder.
+
+          ## macOS 11 or newer (Apple Silicon and Intel)
+
+          Download **CityInvaders-$v-macos.zip**, open it and move *City Invaders* to Applications. It comes with Phase 1; the other maps are downloaded from the game's **Maps** screen.
+
+          The app is not notarized by Apple: the first time, macOS refuses to open it. Open *System Settings > Privacy & Security*, find *"City Invaders" was blocked* and click *Open Anyway* (once).
+
+          ## Linux (x86_64)
+
+          Download **CityInvaders-$v-linux-x86_64.tar.gz**, unpack it and run \`City Invaders/CityInvaders.x86_64\`. It comes with Phase 1; the other maps are downloaded from the game's **Maps** screen.
 
           ## Maps
 
@@ -186,14 +220,20 @@ jobs:
 
           ## Licences
 
-          Code: GNU GPL v3. Models, textures, sounds and maps: CC BY-SA 4.0. The maps contain © OpenStreetMap contributors (ODbL) and © Mapillary contributors (CC BY-SA 4.0) data. Details and third-party credits: [docs/LICENSING.md](https://github.com/${{ github.repository }}/blob/$tag/docs/LICENSING.md), [godot/assets/CREDITS.md](https://github.com/${{ github.repository }}/blob/$tag/godot/assets/CREDITS.md); the installer puts them in the game's \`licenses\` folder.
+          Code: GNU GPL v3. Models, textures, sounds and maps: CC BY-SA 4.0. The maps contain © OpenStreetMap contributors (ODbL) and © Mapillary contributors (CC BY-SA 4.0) data. Details and third-party credits: [docs/LICENSING.md](https://github.com/${{ github.repository }}/blob/$tag/docs/LICENSING.md), [godot/assets/CREDITS.md](https://github.com/${{ github.repository }}/blob/$tag/godot/assets/CREDITS.md); the Windows installer puts them in the game's \`licenses\` folder.
 
-          Built from ${{ github.sha }} by the [Build Windows workflow](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}).
+          Built from ${{ github.sha }} by the [Build release workflow](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}).
           EOF
           sed -i 's/^          //' /tmp/notes.md
-          gh release create "$tag" build/release/* \
-            --draft ${{ inputs.prerelease && '--prerelease' || '' }} --target "${{ github.sha }}" \
-            --title "City Invaders $v" --notes-file /tmp/notes.md
+          if gh release view "$tag" -R "${{ github.repository }}" > /dev/null 2>&1; then
+            # the draft of an earlier run: new files and notes
+            gh release upload "$tag" build/release/* --clobber -R "${{ github.repository }}"
+            gh release edit "$tag" --target "${{ github.sha }}" --notes-file /tmp/notes.md -R "${{ github.repository }}"
+          else
+            gh release create "$tag" build/release/* \
+              --draft ${{ inputs.prerelease && '--prerelease' || '' }} --target "${{ github.sha }}" \
+              --title "City Invaders $v" --notes-file /tmp/notes.md
+          fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
   # The setup is built on Windows (Inno Setup), then tested for real: it installs
@@ -255,4 +295,32 @@ jobs:
           if (($errors | ConvertFrom-Json).errors.Count -gt 0) { Write-Error "errors in the installed game"; exit 1 }
 
       - name: Add the setup to the release
-        run: gh release upload $env:TAG (Get-ChildItem build\installer\*.exe).FullName -R ${{ github.repository }}
+        run: gh release upload $env:TAG (Get-ChildItem build\installer\*.exe).FullName --clobber -R ${{ github.repository }}
+
+  # The macOS app on a real Mac (Apple Silicon): its signature holds, it starts,
+  # and a round runs with no errors.
+  macos:
+    needs: build
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ needs.build.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+
+      - name: Start a round in the macOS app
+        env:
+          DEVAGENT_PORT: "24691"
+        run: |
+          gh release download "$TAG" -R "${{ github.repository }}" -p '*-macos.zip' -D /tmp/dl
+          ditto -x -k /tmp/dl/*-macos.zip /tmp/app
+          app=$(find /tmp/app -maxdepth 2 -name '*.app' | head -1)
+          echo "app: $app"
+          codesign --verify --deep --verbose=2 "$app"
+          bin=$(find "$app/Contents/MacOS" -type f -perm +111 | head -1)
+          "$bin" --headless -- --devagent > /tmp/mac.log 2>&1 &
+          python3 tools/build/smoke_test.py --map gasometro
+          ! grep -E "SCRIPT ERROR|Parse Error|invalid UID" /tmp/mac.log

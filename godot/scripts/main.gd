@@ -42,6 +42,7 @@ const MapEditor := preload("res://scripts/map_editor.gd")
 const EditorTools := preload("res://scripts/editor_tools.gd")
 const LandmarkSite := preload("res://scripts/landmark_site.gd")
 const Studio := preload("res://scripts/studio.gd")
+const MapStore := preload("res://scripts/map_store.gd")
 const Inspector := preload("res://scripts/inspector.gd")
 const Edits := preload("res://scripts/edits.gd")
 const Photos := preload("res://scripts/photos.gd")
@@ -2340,9 +2341,7 @@ func _build_menu() -> void:
 	map_select = OptionButton.new()
 	map_select.custom_minimum_size = Vector2(0, 56)
 	map_select.add_theme_font_size_override("font_size", 26)
-	for c in available_cities():
-		var n: int = c[1].size()
-		map_select.add_item("%s  (%d phase%s)" % [c[0], n, "s" if n > 1 else ""] if n > 1 else c[0])
+	_fill_cities()
 	map_select.tooltip_text = "City (when joining, the host's city is used)"
 	box.add_child(map_select)
 	phase_select = OptionButton.new()
@@ -2378,7 +2377,7 @@ func _build_menu() -> void:
 	var extras := HBoxContainer.new()
 	extras.add_theme_constant_override("separation", 12)
 	box.add_child(extras)
-	for spec in [["Studio", _open_studio], ["Mods", _show_mods], ["Quit", func(): get_tree().quit()]]:
+	for spec in [["Studio", _open_studio], ["Mods", _show_mods], ["Maps", _show_maps], ["Quit", func(): get_tree().quit()]]:
 		var b2 := Button.new()
 		b2.text = spec[0]
 		b2.custom_minimum_size = Vector2(0, 52)
@@ -2394,6 +2393,38 @@ func _build_menu() -> void:
 	status_label.add_theme_font_size_override("font_size", 20)
 	status_label.add_theme_color_override("font_color", Color(0.75, 0.78, 0.82))
 	box.add_child(status_label)
+
+
+func _fill_cities() -> void:
+	map_select.clear()
+	for c in available_cities():
+		var n: int = c[1].size()
+		map_select.add_item("%s  (%d phase%s)" % [c[0], n, "s" if n > 1 else ""] if n > 1 else c[0])
+
+
+## Maps: download more maps in a released game (scripts/map_store.gd).
+var map_store: MapStore
+
+func _show_maps() -> void:
+	_ensure_map_store()
+	map_store.show_screen(menu, func():
+		_fill_cities()
+		_fill_phases())
+
+
+func _ensure_map_store() -> void:
+	if map_store == null:
+		map_store = MapStore.new()
+		add_child(map_store)
+
+
+## DevAgent / tests: fetch the catalog, then download one map, without the screen.
+func download_map(id: String) -> void:
+	_ensure_map_store()
+	if map_store.catalog.is_empty():
+		map_store.refresh()
+		await map_store.changed
+	map_store.download(id)
 
 
 func _menu_edit(placeholder: String, value: String) -> LineEdit:

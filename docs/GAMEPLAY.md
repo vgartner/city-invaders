@@ -196,6 +196,8 @@ Needs an internet connection; everything else works without it.
 - **Report a problem or an idea**: pause menu (Esc). Pick bug / idea /
   other, write what happened, and send a picture of the game as it was when
   you paused. The developers read every one.
+- **Maps** (title screen, in the released game): download the maps that
+  aren't installed yet - each one is checked and ready to play at once.
 - **Mods**: maps changed by other players - placed models, items, bus
   lines, wall photos. Title screen > Mods lists the published ones: Install
   puts one on its map (your own edits are kept and come back with Remove).

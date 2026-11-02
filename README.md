@@ -24,7 +24,16 @@ Each map is its own file in the release (`CityInvaders-map-<id>.pck`): to
 install by hand, put `CityInvaders.exe` and `CityInvaders.pck` in a folder
 and the maps you want in its `maps` subfolder.
 
-macOS and Linux: no package yet - play from the sources ([Quick start](#quick-start)).
+**macOS 11+ (Apple Silicon and Intel):** get `CityInvaders-<version>-macos.zip`,
+open it and move *City Invaders* to Applications. The app is not notarized by
+Apple yet: the first time, open *System Settings > Privacy & Security* and
+click *Open Anyway*.
+
+**Linux (x86_64):** get `CityInvaders-<version>-linux-x86_64.tar.gz`, unpack
+it and run `City Invaders/CityInvaders.x86_64`.
+
+The macOS and Linux packages come with Phase 1; the game's **Maps** screen
+downloads the other maps.
 
 ## The game
 
