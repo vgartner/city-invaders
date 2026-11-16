@@ -679,7 +679,7 @@ for _n in list(PAINTED) + ["brick", "concrete"]:
 # facade tiles baked from the modular kit (tools/blender/bake_facades.py): key ->
 # ("kit:<file prefix>", tile width m, tile height m); storeys per style
 KIT_STOREY = {"antigo": 3.6, "ecletico": 3.6, "residencial": 3.2, "sacada": 3.2,
-              "contemporaneo": 3.2, "comercial": 3.2, "faixa": 3.2, "persiana": 3.2}
+              "contemporaneo": 3.2, "comercial": 3.2, "faixa": 3.2, "persiana": 3.2, "beiral": 3.2}
 for _s, _st in KIT_STOREY.items():
     PBR[f"kit_{_s}_upper"] = (f"kit:{_s}_upper", 6.0, 2 * _st)
     PBR[f"kit_{_s}_ground"] = (f"kit:{_s}_ground", 6.0, _st)
@@ -699,21 +699,73 @@ _CREAM, _GREY, _SAND, _DARK = (252, 252, 229), (158, 168, 170), (224, 197, 141),
 _BLUE, _ROSE, _KHAKI, _BROWN = (119, 160, 188), (177, 155, 155), (180, 167, 127), (164, 132, 105)
 _SAGE, _LAVENDER, _SLATE, _PALE = (174, 178, 167), (226, 224, 244), (153, 175, 186), (224, 233, 222)
 _MAUVE, _PEACH, _MINT = (134, 130, 155), (220, 187, 144), (205, 225, 210)
+_BRICK = (158, 88, 66)        # exposed brick: not a measured wall colour, the brick's own
+# a wall is plaster unless its colour comes with a finish (kit_finish):
+# pastilha (the small ceramic tiles of the 1960s-70s towers), tijolo (exposed
+# brick), concreto (board-marked concrete)
+_P, _T, _C = "pastilha", "tijolo", "concreto"
 KIT_COLOURS = {
     "antigo": [_SAGE, _LAVENDER, _PEACH, _MAUVE, _MINT],
     "ecletico": [_PEACH, _PALE, _SLATE, _MAUVE, _SAGE],
-    "residencial": [_SAND, _ROSE, _GREY, _CREAM, _KHAKI],
-    "sacada": [_BLUE, _CREAM, _SAND, _GREY, _ROSE],
-    "contemporaneo": [_GREY, _CREAM, _DARK, _KHAKI, _BLUE],
-    "comercial": [_GREY, _SAND, _DARK, _CREAM, _BROWN],
-    "faixa": [_BLUE, _SAND, _GREY, _ROSE, _BROWN],
-    "persiana": [_SAND, _CREAM, _KHAKI, _BLUE, _ROSE],
+    "residencial": [_SAND, _ROSE, (_BRICK, _T), _CREAM, _KHAKI],
+    "sacada": [(_BLUE, _P), _CREAM, (_SAND, _P), _GREY, (_ROSE, _P)],
+    "contemporaneo": [(_GREY, _C), _CREAM, (_DARK, _C), _KHAKI, _BLUE],
+    "comercial": [(_GREY, _C), _SAND, _DARK, _CREAM, (_BRICK, _T)],
+    "faixa": [(_BLUE, _P), (_SAND, _P), _GREY, (_ROSE, _P), (_BROWN, _T)],
+    "persiana": [(_SAND, _P), _CREAM, (_KHAKI, _P), _BLUE, _ROSE],
+    "beiral": [_CREAM, _PEACH, _SAND, _PALE, (_BRICK, _T)],
 }
 # styles by height: old sobrados up to 12 m, blocks of flats up to 24 m, towers above
-KIT_BY_HEIGHT = [(12.0, ["antigo", "antigo", "ecletico", "ecletico", "residencial", "comercial", "persiana"]),
+KIT_BY_HEIGHT = [(12.0, ["antigo", "antigo", "ecletico", "ecletico", "residencial", "comercial", "persiana",
+                         "beiral", "beiral"]),
                  (24.0, ["residencial", "sacada", "sacada", "faixa", "faixa", "persiana", "persiana",
-                         "ecletico", "comercial", "contemporaneo"]),
+                         "beiral", "ecletico", "comercial", "contemporaneo"]),
                  (1e9, ["faixa", "faixa", "persiana", "persiana", "contemporaneo", "sacada", "comercial"])]
+KIT_PX_PER_M = 80     # the kit tiles' resolution (bake_facades.py)
+
+
+def kit_colour(style, k):
+    """A style's k-th wall: (rgb, finish or None)."""
+    c = KIT_COLOURS[style][k]
+    return c if isinstance(c[0], tuple) else (c, None)
+
+
+def kit_finish(finish, w, h):
+    """A wall finish over a w x h px kit tile, repeating at its edges: the
+    shade the wall colour is multiplied by, the surface height in metres
+    (joints are lower: the normal map follows it) and the roughness."""
+    rng = np.random.default_rng({"pastilha": 5, "tijolo": 7, "concreto": 9}[finish])
+    rows, cols = np.mgrid[0:h, 0:w]
+    shade, height = np.ones((h, w)), np.zeros((h, w))
+    if finish == "pastilha":
+        # 5 cm tiles, each a touch lighter or darker, in a grid of joints
+        cell = KIT_PX_PER_M // 20
+        tiles = rng.normal(1.0, 0.04, (h // cell + 1, w // cell + 1))
+        shade = tiles[rows // cell, cols // cell]
+        joint = (rows % cell == 0) | (cols % cell == 0)
+        shade[joint] *= 0.84
+        height[joint] = -0.002
+        return shade, height, 0.35
+    if finish == "tijolo":
+        # courses of 10 cm, bricks of 30 cm in running bond, lighter mortar joints
+        course, brick = KIT_PX_PER_M // 8, 3 * KIT_PX_PER_M // 10
+        along = cols + (rows // course % 2) * (brick // 2)
+        bricks = rng.normal(1.0, 0.08, (h // course + 1, w // brick + 1))
+        shade = bricks[rows // course, along // brick % (w // brick)]
+        joint = (rows % course == 0) | (along % brick == 0)
+        shade[joint] = 1.3
+        height[joint] = -0.004
+        return shade, height, 0.9
+    # concreto: the formwork's boards 20 cm apart, panels 3 m wide, the tie holes
+    board, panel = KIT_PX_PER_M // 5, 3 * KIT_PX_PER_M
+    shade = rng.normal(1.0, 0.03, h // board + 1)[rows // board] * rng.normal(1.0, 0.02, w // panel + 1)[cols // panel]
+    line = (rows % board == 0) | (cols % panel == 0)
+    shade[line] *= 0.9
+    height[line] = -0.003
+    hole = ((cols % (panel // 2) - panel // 4) ** 2 + (rows % (4 * board) - 2 * board) ** 2) <= 4
+    shade[hole] = 0.6
+    height[hole] = -0.01
+    return shade, height, 0.8
 
 
 def kit_style(h, rng):
@@ -728,14 +780,14 @@ def kit_wall(batch, pbr, kit, p0, p1, h, top, blind=False):
     windows (stretched to the height) and the cornice band closing at the
     roof line - no window cut at a corner, no storey cut at the top."""
     style, ground_kind, k = kit
-    tint, strength = KIT_COLOURS[style][k], 1.0
+    tint, finish = kit_colour(style, k)
     st = KIT_STOREY[style]
     L = math.dist(p0, p1)
     u = max(1, round(L / 3.0)) / 2.0                  # tiles are two bays wide
-    key = lambda part: pbr(f"kit_{style}_{part}@t{k}", tint=tint, tint_strength=strength)
+    key = lambda part: pbr(f"kit_{style}_{part}@t{k}", tint=tint, finish=finish)
     if blind:
-        # the side wall facing a neighbour: plaster in the building's colour, no openings
-        wall(batch, pbr("kit_cega_wall@%02x%02x%02x" % tuple(tint), tint=tint, tint_strength=strength),
+        # the side wall facing a neighbour: the building's colour and finish, no openings
+        wall(batch, pbr("kit_cega_wall@%02x%02x%02x%s" % (*tint, finish or ""), tint=tint, finish=finish),
              p0, p1, top, L / 6.0, (h + 0.6) / 6.4, 0.0, -0.6, top_abs=True)
         return
     if h < st + 0.8:
@@ -1063,7 +1115,7 @@ def main():
             images[key] = Image.open(path).convert("RGB")
         return key
 
-    def pbr(key, tint=None, tint_strength=0.4):
+    def pbr(key, tint=None, tint_strength=0.4, finish=None):
         """Register an ambientCG material (optionally tinted) and return its key."""
         folder, _, _ = PBR[key.split("@")[0]]
         if key not in images:
@@ -1076,11 +1128,24 @@ def main():
             base = Image.open(paths[0])
             mask = np.asarray(base.getchannel("A"), float)[..., None] / 255.0 if base.mode == "RGBA" else None
             base = base.convert("RGB")
+            normal, rough = Image.open(paths[1]).convert("RGB"), Image.open(paths[2]).convert("L")
             if tint is not None and mask is not None:
                 # a kit tile: its wall (the mask) painted in the colour, the rest as baked
                 arr = np.asarray(base, float)
                 wall = (arr * mask).reshape(-1, 3).sum(0) / max(float(mask.sum()), 1.0)
                 painted = arr * (np.asarray(tint) / np.maximum(wall, 1))
+                if finish:
+                    # the wall's finish: its shade on the colour, its joints in the
+                    # normal map (OpenGL: green up; image rows run down), its roughness
+                    shade, surface, roughness = kit_finish(finish, base.width, base.height)
+                    painted = painted * shade[..., None]
+                    n = np.asarray(normal, float) / 127.5 - 1.0
+                    n[..., 0] -= np.gradient(surface, axis=1) * KIT_PX_PER_M * mask[..., 0]
+                    n[..., 1] += np.gradient(surface, axis=0) * KIT_PX_PER_M * mask[..., 0]
+                    n /= np.linalg.norm(n, axis=-1, keepdims=True)
+                    normal = Image.fromarray(((n + 1.0) * 127.5).clip(0, 255).astype(np.uint8))
+                    r = np.asarray(rough, float)
+                    rough = Image.fromarray((r * (1 - mask[..., 0]) + 255 * roughness * mask[..., 0]).astype(np.uint8))
                 base = Image.fromarray((arr * (1 - mask) + painted * mask).clip(0, 255).astype(np.uint8))
             elif tint is not None:
                 arr = np.asarray(base, float)
@@ -1088,8 +1153,8 @@ def main():
                 tinted = arr * (np.asarray(tint) / np.maximum(mean, 1))
                 base = Image.fromarray((arr * (1 - tint_strength) + tinted * tint_strength).clip(0, 255).astype(np.uint8))
             images[key] = base
-            normals[key] = Image.open(paths[1]).convert("RGB")
-            roughs[key] = Image.open(paths[2]).convert("L")
+            normals[key] = normal
+            roughs[key] = rough
         return key
 
     def tile(key):

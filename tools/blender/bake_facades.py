@@ -17,7 +17,8 @@ A style is a recipe over one of the kit's three panel families (antigo,
 residencial, contemporaneo): which insert goes in which bay, balconies, air
 conditioners. Storeys the kit has no panel for are built here from boxes
 (`ribbon`: the slab as a band at every storey, a ribbon of windows between;
-`shutters`: windows under a roller-shutter box, the shutter part way down).
+`shutters`: windows under a roller-shutter box, the shutter part way down;
+`eaves`: a small coloured eave over every window).
 One more tile, `cega_wall` (6 x 6.4 m), is the windowless side wall: plaster
 with faint stains and a joint at every storey, all of it wall in the mask. The base colour's alpha is the wall mask (255 = the painted
 wall, 0 = frames, glass, doors, trim): the map pipeline repaints the wall in
@@ -78,6 +79,10 @@ STYLES = {
     "persiana": dict(family="contemporaneo", upper="shutters",
                      ground=[DOOR("porta_madeira"), WIN("janela_grade")],
                      shop=[DOOR("porta_aco"), WIN("janela_aluminio")]),
+    # the small block with a coloured eave over every window
+    "beiral": dict(family="contemporaneo", upper="eaves",
+                   ground=[DOOR("porta_madeira"), WIN("janela_grade")],
+                   shop=[DOOR("porta_vidro"), WIN("janela_aluminio")]),
 }
 BAY_M = 3.0
 
@@ -186,6 +191,37 @@ def shutters(h):
             while y - 0.05 >= z + win1 - lowered[k][b]:              # the slats, from the box down
                 box(c - half + 0.04, c + half - 0.04, y - 0.05, y - 0.008, -0.03, 0.03, slat)
                 y -= 0.05
+    return 2 * BAY_M, 2 * h
+
+
+EAVE = (176, 68, 52)
+
+
+def eaves(h):
+    """Two storeys of windows with a small tiled eave over each, 6 m wide,
+    an air conditioner under one of them."""
+    wall, eave = _material("wall", WALL, 0.85), _material("eave", EAVE, 0.7)
+    glass, frame = _material("glass", GLASS, 0.1), _material("frame", BAND, 0.6)
+    sill = _material("sill", SILL, 0.7)
+    x0, x1 = -3.4, 3.4
+    half, win0, win1 = 0.7, 0.95, 2.15
+    for k in range(2):
+        z = k * h
+        box(x0, x1, z, z + win0, 0.0, 0.3, wall)
+        box(x0, x1, z + win1, z + h, 0.0, 0.3, wall)
+        for edges in ((x0, -1.5 - half), (-1.5 + half, 1.5 - half), (1.5 + half, x1)):
+            box(edges[0], edges[1], z + win0, z + win1, 0.0, 0.3, wall)
+        for c in (-1.5, 1.5):
+            box(c - half, c + half, z + win0, z + win1, -0.14, 0.05, glass)
+            box(c - half - 0.06, c + half + 0.06, z + win0 - 0.05, z + win0, 0.04, 0.22, sill)
+            for x in (c - half, c - 0.025, c + half - 0.05):                 # the frame: sides and the middle
+                box(x, x + 0.05, z + win0, z + win1, -0.06, 0.08, frame)
+            for y in (z + win0, z + win1 - 0.05):
+                box(c - half, c + half, y, y + 0.05, -0.06, 0.08, frame)
+            # the eave: two steps, the upper one against the wall, the lower one out
+            box(c - half - 0.25, c + half + 0.25, z + win1 + 0.2, z + win1 + 0.32, 0.12, 0.2, eave)
+            box(c - half - 0.25, c + half + 0.25, z + win1 + 0.08, z + win1 + 0.2, 0.2, 0.28, eave)
+    place("ar_condicionado", 1.5, AIRCON[1])
     return 2 * BAY_M, 2 * h
 
 

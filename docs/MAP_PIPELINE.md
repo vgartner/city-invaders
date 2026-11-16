@@ -289,15 +289,15 @@ The generated buildings (no photo of their own) get facades baked
 from the modular architecture kit instead of the painted ones: flat walls
 whose maps - base colour, normal, height (parallax) and roughness - come
 from the kit's real 3D panels (`godot/assets/common/facades_kit/`, made by
-`tools/blender/bake_facades.py`). Eight styles, each a recipe over one of the
+`tools/blender/bake_facades.py`). Nine styles, each a recipe over one of the
 kit's three panel families: `antigo` (the old sobrado) and `ecletico` (arched
 openings); `residencial` (a 1960s block with shutters) and `sacada` (flats
 with balconies and air conditioners); `contemporaneo`, `comercial`
 (tilting windows, steel shutters at the street), `faixa` (the slab-band
-tower: a light band at every storey and a ribbon of windows between) and
+tower: a light band at every storey and a ribbon of windows between),
 `persiana` (windows under roller-shutter boxes, the shutters part way down)
-- the storeys of the last two are built in the bake script from boxes, the
-kit has no such panels. A wall of at least 4 m with another building within
+and `beiral` (a small red eave over every window) - the storeys of the last
+three are built in the bake script from boxes, the kit has no such panels. A wall of at least 4 m with another building within
 3 m in front of it (a side wall on a narrow gap, a party wall standing above
 its neighbour) is a blind one: the `cega_wall` tile, stained plaster in the
 building's colour, no openings. Each has a street storey
@@ -317,7 +317,13 @@ are measured, not chosen: `tools/map/facade_colours.py <facades.json>` takes
 the wall colour of every photographed facade of a map and groups them for
 low and for tall buildings, leaving out walls in shade (Gasômetro: cream,
 greys, sand, blue, dusty rose, khaki and brown on the tall ones; sage,
-lavender white, blue-grey, pale green, mauve, peach and mint on the low). A new style is
+lavender white, blue-grey, pale green, mauve, peach and mint on the low). A
+colour may come with a finish (`kit_finish`), drawn over the wall when it is
+painted - its shade on the colour, its joints in the normal map, its
+roughness: `pastilha` (5 cm ceramic tiles, on the 1960s-70s towers),
+`tijolo` (exposed brick in running bond; the brick's colour is its own, not
+a measured one) and `concreto` (board-marked concrete with tie holes). A
+blind wall takes its building's colour and finish. A new style is
 a recipe in `bake_facades.py` (`STYLES`) plus its storey height and colours
 in `osm2gltf.py`. Buildings with kit facades and blind walls among them:
 Gasômetro 823 and 1527, centro 754 and 1604, mercado 221 and 460, poa 403
