@@ -283,9 +283,9 @@ GLB; `tools/map/glb_shared_textures.py` points them all at one shared set in
 `centro_historico/textures/` (57 MB instead of ~400 MB, one copy in video
 memory).
 
-### Kit facades (in test)
+### Kit facades
 
-The generated buildings (no photo of their own) are to get facades baked
+The generated buildings (no photo of their own) get facades baked
 from the modular architecture kit instead of the painted ones: flat walls
 whose maps - base colour, normal, height (parallax) and roughness - come
 from the kit's real 3D panels (`godot/assets/common/facades_kit/`, made by
@@ -302,10 +302,10 @@ kit has no such panels. A wall of at least 4 m with another building within
 its neighbour) is a blind one: the `cega_wall` tile, stained plaster in the
 building's colour, no openings. Each has a street storey
 with a door or a shop, storeys of windows, a cornice band at the roof line.
-The test block is the Casa de Cultura's (centro map, around x -522, z 120:
-43 generated buildings, 7-47 m): `"kit_facades": [-522, 120]` in its
-`build.json` (`--kit-facades x,z`, or `all`) - the road block round that
-point. Each wall gets a whole number of 3 m bays, the street storey (a
+A map turns them on in its `build.json`: `"kit_facades": "all"` (the
+Gasômetro map) or `[x, z]` for only the road block round that point (the
+centro map's first test: the Casa de Cultura's block, `[-522, 120]`); on the
+command line `--kit-facades all` or `x,z`. Each wall gets a whole number of 3 m bays, the street storey (a
 door or a shop), whole storeys of windows and the cornice band at the roof
 line, all stretched a little to fit, so no window is cut at a corner and no
 storey at the top. The style is drawn from the ones of the building's
@@ -319,8 +319,7 @@ low and for tall buildings, leaving out walls in shade (Gasômetro: cream,
 greys, sand, blue, dusty rose, khaki and brown on the tall ones; sage,
 lavender white, blue-grey, pale green, mauve, peach and mint on the low). A new style is
 a recipe in `bake_facades.py` (`STYLES`) plus its storey height and colours
-in `osm2gltf.py`. The whole Gasômetro map with kit facades (`--kit-facades
-all`): 823 buildings, 1527 blind walls, 172 kit materials, no errors in a round. The
+in `osm2gltf.py`. The Gasômetro map: 823 buildings, 1527 blind walls, 172 kit materials, no errors in a round. The
 game sets the height maps on the `kit_*` materials (`_kit_facades` in
 main.gd: deep parallax; `set_kit_parallax(0|1|2)` to compare). Measured
 with the simulation paused at full resolution: the parallax costs nothing

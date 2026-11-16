@@ -190,7 +190,8 @@ def rebuild(map_id):
     if c.get("ring"):
         cmd += ["--ring"]                                # car roads end at the outer road loop
     if c.get("kit_facades"):
-        cmd += ["--kit-facades", ",".join(map(str, c["kit_facades"]))]     # the block (x, z) whose buildings get them
+        k = c["kit_facades"]                             # "all", or the block (x, z) whose buildings get them
+        cmd += ["--kit-facades", k if isinstance(k, str) else ",".join(map(str, k))]
     cmd += ["--user", str(d / "buildings_user.json"), "--textures", str(ROOT / c["textures"]),
             "--materials", str(ROOT / "godot/assets/materials"), "--start", *map(str, c["start"]),
             "--out", str(ROOT / c["out"])]
