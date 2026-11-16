@@ -289,8 +289,11 @@ The generated buildings (no photo of their own) are to get facades baked
 from the modular architecture kit instead of the painted ones: flat walls
 whose maps - base colour, normal, height (parallax) and roughness - come
 from the kit's real 3D panels (`godot/assets/common/facades_kit/`, made by
-`tools/blender/bake_facades.py`). Three styles by age and height (an old
-sobrado, a 1960s residential block, a contemporary one), a street storey
+`tools/blender/bake_facades.py`). Six styles, each a recipe over one of the
+kit's three panel families: `antigo` (the old sobrado) and `ecletico` (arched
+openings); `residencial` (a 1960s block with shutters) and `sacada` (flats
+with balconies and air conditioners); `contemporaneo` and `comercial`
+(tilting windows, steel shutters at the street). Each has a street storey
 with a door or a shop, storeys of windows, a cornice band at the roof line.
 The test block is the Casa de Cultura's (centro map, around x -522, z 120:
 43 generated buildings, 7-47 m): `"kit_facades": [-522, 120]` in its
@@ -298,8 +301,14 @@ The test block is the Casa de Cultura's (centro map, around x -522, z 120:
 point. Each wall gets a whole number of 3 m bays, the street storey (a
 door or a shop), whole storeys of windows and the cornice band at the roof
 line, all stretched a little to fit, so no window is cut at a corner and no
-storey at the top; the style comes from the height (up to 12 m old, up to
-24 m residential, above contemporary), a tint from the shared few. The
+storey at the top. The style is drawn from the ones of the building's
+height (`KIT_BY_HEIGHT`: up to 12 m the old ones, up to 24 m the blocks of
+flats, above the towers) and its wall colour from the style's few
+(`KIT_COLOURS`): the base colour's alpha is the wall mask, so the wall takes
+the colour while frames, glass, doors and trim stay as baked. A new style is
+a recipe in `bake_facades.py` (`STYLES`) plus its storey height and colours
+in `osm2gltf.py`. The whole Gasômetro map with kit facades (`--kit-facades
+all`): 823 buildings, 120 kit materials, no errors in a round. The
 game sets the height maps on the `kit_*` materials (`_kit_facades` in
 main.gd: deep parallax; `set_kit_parallax(0|1|2)` to compare). Measured
 with the simulation paused at full resolution: the parallax costs nothing

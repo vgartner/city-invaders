@@ -678,19 +678,34 @@ for _n in list(PAINTED) + ["brick", "concrete"]:
 
 # facade tiles baked from the modular kit (tools/blender/bake_facades.py): key ->
 # ("kit:<file prefix>", tile width m, tile height m); storeys per style
-KIT_STOREY = {"antigo": 3.6, "residencial": 3.2, "contemporaneo": 3.2}
+KIT_STOREY = {"antigo": 3.6, "ecletico": 3.6, "residencial": 3.2, "sacada": 3.2,
+              "contemporaneo": 3.2, "comercial": 3.2}
 for _s, _st in KIT_STOREY.items():
     PBR[f"kit_{_s}_upper"] = (f"kit:{_s}_upper", 6.0, 2 * _st)
     PBR[f"kit_{_s}_ground"] = (f"kit:{_s}_ground", 6.0, _st)
     PBR[f"kit_{_s}_shop"] = (f"kit:{_s}_shop", 6.0, _st)
     PBR[f"kit_{_s}_top"] = (f"kit:{_s}_top", 6.0, 2.5)
 KIT_BAND_M = 1.6      # the top tile's part drawn under the roof line: the cornice and the parapet
+# the wall colours a style is painted in (the tiles' wall mask takes the colour;
+# frames, glass, doors and trim stay): a few each keeps the scene small
+KIT_COLOURS = {
+    "antigo": [(222, 211, 180), (214, 172, 96), (214, 150, 128), (168, 196, 170), (236, 234, 226)],
+    "ecletico": [(226, 212, 178), (206, 160, 170), (160, 186, 206), (224, 190, 120), (184, 108, 76)],
+    "residencial": [(184, 108, 96), (205, 195, 170), (176, 176, 170), (150, 175, 160), (214, 172, 96)],
+    "sacada": [(137, 170, 196), (228, 224, 212), (196, 150, 110), (150, 178, 165), (190, 186, 178)],
+    "contemporaneo": [(198, 186, 160), (232, 230, 224), (166, 168, 166), (140, 160, 175), (120, 124, 128)],
+    "comercial": [(176, 176, 170), (205, 195, 170), (214, 180, 120), (232, 230, 224), (150, 140, 128)],
+}
+# styles by height: old sobrados up to 12 m, blocks of flats up to 24 m, towers above
+KIT_BY_HEIGHT = [(12.0, ["antigo", "antigo", "ecletico", "ecletico", "residencial", "comercial"]),
+                 (24.0, ["residencial", "sacada", "sacada", "ecletico", "comercial", "contemporaneo"]),
+                 (1e9, ["contemporaneo", "contemporaneo", "sacada", "comercial", "comercial"])]
 
 
 def kit_style(h, rng):
-    """A generated building's style from its height: old sobrados up to
-    12 m, 1960s residential blocks up to 24 m, contemporary above."""
-    return "antigo" if h <= 12 else ("residencial" if h <= 24 else "contemporaneo")
+    """A generated building's style, drawn from the ones of its height."""
+    styles = next(s for top, s in KIT_BY_HEIGHT if h <= top)
+    return styles[int(rng.integers(len(styles)))]
 
 
 def kit_wall(batch, pbr, kit, p0, p1, h, top):
@@ -698,7 +713,8 @@ def kit_wall(batch, pbr, kit, p0, p1, h, top):
     3 m bays (stretched to the wall), the street storey, whole storeys of
     windows (stretched to the height) and the cornice band closing at the
     roof line - no window cut at a corner, no storey cut at the top."""
-    style, ground_kind, k, (tint, strength) = kit
+    style, ground_kind, k = kit
+    tint, strength = KIT_COLOURS[style][k], 1.0
     st = KIT_STOREY[style]
     L = math.dist(p0, p1)
     u = max(1, round(L / 3.0)) / 2.0                  # tiles are two bays wide
@@ -1038,8 +1054,16 @@ def main():
             else:
                 paths = (args.materials / folder / "color.jpg", args.materials / folder / "normalgl.jpg",
                          args.materials / folder / "roughness.jpg")
-            base = Image.open(paths[0]).convert("RGB")
-            if tint is not None:
+            base = Image.open(paths[0])
+            mask = np.asarray(base.getchannel("A"), float)[..., None] / 255.0 if base.mode == "RGBA" else None
+            base = base.convert("RGB")
+            if tint is not None and mask is not None:
+                # a kit tile: its wall (the mask) painted in the colour, the rest as baked
+                arr = np.asarray(base, float)
+                wall = (arr * mask).reshape(-1, 3).sum(0) / max(float(mask.sum()), 1.0)
+                painted = arr * (np.asarray(tint) / np.maximum(wall, 1))
+                base = Image.fromarray((arr * (1 - mask) + painted * mask).clip(0, 255).astype(np.uint8))
+            elif tint is not None:
                 arr = np.asarray(base, float)
                 mean = arr.reshape(-1, 3).mean(0)
                 tinted = arr * (np.asarray(tint) / np.maximum(mean, 1))
@@ -1156,10 +1180,9 @@ def main():
         kit = None
         if kit_area is not None and kit_area.contains(poly.centroid):
             style = kit_style(h, kit_rng)
-            k = int(kit_rng.integers(len(TINTS)))
-            tint = (TINTS[k], 0.3 if style != "contemporaneo" else 0.15)
+            k = int(kit_rng.integers(len(KIT_COLOURS[style])))
             ground_kind = "shop" if (tags.get("shop") or tags.get("amenity") or kit_rng.random() < 0.4) else "ground"
-            kit = (style, ground_kind, k, tint)
+            kit = (style, ground_kind, k)
             n_kit += 1
         for p0, p1, r in walls:
             L = math.dist(p0, p1)

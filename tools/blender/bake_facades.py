@@ -7,12 +7,17 @@ instead of the painted facades (docs/MAP_PIPELINE.md).
 
     Blender -b --factory-startup --python tools/blender/bake_facades.py -- KIT_GLB_DIR OUT_DIR [px_per_m]
 
-Tiles, per style (antigo, residencial, contemporaneo), each two 3 m bays
-wide so they repeat without a seam:
+Tiles, per style (STYLES below), each two 3 m bays wide so they repeat
+without a seam:
     <style>_upper   two storeys of windows
     <style>_ground  the street storey: a door and a window
-    <style>_shop    the street storey: a glass door and a shop window
+    <style>_shop    the street storey: a shop door and a shop window
     <style>_top     the band at the roof line: cornice and parapet
+A style is a recipe over one of the kit's three panel families (antigo,
+residencial, contemporaneo): which insert goes in which bay, balconies, air
+conditioners. The base colour's alpha is the wall mask (255 = the painted
+wall, 0 = frames, glass, doors, trim): the map pipeline repaints the wall in
+a building's own colour and leaves the rest as it is.
 The kit's panels: origin at the middle of their lower edge on the facade
 plane, thickness behind it, front -Z in glTF (+Y in Blender).
 """
@@ -29,13 +34,39 @@ PX_PER_M = int(argv[2]) if len(argv) > 2 else 80
 DEPTH_M = 0.7            # the height map's range: from the deepest recess to the most forward relief
 GLASS_SET_BACK_M = 0.18  # how far the glass sits behind the facade
 
-STOREY = {"antigo": 3.6, "residencial": 3.2, "contemporaneo": 3.2}
-INSERTS = {              # (window insert upper, window insert ground, ground door, shop door, shop window)
-    "antigo": ("janela_madeira", "janela_grade", "porta_madeira", "porta_vidro", "janela_madeira"),
-    "residencial": ("janela_veneziana", "janela_grade", "porta_madeira", "porta_vidro", "janela_aluminio"),
-    "contemporaneo": ("janela_aluminio", "janela_basculante", "porta_vidro", "porta_vidro", "janela_aluminio"),
-}
+STOREY = {"antigo": 3.6, "residencial": 3.2, "contemporaneo": 3.2}      # per panel family
 SILL_M = 0.9
+# a bay: (panel, [(piece, height above the storey's floor), ...]); a tile has two.
+WIN = lambda insert, *more: ("window", [(insert, SILL_M), *more])
+DOOR = lambda door, *more: ("door", [(door, 0.0), *more])
+AIRCON = ("ar_condicionado", 0.12)
+STYLES = {
+    # the old sobrado: wooden sashes, a wooden door
+    "antigo": dict(family="antigo", upper=[WIN("janela_madeira")] * 2,
+                   ground=[DOOR("porta_madeira"), WIN("janela_grade")],
+                   shop=[DOOR("porta_vidro"), WIN("janela_madeira")]),
+    # the eclectic one: arched openings on every storey
+    "ecletico": dict(family="antigo", upper=[("arco", [("janela_arco", SILL_M)])] * 2,
+                     ground=[DOOR("porta_madeira"), ("arco", [("janela_arco", SILL_M)])],
+                     shop=[DOOR("porta_vidro"), ("arco", [("janela_arco", SILL_M)])]),
+    # the 1960s block: shuttered windows
+    "residencial": dict(family="residencial", upper=[WIN("janela_veneziana")] * 2,
+                        ground=[DOOR("porta_madeira"), WIN("janela_grade")],
+                        shop=[DOOR("porta_vidro"), WIN("janela_aluminio")]),
+    # the apartment block: a balcony door next to a window with its air conditioner
+    "sacada": dict(family="residencial",
+                   upper=[DOOR("porta_vidro", ("sacada_3m", 0.0)), WIN("janela_aluminio", AIRCON)],
+                   ground=[DOOR("porta_vidro"), WIN("janela_grade")],
+                   shop=[DOOR("porta_aco"), WIN("janela_aluminio")]),
+    # the contemporary one: aluminium frames, glass doors
+    "contemporaneo": dict(family="contemporaneo", upper=[WIN("janela_aluminio")] * 2,
+                          ground=[DOOR("porta_vidro"), WIN("janela_basculante")],
+                          shop=[DOOR("porta_vidro"), WIN("janela_aluminio")]),
+    # the office and shop building: tilting windows, steel shutters at the street
+    "comercial": dict(family="contemporaneo", upper=[WIN("janela_basculante", AIRCON), WIN("janela_basculante")],
+                      ground=[DOOR("porta_aco"), WIN("janela_basculante")],
+                      shop=[DOOR("porta_aco"), DOOR("porta_vidro")]),
+}
 BAY_M = 3.0
 
 
@@ -55,30 +86,24 @@ def place(name, x, z, along=0.0):
 
 def tile(style, kind):
     """Assemble one tile; returns its (width, height) in metres."""
-    up_win, gr_win, gr_door, shop_door, shop_win = INSERTS[style]
-    h = STOREY[style]
+    recipe = STYLES[style]
+    family = recipe["family"]
+    h = STOREY[family]
     xs = [-BAY_M / 2, BAY_M / 2]                 # the two bays' centres, tile from -3 to +3
-    if kind == "upper":
-        for k in range(2):
-            for x in xs:
-                place(f"{style}_window_3m", x, k * h)
-                place(up_win, x, k * h + SILL_M)
-        return 2 * BAY_M, 2 * h
-    if kind in ("ground", "shop"):
-        door, win = (gr_door, gr_win) if kind == "ground" else (shop_door, shop_win)
-        place(f"{style}_door_3m", xs[0], 0.0)
-        place(door, xs[0], 0.0)
-        place(f"{style}_window_3m", xs[1], 0.0)
-        place(win, xs[1], SILL_M)
-        if kind == "shop":
-            place("marquise_3m", xs[0], 2.75)
-            place("marquise_3m", xs[1], 2.75)
-        return 2 * BAY_M, h
+    if kind in ("upper", "ground", "shop"):
+        for k in range(2 if kind == "upper" else 1):
+            for x, (panel, pieces) in zip(xs, recipe[kind]):
+                place(f"{family}_{panel}_3m", x, k * h)
+                for piece, z in pieces:
+                    place(piece, x, k * h + z)
+                if kind == "shop":
+                    place("marquise_3m", x, 2.75)
+        return 2 * BAY_M, (2 * h if kind == "upper" else h)
     if kind == "top":
-        place(f"{style}_blank_3m", xs[0], -h + 1.4)     # the top of a storey's wall behind the band
-        place(f"{style}_blank_3m", xs[1], -h + 1.4)
-        place(f"{style}_cornice", xs[0], 1.4)
-        place(f"{style}_cornice", xs[1], 1.4)
+        place(f"{family}_blank_3m", xs[0], -h + 1.4)     # the top of a storey's wall behind the band
+        place(f"{family}_blank_3m", xs[1], -h + 1.4)
+        place(f"{family}_cornice", xs[0], 1.4)
+        place(f"{family}_cornice", xs[1], 1.4)
         place("platibanda_4m", 0.0, 1.75)
         place("platibanda_4m", 4.0, 1.75)               # 4 m pieces: overlap past the tile, trimmed by the camera
         place("platibanda_4m", -4.0, 1.75)
@@ -193,6 +218,10 @@ def compositor(name):
     save(rl.outputs["rough"], "roughness", colour="BW", depth="16")
 
 
+WALL_TOLERANCE = 0.08     # how far (0..1 RGB) a pixel may be from the wall's colour and still be wall
+_wall_colour = {}         # style -> its wall's colour, measured on the upper tile
+
+
 def post(name):
     """From the raw depth (16-bit, written without a colour curve): the height
     map - the wall plane is the tile's most common depth - and the normal map
@@ -206,11 +235,14 @@ def post(name):
         a = np.array(img.pixels[:], dtype=np.float32).reshape(img.size[1], img.size[0], 4)
         return img, a                      # rows bottom to top (Blender's order)
 
-    def write(suffix, arr, size):
-        out = bpy.data.images.new(f"{name}_{suffix}_raw", size[0], size[1], alpha=False, float_buffer=False)
+    def write(suffix, arr, size, alpha=None):
+        out = bpy.data.images.new(f"{name}_{suffix}_raw", size[0], size[1], alpha=alpha is not None, float_buffer=False)
         out.colorspace_settings.name = "Non-Color"
+        out.alpha_mode = "CHANNEL_PACKED"          # the alpha is a mask: the colour is not multiplied by it
         rgba = np.ones((size[1], size[0], 4), dtype=np.float32)
         rgba[..., :3] = arr if arr.ndim == 3 else arr[..., None]
+        if alpha is not None:
+            rgba[..., 3] = alpha
         out.pixels[:] = rgba.ravel()
         out.filepath_raw = str(OUT / f"{name}_{suffix}.png")
         out.file_format = "PNG"
@@ -237,14 +269,25 @@ def post(name):
     n = np.stack([-dzdx, -dzdy, np.ones_like(z)], axis=-1)
     n /= np.linalg.norm(n, axis=-1, keepdims=True)
     write("normal", n * 0.5 + 0.5, img.size)
+    # the wall mask, in the base colour's alpha: the pixels of the wall's own
+    # colour (the most common one on the wall plane of the style's upper tile)
+    img, c = load("basecolor")
+    style = name.split("_")[0]
+    if style not in _wall_colour:
+        on_plane = c[np.abs(depth - plane) < 0.012][:, :3]
+        _wall_colour[style] = np.median(on_plane, axis=0)
+    dist = np.linalg.norm(c[..., :3] - _wall_colour[style], axis=-1)
+    mask = np.clip((WALL_TOLERANCE - dist) / (WALL_TOLERANCE * 0.5), 0.0, 1.0)
+    mask[glass] = 0.0
+    write("basecolor", c[..., :3], img.size, alpha=mask)
     (OUT / f"{name}_depth.png").unlink()
     print(f"{name}: wall plane at {plane - 20.0:+.2f} m")
 
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
-    for style in STOREY:
-        for kind in ("upper", "ground", "shop", "top"):
+    for style in STYLES:
+        for kind in ("upper", "ground", "shop", "top"):      # upper first: it gives the wall's colour
             clear()
             w, h = tile(style, kind)
             setup_passes(w, h)
