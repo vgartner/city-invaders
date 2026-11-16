@@ -19,5 +19,6 @@
   250,
   340
  ],
- "ring": true
+ "ring": true,
+ "kit_facades": "all"
 }

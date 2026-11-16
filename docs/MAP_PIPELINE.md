@@ -302,10 +302,10 @@ kit has no such panels. A wall of at least 4 m with another building within
 its neighbour) is a blind one: the `cega_wall` tile, stained plaster in the
 building's colour, no openings. Each has a street storey
 with a door or a shop, storeys of windows, a cornice band at the roof line.
-A map turns them on in its `build.json`: `"kit_facades": "all"` (the
-Gasômetro map) or `[x, z]` for only the road block round that point (the
-centro map's first test: the Casa de Cultura's block, `[-522, 120]`); on the
-command line `--kit-facades all` or `x,z`. Each wall gets a whole number of 3 m bays, the street storey (a
+A map turns them on in its `build.json`: `"kit_facades": "all"` (the four
+Porto Alegre maps) or `[x, z]` for only the road block round that point (how
+they were first tried: the Casa de Cultura's block in the centro map,
+`[-522, 120]`); on the command line `--kit-facades all` or `x,z`. Each wall gets a whole number of 3 m bays, the street storey (a
 door or a shop), whole storeys of windows and the cornice band at the roof
 line, all stretched a little to fit, so no window is cut at a corner and no
 storey at the top. The style is drawn from the ones of the building's
@@ -319,7 +319,9 @@ low and for tall buildings, leaving out walls in shade (Gasômetro: cream,
 greys, sand, blue, dusty rose, khaki and brown on the tall ones; sage,
 lavender white, blue-grey, pale green, mauve, peach and mint on the low). A new style is
 a recipe in `bake_facades.py` (`STYLES`) plus its storey height and colours
-in `osm2gltf.py`. The Gasômetro map: 823 buildings, 1527 blind walls, 172 kit materials, no errors in a round. The
+in `osm2gltf.py`. Buildings with kit facades and blind walls among them:
+Gasômetro 823 and 1527, centro 754 and 1604, mercado 221 and 460, poa 403
+and 896; no errors in a round on any of them. The
 game sets the height maps on the `kit_*` materials (`_kit_facades` in
 main.gd: deep parallax; `set_kit_parallax(0|1|2)` to compare). Measured
 with the simulation paused at full resolution: the parallax costs nothing

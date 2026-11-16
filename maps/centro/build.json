@@ -21,8 +21,5 @@
  ],
  "user": "maps/poa/user",
  "ring": true,
- "kit_facades": [
-  -522,
-  120
- ]
+ "kit_facades": "all"
 }

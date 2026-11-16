@@ -20,5 +20,6 @@
   420
  ],
  "user": "maps/poa/user",
- "ring": true
+ "ring": true,
+ "kit_facades": "all"
 }
