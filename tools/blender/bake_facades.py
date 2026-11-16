@@ -15,7 +15,8 @@ without a seam:
     <style>_top     the band at the roof line: cornice and parapet
 A style is a recipe over one of the kit's three panel families (antigo,
 residencial, contemporaneo): which insert goes in which bay, balconies, air
-conditioners. The base colour's alpha is the wall mask (255 = the painted
+conditioners. Storeys the kit has no panel for are built here from boxes
+(`ribbon`: the slab as a band at every storey, a ribbon of windows between). The base colour's alpha is the wall mask (255 = the painted
 wall, 0 = frames, glass, doors, trim): the map pipeline repaints the wall in
 a building's own colour and leaves the rest as it is.
 The kit's panels: origin at the middle of their lower edge on the facade
@@ -66,6 +67,10 @@ STYLES = {
     "comercial": dict(family="contemporaneo", upper=[WIN("janela_basculante", AIRCON), WIN("janela_basculante")],
                       ground=[DOOR("porta_aco"), WIN("janela_basculante")],
                       shop=[DOOR("porta_aco"), DOOR("porta_vidro")]),
+    # the slab-band tower: a light band at every storey, a ribbon of windows between
+    "faixa": dict(family="contemporaneo", upper="ribbon",
+                  ground=[DOOR("porta_vidro"), WIN("janela_aluminio")],
+                  shop=[DOOR("porta_vidro"), DOOR("porta_aco")]),
 }
 BAY_M = 3.0
 
@@ -84,12 +89,75 @@ def place(name, x, z, along=0.0):
             o.location = (o.location.x + x, o.location.y + along, o.location.z + z)
 
 
+def _srgb(c):
+    """An sRGB colour (0..255) as the linear RGBA a material takes."""
+    v = [x / 255.0 for x in c]
+    return [((x + 0.055) / 1.055) ** 2.4 if x > 0.04045 else x / 12.92 for x in v] + [1.0]
+
+
+def _material(name, colour, roughness):
+    mat = bpy.data.materials.get(name)
+    if mat is None:
+        mat = bpy.data.materials.new(name)
+        mat.use_nodes = True
+        bsdf = next(n for n in mat.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
+        bsdf.inputs["Base Color"].default_value = _srgb(colour)
+        bsdf.inputs["Roughness"].default_value = roughness
+    return mat
+
+
+def box(x0, x1, z0, z1, front, depth, mat):
+    """A box on the facade: x0..x1 along it, z0..z1 up, its face `front`
+    metres in front of the wall plane (negative: set back), `depth` thick."""
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=((x0 + x1) / 2, front - depth / 2, (z0 + z1) / 2))
+    o = bpy.context.object
+    o.scale = (x1 - x0, depth, z1 - z0)
+    o.data.materials.append(mat)
+
+
+# the colours of the built storeys: the wall is the contemporaneo panels' own
+# (the wall mask is measured on it), the glass the kit's
+WALL = (199, 188, 162)
+BAND = (236, 233, 224)
+GLASS = (104, 120, 112)
+FRAME = (72, 76, 80)
+SILL = (160, 158, 150)
+
+
+def ribbon(h):
+    """Two storeys of a slab-band facade, 6 m wide: the slab's edge as a
+    light band at the top of each storey, a ribbon of windows the whole
+    width (a mullion every metre, so it repeats) over a plain spandrel."""
+    wall, band = _material("wall", WALL, 0.85), _material("band", BAND, 0.8)
+    glass, frame = _material("glass", GLASS, 0.1), _material("frame", FRAME, 0.45)
+    sill = _material("sill", SILL, 0.7)
+    x0, x1 = -3.4, 3.4                       # past the tile: trimmed by the camera
+    slab, win0, win1 = 0.45, 0.95, 2.35      # the band's height; the window from sill to head
+    for k in range(2):
+        z = k * h
+        box(x0, x1, z, z + win0, 0.0, 0.3, wall)                    # spandrel
+        box(x0, x1, z + win1, z + h - slab, 0.0, 0.3, wall)         # over the window
+        box(x0, x1, z + h - slab, z + h, 0.07, 0.37, band)          # the slab's edge
+        box(x0, x1, z + win0, z + win1, -0.12, 0.05, glass)
+        box(x0, x1, z + win0 - 0.05, z + win0, 0.04, 0.2, sill)
+        box(x0, x1, z + win0, z + win0 + 0.06, -0.04, 0.1, frame)   # bottom and top rails
+        box(x0, x1, z + win1 - 0.06, z + win1, -0.04, 0.1, frame)
+        for i in range(-3, 4):                                      # mullions at -2.5 .. 2.5 and the tile's edges
+            for x in ((i + 0.5,) if i < 3 else ()):
+                box(x - 0.03, x + 0.03, z + win0, z + win1, -0.04, 0.1, frame)
+    return 2 * BAY_M, 2 * h
+
+
 def tile(style, kind):
     """Assemble one tile; returns its (width, height) in metres."""
-    recipe = STYLES[style]
+    recipe = dict(STYLES[style])
+    if isinstance(recipe.get(kind), str):
+        recipe[kind] = globals()[recipe[kind]]       # a storey built here (ribbon)
     family = recipe["family"]
     h = STOREY[family]
     xs = [-BAY_M / 2, BAY_M / 2]                 # the two bays' centres, tile from -3 to +3
+    if callable(recipe.get(kind)):
+        return recipe[kind](h)
     if kind in ("upper", "ground", "shop"):
         for k in range(2 if kind == "upper" else 1):
             for x, (panel, pieces) in zip(xs, recipe[kind]):

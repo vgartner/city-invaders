@@ -16,6 +16,7 @@ the map pipeline repaints the wall in a building's colour. Every tile is two 3 m
 
 Styles (recipes over the kit's three panel families, `STYLES` in the bake
 script): `antigo` and `ecletico` (3.6 m storeys); `residencial`, `sacada`,
-`contemporaneo` and `comercial` (3.2 m).
+`contemporaneo`, `comercial` and `faixa` (3.2 m; `faixa`'s storeys of ribbon
+windows are built in the bake script, not from kit panels).
 The map pipeline's use of them (a test block first) is described in
 docs/MAP_PIPELINE.md.

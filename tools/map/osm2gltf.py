@@ -679,7 +679,7 @@ for _n in list(PAINTED) + ["brick", "concrete"]:
 # facade tiles baked from the modular kit (tools/blender/bake_facades.py): key ->
 # ("kit:<file prefix>", tile width m, tile height m); storeys per style
 KIT_STOREY = {"antigo": 3.6, "ecletico": 3.6, "residencial": 3.2, "sacada": 3.2,
-              "contemporaneo": 3.2, "comercial": 3.2}
+              "contemporaneo": 3.2, "comercial": 3.2, "faixa": 3.2}
 for _s, _st in KIT_STOREY.items():
     PBR[f"kit_{_s}_upper"] = (f"kit:{_s}_upper", 6.0, 2 * _st)
     PBR[f"kit_{_s}_ground"] = (f"kit:{_s}_ground", 6.0, _st)
@@ -687,19 +687,26 @@ for _s, _st in KIT_STOREY.items():
     PBR[f"kit_{_s}_top"] = (f"kit:{_s}_top", 6.0, 2.5)
 KIT_BAND_M = 1.6      # the top tile's part drawn under the roof line: the cornice and the parapet
 # the wall colours a style is painted in (the tiles' wall mask takes the colour;
-# frames, glass, doors and trim stay): a few each keeps the scene small
+# frames, glass, doors and trim stay): a few each keeps the scene small. They
+# are the wall colours measured on Porto Alegre's photographed facades
+# (tools/map/facade_colours.py on the gasometro map): greys, off-white, sand,
+# tan and blue on the tall ones; light grey, peach, blue-grey and mauve on the low.
+_GREY, _WHITE, _SAND, _TAN = (153, 159, 161), (240, 240, 234), (224, 195, 141), (168, 152, 126)
+_BLUE, _DARK, _OLIVE = (40, 128, 178), (108, 112, 111), (111, 107, 86)
+_LIGHT, _PEACH, _SLATE, _MAUVE = (224, 224, 231), (211, 175, 138), (112, 131, 157), (134, 109, 130)
 KIT_COLOURS = {
-    "antigo": [(222, 211, 180), (214, 172, 96), (214, 150, 128), (168, 196, 170), (236, 234, 226)],
-    "ecletico": [(226, 212, 178), (206, 160, 170), (160, 186, 206), (224, 190, 120), (184, 108, 76)],
-    "residencial": [(184, 108, 96), (205, 195, 170), (176, 176, 170), (150, 175, 160), (214, 172, 96)],
-    "sacada": [(137, 170, 196), (228, 224, 212), (196, 150, 110), (150, 178, 165), (190, 186, 178)],
-    "contemporaneo": [(198, 186, 160), (232, 230, 224), (166, 168, 166), (140, 160, 175), (120, 124, 128)],
-    "comercial": [(176, 176, 170), (205, 195, 170), (214, 180, 120), (232, 230, 224), (150, 140, 128)],
+    "antigo": [_LIGHT, _PEACH, _GREY, _MAUVE, _SLATE],
+    "ecletico": [_PEACH, _LIGHT, _SLATE, _TAN, _SAND],
+    "residencial": [_SAND, _TAN, _GREY, _WHITE, _OLIVE],
+    "sacada": [_BLUE, _WHITE, _SAND, _GREY, _TAN],
+    "contemporaneo": [_GREY, _WHITE, _DARK, _TAN, _SLATE],
+    "comercial": [_GREY, _SAND, _DARK, _WHITE, _OLIVE],
+    "faixa": [_BLUE, _SAND, _GREY, _DARK, _SLATE],
 }
 # styles by height: old sobrados up to 12 m, blocks of flats up to 24 m, towers above
 KIT_BY_HEIGHT = [(12.0, ["antigo", "antigo", "ecletico", "ecletico", "residencial", "comercial"]),
-                 (24.0, ["residencial", "sacada", "sacada", "ecletico", "comercial", "contemporaneo"]),
-                 (1e9, ["contemporaneo", "contemporaneo", "sacada", "comercial", "comercial"])]
+                 (24.0, ["residencial", "sacada", "sacada", "faixa", "faixa", "ecletico", "comercial", "contemporaneo"]),
+                 (1e9, ["faixa", "faixa", "contemporaneo", "sacada", "comercial"])]
 
 
 def kit_style(h, rng):
