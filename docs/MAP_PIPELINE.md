@@ -289,13 +289,18 @@ The generated buildings (no photo of their own) are to get facades baked
 from the modular architecture kit instead of the painted ones: flat walls
 whose maps - base colour, normal, height (parallax) and roughness - come
 from the kit's real 3D panels (`godot/assets/common/facades_kit/`, made by
-`tools/blender/bake_facades.py`). Seven styles, each a recipe over one of the
+`tools/blender/bake_facades.py`). Eight styles, each a recipe over one of the
 kit's three panel families: `antigo` (the old sobrado) and `ecletico` (arched
 openings); `residencial` (a 1960s block with shutters) and `sacada` (flats
 with balconies and air conditioners); `contemporaneo`, `comercial`
-(tilting windows, steel shutters at the street) and `faixa` (the slab-band
-tower: a light band at every storey and a ribbon of windows between, built
-in the bake script from boxes - the kit has no such panel). Each has a street storey
+(tilting windows, steel shutters at the street), `faixa` (the slab-band
+tower: a light band at every storey and a ribbon of windows between) and
+`persiana` (windows under roller-shutter boxes, the shutters part way down)
+- the storeys of the last two are built in the bake script from boxes, the
+kit has no such panels. A wall of at least 4 m with another building within
+3 m in front of it (a side wall on a narrow gap, a party wall standing above
+its neighbour) is a blind one: the `cega_wall` tile, stained plaster in the
+building's colour, no openings. Each has a street storey
 with a door or a shop, storeys of windows, a cornice band at the roof line.
 The test block is the Casa de Cultura's (centro map, around x -522, z 120:
 43 generated buildings, 7-47 m): `"kit_facades": [-522, 120]` in its
@@ -310,11 +315,12 @@ flats, above the towers) and its wall colour from the style's few
 the colour while frames, glass, doors and trim stay as baked. The colours
 are measured, not chosen: `tools/map/facade_colours.py <facades.json>` takes
 the wall colour of every photographed facade of a map and groups them for
-low and for tall buildings (Gasômetro: greys, off-white, sand, tan and blue
-on the tall ones; light grey, peach, blue-grey and mauve on the low). A new style is
+low and for tall buildings, leaving out walls in shade (Gasômetro: cream,
+greys, sand, blue, dusty rose, khaki and brown on the tall ones; sage,
+lavender white, blue-grey, pale green, mauve, peach and mint on the low). A new style is
 a recipe in `bake_facades.py` (`STYLES`) plus its storey height and colours
 in `osm2gltf.py`. The whole Gasômetro map with kit facades (`--kit-facades
-all`): 823 buildings, 139 kit materials, no errors in a round. The
+all`): 823 buildings, 1527 blind walls, 172 kit materials, no errors in a round. The
 game sets the height maps on the `kit_*` materials (`_kit_facades` in
 main.gd: deep parallax; `set_kit_parallax(0|1|2)` to compare). Measured
 with the simulation paused at full resolution: the parallax costs nothing

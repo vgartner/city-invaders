@@ -16,7 +16,9 @@ the map pipeline repaints the wall in a building's colour. Every tile is two 3 m
 
 Styles (recipes over the kit's three panel families, `STYLES` in the bake
 script): `antigo` and `ecletico` (3.6 m storeys); `residencial`, `sacada`,
-`contemporaneo`, `comercial` and `faixa` (3.2 m; `faixa`'s storeys of ribbon
-windows are built in the bake script, not from kit panels).
+`contemporaneo`, `comercial`, `faixa` and `persiana` (3.2 m; the storeys of
+the last two - ribbon windows, roller shutters - are built in the bake
+script, not from kit panels). `cega_wall` (6 x 6.4 m) is the windowless side
+wall of any style: stained plaster, all of it wall in the mask.
 The map pipeline's use of them (a test block first) is described in
 docs/MAP_PIPELINE.md.

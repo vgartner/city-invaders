@@ -679,34 +679,41 @@ for _n in list(PAINTED) + ["brick", "concrete"]:
 # facade tiles baked from the modular kit (tools/blender/bake_facades.py): key ->
 # ("kit:<file prefix>", tile width m, tile height m); storeys per style
 KIT_STOREY = {"antigo": 3.6, "ecletico": 3.6, "residencial": 3.2, "sacada": 3.2,
-              "contemporaneo": 3.2, "comercial": 3.2, "faixa": 3.2}
+              "contemporaneo": 3.2, "comercial": 3.2, "faixa": 3.2, "persiana": 3.2}
 for _s, _st in KIT_STOREY.items():
     PBR[f"kit_{_s}_upper"] = (f"kit:{_s}_upper", 6.0, 2 * _st)
     PBR[f"kit_{_s}_ground"] = (f"kit:{_s}_ground", 6.0, _st)
     PBR[f"kit_{_s}_shop"] = (f"kit:{_s}_shop", 6.0, _st)
     PBR[f"kit_{_s}_top"] = (f"kit:{_s}_top", 6.0, 2.5)
+PBR["kit_cega_wall"] = ("kit:cega_wall", 6.0, 6.4)     # the windowless side wall, any style
 KIT_BAND_M = 1.6      # the top tile's part drawn under the roof line: the cornice and the parapet
+BLIND_MIN_M = 4.0     # shorter walls keep their windows
+BLIND_REACH_M = 3.0   # a neighbour this close in front of a wall makes it a blind one
 # the wall colours a style is painted in (the tiles' wall mask takes the colour;
 # frames, glass, doors and trim stay): a few each keeps the scene small. They
 # are the wall colours measured on Porto Alegre's photographed facades
-# (tools/map/facade_colours.py on the gasometro map): greys, off-white, sand,
-# tan and blue on the tall ones; light grey, peach, blue-grey and mauve on the low.
-_GREY, _WHITE, _SAND, _TAN = (153, 159, 161), (240, 240, 234), (224, 195, 141), (168, 152, 126)
-_BLUE, _DARK, _OLIVE = (40, 128, 178), (108, 112, 111), (111, 107, 86)
-_LIGHT, _PEACH, _SLATE, _MAUVE = (224, 224, 231), (211, 175, 138), (112, 131, 157), (134, 109, 130)
+# (tools/map/facade_colours.py on the gasometro map, walls in shade left out):
+# cream, greys, sand, blue, dusty rose, khaki and brown on the tall ones;
+# sage, lavender white, blue-grey, pale green, mauve, peach and mint on the low.
+_CREAM, _GREY, _SAND, _DARK = (252, 252, 229), (158, 168, 170), (224, 197, 141), (136, 134, 133)
+_BLUE, _ROSE, _KHAKI, _BROWN = (119, 160, 188), (177, 155, 155), (180, 167, 127), (164, 132, 105)
+_SAGE, _LAVENDER, _SLATE, _PALE = (174, 178, 167), (226, 224, 244), (153, 175, 186), (224, 233, 222)
+_MAUVE, _PEACH, _MINT = (134, 130, 155), (220, 187, 144), (205, 225, 210)
 KIT_COLOURS = {
-    "antigo": [_LIGHT, _PEACH, _GREY, _MAUVE, _SLATE],
-    "ecletico": [_PEACH, _LIGHT, _SLATE, _TAN, _SAND],
-    "residencial": [_SAND, _TAN, _GREY, _WHITE, _OLIVE],
-    "sacada": [_BLUE, _WHITE, _SAND, _GREY, _TAN],
-    "contemporaneo": [_GREY, _WHITE, _DARK, _TAN, _SLATE],
-    "comercial": [_GREY, _SAND, _DARK, _WHITE, _OLIVE],
-    "faixa": [_BLUE, _SAND, _GREY, _DARK, _SLATE],
+    "antigo": [_SAGE, _LAVENDER, _PEACH, _MAUVE, _MINT],
+    "ecletico": [_PEACH, _PALE, _SLATE, _MAUVE, _SAGE],
+    "residencial": [_SAND, _ROSE, _GREY, _CREAM, _KHAKI],
+    "sacada": [_BLUE, _CREAM, _SAND, _GREY, _ROSE],
+    "contemporaneo": [_GREY, _CREAM, _DARK, _KHAKI, _BLUE],
+    "comercial": [_GREY, _SAND, _DARK, _CREAM, _BROWN],
+    "faixa": [_BLUE, _SAND, _GREY, _ROSE, _BROWN],
+    "persiana": [_SAND, _CREAM, _KHAKI, _BLUE, _ROSE],
 }
 # styles by height: old sobrados up to 12 m, blocks of flats up to 24 m, towers above
-KIT_BY_HEIGHT = [(12.0, ["antigo", "antigo", "ecletico", "ecletico", "residencial", "comercial"]),
-                 (24.0, ["residencial", "sacada", "sacada", "faixa", "faixa", "ecletico", "comercial", "contemporaneo"]),
-                 (1e9, ["faixa", "faixa", "contemporaneo", "sacada", "comercial"])]
+KIT_BY_HEIGHT = [(12.0, ["antigo", "antigo", "ecletico", "ecletico", "residencial", "comercial", "persiana"]),
+                 (24.0, ["residencial", "sacada", "sacada", "faixa", "faixa", "persiana", "persiana",
+                         "ecletico", "comercial", "contemporaneo"]),
+                 (1e9, ["faixa", "faixa", "persiana", "persiana", "contemporaneo", "sacada", "comercial"])]
 
 
 def kit_style(h, rng):
@@ -715,7 +722,7 @@ def kit_style(h, rng):
     return styles[int(rng.integers(len(styles)))]
 
 
-def kit_wall(batch, pbr, kit, p0, p1, h, top):
+def kit_wall(batch, pbr, kit, p0, p1, h, top, blind=False):
     """A generated building's wall in the kit's facades: a whole number of
     3 m bays (stretched to the wall), the street storey, whole storeys of
     windows (stretched to the height) and the cornice band closing at the
@@ -726,6 +733,11 @@ def kit_wall(batch, pbr, kit, p0, p1, h, top):
     L = math.dist(p0, p1)
     u = max(1, round(L / 3.0)) / 2.0                  # tiles are two bays wide
     key = lambda part: pbr(f"kit_{style}_{part}@t{k}", tint=tint, tint_strength=strength)
+    if blind:
+        # the side wall facing a neighbour: plaster in the building's colour, no openings
+        wall(batch, pbr("kit_cega_wall@%02x%02x%02x" % tuple(tint), tint=tint, tint_strength=strength),
+             p0, p1, top, L / 6.0, (h + 0.6) / 6.4, 0.0, -0.6, top_abs=True)
+        return
     if h < st + 0.8:
         # a single storey: the street storey up to the roof
         wall(batch, key(ground_kind), p0, p1, top, u, 1.0, -0.6 / st, -0.6, top_abs=True)
@@ -1099,6 +1111,26 @@ def main():
         street_lines = [ln for k, _, ln in roads if k in VEHICLE_ROADS | PEDESTRIAN_ROADS]
         kit_area = next((f for f in polygonize(unary_union(street_lines)) if f.contains(Point(kx, -kz))), None)
         print("kit facades: block of %.0f m2 round (%.0f, %.0f)" % (kit_area.area if kit_area else 0, kx, kz))
+    # a wall with another building right in front of it (a side wall on a
+    # narrow gap, a party wall standing above its neighbour) has no windows
+    from shapely.strtree import STRtree
+    building_tree = STRtree([b[0] for b in buildings])
+    n_blind = 0
+
+    def blind_wall(p0, p1, poly, own):
+        L = math.dist(p0, p1)
+        if L < BLIND_MIN_M:
+            return False
+        mx, my = (p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2
+        nx, ny = (p1[1] - p0[1]) / L, -(p1[0] - p0[0]) / L
+        if poly.contains(Point(mx + nx, my + ny)):
+            nx, ny = -nx, -ny                    # outwards
+        for reach in (1.0, BLIND_REACH_M):
+            hits = building_tree.query(Point(mx + nx * reach, my + ny * reach), predicate="intersects")
+            if any(int(i) != own for i in hits):
+                return True
+        return False
+
     photo_walls = []    # (p0, p1) of walls showing a real photo
     # every building with its OSM identity, for the in-game editor (pick a
     # building, change it, send the change back to OpenStreetMap)
@@ -1203,7 +1235,9 @@ def main():
                 wall(batch, key, p0, p1, top, L * REAL_PX_PER_M / donor["w_px"], 1.0, 0.0, -0.6, top_abs=True)
                 n_inherit += 1
             elif kit:
-                kit_wall(batch, pbr, kit, p0, p1, h, top)
+                is_blind = blind_wall(p0, p1, poly, bi)
+                n_blind += is_blind
+                kit_wall(batch, pbr, kit, p0, p1, h, top, blind=is_blind)
             else:
                 # the street level gets doors and shop windows; the facade starts above it
                 gk = pbr(ground_family(family))
@@ -1272,7 +1306,7 @@ def main():
             n_fill += 1
     print("infill pieces:", n_fill)
     if kit_area is not None:
-        print("buildings with kit facades:", n_kit)
+        print("buildings with kit facades:", n_kit, "- blind side walls:", n_blind)
 
     # ---- street surfaces: asphalt, pedestrian promenades, sidewalks, grass ----
     # asphalt only where cars drive (the carriageway), paving on footways,

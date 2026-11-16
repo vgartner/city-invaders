@@ -5,8 +5,11 @@ osm2gltf.py, docs/MAP_PIPELINE.md "Kit facades").
 
     tools/.venv/bin/python tools/map/facade_colours.py maps/gasometro/facades/facades_clean.json [--swatch out.png]
 
-Per photo: the wall is the most common colour once glass, shadow, sky and
-trees are left out (dark, very bright-blue and green pixels). The photos'
+Per photo: the wall is the most common colour of the lit part - glass,
+shadow, sky and trees are left out (dark, very bright-blue and green
+pixels), then the darker half of what is left (the wall in shade). A photo
+whose wall is still dark is a facade in shadow: it says little about the
+paint and is skipped. The photos'
 wall colours are then grouped (k-means in Lab) for low buildings (up to
 12 m) and for tall ones; each group prints as an RGB triple with the number
 of facades in it.
@@ -19,6 +22,7 @@ import numpy as np
 from PIL import Image
 
 LOW_M = 12.0
+SHADE_LUM = 125.0        # a wall darker than this is in shadow (or its photo is)
 
 
 def lab(rgb):
@@ -38,14 +42,16 @@ def wall_colour(path):
     lum = 0.299 * r + 0.587 * g + 0.114 * b
     tree = (g > r * 1.08) & (g > b * 1.08) & (lum < 150)
     sky = (b > r * 1.25) & (lum > 170)
-    keep = a[(lum > 85) & ~tree & ~sky]
-    if len(keep) < 0.25 * len(a):
+    ok = (lum > 85) & ~tree & ~sky
+    if ok.sum() < 0.25 * len(a):
         return None
+    keep = a[ok & (lum >= np.median(lum[ok]))]          # the lit half
     # the most common colour: the fullest cell of a coarse RGB grid, then the mean of its pixels
     cells = (keep // 24).astype(int)
     keys = cells[:, 0] * 10000 + cells[:, 1] * 100 + cells[:, 2]
     vals, counts = np.unique(keys, return_counts=True)
-    return keep[keys == vals[np.argmax(counts)]].mean(0)
+    c = keep[keys == vals[np.argmax(counts)]].mean(0)
+    return c if c @ (0.299, 0.587, 0.114) >= SHADE_LUM else None
 
 
 def groups(colours, k, rng):

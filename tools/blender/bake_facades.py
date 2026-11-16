@@ -16,7 +16,10 @@ without a seam:
 A style is a recipe over one of the kit's three panel families (antigo,
 residencial, contemporaneo): which insert goes in which bay, balconies, air
 conditioners. Storeys the kit has no panel for are built here from boxes
-(`ribbon`: the slab as a band at every storey, a ribbon of windows between). The base colour's alpha is the wall mask (255 = the painted
+(`ribbon`: the slab as a band at every storey, a ribbon of windows between;
+`shutters`: windows under a roller-shutter box, the shutter part way down).
+One more tile, `cega_wall` (6 x 6.4 m), is the windowless side wall: plaster
+with faint stains and a joint at every storey, all of it wall in the mask. The base colour's alpha is the wall mask (255 = the painted
 wall, 0 = frames, glass, doors, trim): the map pipeline repaints the wall in
 a building's own colour and leaves the rest as it is.
 The kit's panels: origin at the middle of their lower edge on the facade
@@ -71,6 +74,10 @@ STYLES = {
     "faixa": dict(family="contemporaneo", upper="ribbon",
                   ground=[DOOR("porta_vidro"), WIN("janela_aluminio")],
                   shop=[DOOR("porta_vidro"), DOOR("porta_aco")]),
+    # the 1960s-70s block of flats: windows under roller-shutter boxes
+    "persiana": dict(family="contemporaneo", upper="shutters",
+                     ground=[DOOR("porta_madeira"), WIN("janela_grade")],
+                     shop=[DOOR("porta_aco"), WIN("janela_aluminio")]),
 }
 BAY_M = 3.0
 
@@ -146,6 +153,71 @@ def ribbon(h):
             for x in ((i + 0.5,) if i < 3 else ()):
                 box(x - 0.03, x + 0.03, z + win0, z + win1, -0.04, 0.1, frame)
     return 2 * BAY_M, 2 * h
+
+
+SLAT = (226, 223, 214)
+
+
+def shutters(h):
+    """Two storeys of windows with roller shutters, 6 m wide: each bay a
+    window under its shutter box, the slatted shutter lowered part of the
+    way (differently in each window)."""
+    wall, box_m = _material("wall", WALL, 0.85), _material("band", BAND, 0.8)
+    glass, frame = _material("glass", GLASS, 0.1), _material("frame", FRAME, 0.45)
+    sill, slat = _material("sill", SILL, 0.7), _material("slat", SLAT, 0.65)
+    x0, x1 = -3.4, 3.4
+    half, win0, win1 = 0.8, 0.95, 2.25       # the window's half width; from sill to head
+    lowered = [[0.45, 0.95], [1.3, 0.25]]    # how far each shutter is down, per storey and bay (m)
+    for k in range(2):
+        z = k * h
+        box(x0, x1, z, z + win0, 0.0, 0.3, wall)                    # under the windows
+        box(x0, x1, z + win1, z + h, 0.0, 0.3, wall)                # over them
+        for edges in ((x0, -1.5 - half), (-1.5 + half, 1.5 - half), (1.5 + half, x1)):
+            box(edges[0], edges[1], z + win0, z + win1, 0.0, 0.3, wall)     # the piers between
+        for b, c in enumerate((-1.5, 1.5)):
+            box(c - half, c + half, z + win0, z + win1, -0.14, 0.05, glass)
+            box(c - half - 0.06, c + half + 0.06, z + win0 - 0.05, z + win0, 0.04, 0.22, sill)
+            box(c - half - 0.04, c + half + 0.04, z + win1, z + win1 + 0.24, 0.05, 0.2, box_m)   # the shutter's box
+            box(c - 0.02, c + 0.02, z + win0, z + win1, -0.09, 0.05, frame)                      # the two leaves
+            for x in (c - half, c + half - 0.04):
+                box(x, x + 0.04, z + win0, z + win1, -0.06, 0.08, frame)
+            box(c - half, c + half, z + win0, z + win0 + 0.04, -0.06, 0.08, frame)
+            y = z + win1
+            while y - 0.05 >= z + win1 - lowered[k][b]:              # the slats, from the box down
+                box(c - half + 0.04, c + half - 0.04, y - 0.05, y - 0.008, -0.03, 0.03, slat)
+                y -= 0.05
+    return 2 * BAY_M, 2 * h
+
+
+def blind_wall():
+    """The windowless side wall, 6 x 6.4 m: plaster with faint stains (a
+    stretched noise, weak enough not to show the tile's edge) and a shallow
+    joint at every storey."""
+    mat = bpy.data.materials.new("wall_stained")
+    mat.use_nodes = True
+    nt = mat.node_tree
+    bsdf = next(n for n in nt.nodes if n.type == "BSDF_PRINCIPLED")
+    bsdf.inputs["Roughness"].default_value = 0.88
+    coord = nt.nodes.new("ShaderNodeTexCoord")
+    mapping = nt.nodes.new("ShaderNodeMapping")
+    mapping.inputs["Scale"].default_value = (2.2, 1.0, 0.22)        # streaks down the wall
+    noise = nt.nodes.new("ShaderNodeTexNoise")
+    noise.inputs["Scale"].default_value = 1.6
+    noise.inputs["Detail"].default_value = 6.0
+    ramp = nt.nodes.new("ShaderNodeValToRGB")
+    ramp.color_ramp.elements[0].position, ramp.color_ramp.elements[1].position = 0.3, 0.75
+    ramp.color_ramp.elements[0].color = _srgb([c * 0.93 for c in WALL])
+    ramp.color_ramp.elements[1].color = _srgb(WALL)
+    nt.links.new(coord.outputs["Object"], mapping.inputs["Vector"])
+    nt.links.new(mapping.outputs["Vector"], noise.inputs["Vector"])
+    nt.links.new(noise.outputs["Fac"], ramp.inputs["Fac"])
+    nt.links.new(ramp.outputs["Color"], bsdf.inputs["Base Color"])
+    for z0, z1 in ((0.02, 3.18), (3.22, 6.38)):         # a storey each, the slab joints between
+        box(-3.4, 3.4, z0, z1, 0.0, 0.3, mat)
+        bpy.ops.object.transform_apply(scale=True)      # object space in metres for the noise
+    box(-3.4, 3.4, -0.1, 6.5, -0.02, 0.3, mat)          # behind: the joints are grooves 2 cm deep
+    bpy.ops.object.transform_apply(scale=True)
+    return 2 * BAY_M, 6.4
 
 
 def tile(style, kind):
@@ -347,29 +419,36 @@ def post(name):
     dist = np.linalg.norm(c[..., :3] - _wall_colour[style], axis=-1)
     mask = np.clip((WALL_TOLERANCE - dist) / (WALL_TOLERANCE * 0.5), 0.0, 1.0)
     mask[glass] = 0.0
+    if style == "cega":
+        mask[:] = 1.0                      # the blind wall: stains and all take the colour
     write("basecolor", c[..., :3], img.size, alpha=mask)
     (OUT / f"{name}_depth.png").unlink()
     print(f"{name}: wall plane at {plane - 20.0:+.2f} m")
+
+
+def bake(name, build):
+    """Assemble a tile with `build()` (returns its size in metres) and bake its maps."""
+    clear()
+    w, h = build()
+    setup_passes(w, h)
+    roughness_aov()
+    compositor(name)
+    bpy.context.scene.render.filepath = str(OUT / f"_beauty_{name}.png")
+    bpy.ops.render.render(write_still=True)
+    # the file outputs add the item name and frame number: plain names
+    for f in OUT.glob(f"{name}_*_*.png"):
+        tag = f.stem.rsplit("_", 1)[0].rstrip("_")
+        f.replace(OUT / f"{tag}.png")
+    post(name)
+    print(f"baked {name}: {w} x {h} m")
 
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     for style in STYLES:
         for kind in ("upper", "ground", "shop", "top"):      # upper first: it gives the wall's colour
-            clear()
-            w, h = tile(style, kind)
-            setup_passes(w, h)
-            roughness_aov()
-            compositor(f"{style}_{kind}")
-            bpy.context.scene.render.filepath = str(OUT / f"_beauty_{style}_{kind}.png")
-            bpy.ops.render.render(write_still=True)
-            # the file outputs add the item name and frame number: plain names
-            for f in OUT.glob(f"{style}_{kind}_*_*.png"):
-                base = f.name.split("_")
-                tag = f.stem.rsplit("_", 1)[0].rstrip("_")
-                f.replace(OUT / f"{tag}.png")
-            post(f"{style}_{kind}")
-            print(f"baked {style}_{kind}: {w} x {h} m")
+            bake(f"{style}_{kind}", lambda: tile(style, kind))
+    bake("cega_wall", blind_wall)
 
 
 main()
