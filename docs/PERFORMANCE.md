@@ -948,3 +948,15 @@ restored-scene screenshot. Verification: 18 benchmark/report Python tests,
 four native parser tests, headless startup and the coverage/drawability fixture
 pass. User map changes were preserved. The new diagnostic does not force window
 focus, change its size or modify graphics settings in normal operation.
+
+## Kit facades (November 2026)
+
+`tools/bench/kit_bench.py` on the Centro, the map with kit facades on every
+generated building against the map before them (38 kit materials, one
+block): the three fixed views draw 550-700 more draw calls each (2,376
+against 1,830, 3,761 against 3,224, 3,050 against 2,443) and 5-10% fewer
+triangles - the kit materials are one per style, part, colour and finish
+(196 in the Centro). The frame rates of those runs are not comparable: the
+machine was swapping (three walks round the block gave 62, 75 and 35 fps).
+Still to measure on a quiet machine, with the parallax modes
+(`main.set_kit_parallax(0 / 1 / 2)`) in the same session.

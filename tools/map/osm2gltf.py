@@ -717,7 +717,7 @@ KIT_COLOURS = {
 }
 # styles by height: old sobrados up to 12 m, blocks of flats up to 24 m, towers above
 KIT_BY_HEIGHT = [(12.0, ["antigo", "antigo", "ecletico", "ecletico", "residencial", "comercial", "persiana",
-                         "beiral", "beiral"]),
+                         "beiral", "beiral", "faixa", "sacada"]),
                  (24.0, ["residencial", "sacada", "sacada", "faixa", "faixa", "persiana", "persiana",
                          "beiral", "ecletico", "comercial", "contemporaneo"]),
                  (1e9, ["faixa", "faixa", "persiana", "persiana", "contemporaneo", "sacada", "comercial"])]

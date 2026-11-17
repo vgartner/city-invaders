@@ -309,8 +309,8 @@ they were first tried: the Casa de Cultura's block in the centro map,
 door or a shop), whole storeys of windows and the cornice band at the roof
 line, all stretched a little to fit, so no window is cut at a corner and no
 storey at the top. The style is drawn from the ones of the building's
-height (`KIT_BY_HEIGHT`: up to 12 m the old ones, up to 24 m the blocks of
-flats, above the towers) and its wall colour from the style's few
+height (`KIT_BY_HEIGHT`: up to 12 m mostly the old ones, with a few ribbon
+windows and balconies, up to 24 m the blocks of flats, above the towers) and its wall colour from the style's few
 (`KIT_COLOURS`): the base colour's alpha is the wall mask, so the wall takes
 the colour while frames, glass, doors and trim stay as baked. The colours
 are measured, not chosen: `tools/map/facade_colours.py <facades.json>` takes
