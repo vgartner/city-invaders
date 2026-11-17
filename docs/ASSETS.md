@@ -209,3 +209,44 @@ the real pickup scene in Gasometro. The existing scale remained (3,3,3).
 A real physics overlap removed the non-respawning pickup, healed 70 to 95
 and activated the existing approximately 12-second adrenaline effect.
 No pickup/player logic or entity definition was changed.
+
+## URB-07 part-specific finish
+
+`tools/assets/urb07_finish.py` rebuilds the trooper's 2048 PBR atlas from
+`tools/blender/src/urb07_finish/robot_palette_source.glb`. Run it with the
+repository Python environment; numpy and Pillow are required. The source is
+retained so repeated builds do not accumulate resampling or wear.
+
+This is a surface finish pass: original silhouette, triangle positions,
+normals, rigid skin weights, 52-joint skeleton and all six animations are
+preserved. UV seam splits increase vertices from 24,516 to 26,642; the budget
+stays at 29,692 triangles and one material. Four embedded 2048 maps remain:
+base colour, OpenGL tangent normal, metallic/roughness (G/B), and emission.
+The atlas uses 1,068 projection charts across 178 rigid components. Original
+markings and emission are resampled; panel joints, fasteners, selective vents
+and edge wear are original procedural height fields. Paint is less metallic
+than exposed steel. No TPS Demo geometry, textures or code are incorporated.
+
+The generator asserts that reindexed triangle corners retain identical
+positions, normals, joints and weights; node, skin, animation and material
+JSON plus untouched buffer payloads must remain identical. Thus `wreck.gd`
+keeps the same bone-group triangle assignments. A higher vertex count has a
+small cost; this change is not a measured performance improvement.
+
+Matching before/after previews and a packed editable `.blend` can be made:
+
+```sh
+blender --background --factory-startup --disable-autoexec \
+  --python tools/blender/urb07_finish_preview.py -- --output <preview-folder>
+```
+
+The `.blend` is saved before preview lights and cameras are added. The GLB
+contains no lights or cameras. Asset licence remains CC BY-SA 4.0; the build
+and preview scripts follow the repository's GPL v3 licence.
+
+Validation of this revision: Khronos reported zero errors and warnings.
+Godot 4.7.2 loaded the trooper in Gasometro in a separate test session; all
+six clips were played/seeked, damage triggered death and 29 rigid bodies
+were created by the plate shatter. Runtime `errors` was empty. The map still
+reports its existing navigation-radius rounding and excluded unreachable
+Fruki-pickup warnings; those are outside this asset change.

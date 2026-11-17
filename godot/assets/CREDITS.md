@@ -10,6 +10,7 @@
 | Ambience loops and dropship engine (`assets/audio/amb_*.wav`, `ship_engine.wav`) | Synthesised by `tools/gen_ambience.py` | — |
 | Gunshots and robot phaser (`assets/audio/gun_*.wav`, `robot_phaser_*.wav`) | Synthesised by `tools/gen_gunshots.py` | — |
 | Robot URB-07, URB-07 dropship, weapons, medkit, ammo crate, menu key art | Generated for this project | — |
+| URB-07 part-specific PBR finish (`common/enemies/robot/`), retained palette source and packed editable source | Original project robot; original procedural panel seams, fasteners, vents and wear built by `tools/assets/urb07_finish.py`. No third-party art incorporated | CC BY-SA 4.0 |
 | Repair shop storefront, five-a-side pitch, playground (`common/storefronts/assistencia_loja_09m.glb`, `rio_grande_do_sul/sport/`, `park/`), football players and children (`sport/jogadores/`, `park/criancas/`), ball (`sport/bola/`) | Modelled for this game (AI-assisted Blender workflow); human bases from MakeHuman assets (CC0). The club crests on the shirts are the clubs' marks (Internacional, Grêmio), not covered by CC0 | CC0 |
 | People container, transport ship and mothership (`common/enemies/people_container`, `transport`, `mothership`) | Modelled for this game (AI-assisted Blender workflow) | CC0 |
 | Pedestrians (`assets/common/people/ped_*.glb`) | Generated for this project from [MakeHuman](https://github.com/makehumancommunity/makehuman) CC0 assets (see `assets/common/people/SOURCES.txt`) | CC0 sources |

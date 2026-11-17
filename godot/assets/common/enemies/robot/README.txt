@@ -1,6 +1,6 @@
 URB-07 COMBAT ROBOT
 
-Main file: URB-07_Combat_Robot.glb
+Main file: robot.glb
 Self-contained glTF 2.0 binary; all four PNG texture maps are embedded.
 
 MODEL
@@ -8,7 +8,7 @@ MODEL
 - Foot soles at Y=0; scene/mesh origin is (0,0,0), centered between the feet.
 - Right-side equipment is on +X: integrated green-energy forearm rifle.
 - One skinned mesh, one primitive, one opaque PBR material.
-- 29,692 triangles, 24,516 exported vertices (including UV/normal seams).
+- 29,692 triangles, 26,642 exported vertices (including UV/normal seams).
 - 52-bone humanoid hierarchy with mixamorig: names, including fingers/toes.
 - Hard armor is rigidly weighted to bones, preserving mechanical panels.
 - No camera, light, ground plane, background, or external dependency in GLB.
@@ -39,16 +39,25 @@ The skeleton uses Mixamo-compatible humanoid names/hierarchy, with a
 mechanical A-pose. Engine-specific retargeting may require bone mapping and
 rest-pose calibration; it has not been uploaded to the Mixamo service.
 
-VALIDATION
-The final GLB was loaded and rendered using the Three.js GLTFLoader.
-Khronos glTF Validator: 0 errors, 0 warnings, 0 infos, 0 hints.
-Independent checks read the delivered binary and verify triangle budget,
-geometry winding, nondegenerate triangles, normal/tangent normalization,
-UV ranges, embedded texture dimensions, skin weights, joint indices,
-inverse bind transforms, 30-fps clip samples, loop endpoints and every
-sampled pose's floor contact and rigid armor preservation.
-Floor contact tolerance is 0.00001 m to allow floating-point roundoff.
-See asset-validation.json and gltf-validation.json for the detailed results.
+FINISH REVISION
+The part-specific atlas adds procedural panel joints, fasteners, selective
+vents, coating variation and exposed edge wear. The original silhouette,
+positions, normals, rigid bone weights, skeleton and animation payloads are
+retained. UV seams add 2,126 vertices; triangle count is unchanged.
 
-URB-07_preview.png shows the actual asset in a studio preview scene.
-The preview lighting and background are not part of the GLB.
+Rebuild from the repository root:
+  tools/.venv/bin/python tools/assets/urb07_finish.py
+The original palette GLB is retained in tools/blender/src/urb07_finish/.
+Preview/source generation: tools/blender/urb07_finish_preview.py (see docs/ASSETS.md).
+
+VALIDATION
+Revised GLB: Khronos Validator 0 errors and 0 warnings. The build asserts
+identical triangle-corner positions, normals, joint indices and weights;
+nodes, skins, animations, materials and untouched buffer payloads remain
+identical. Bone-group triangle counts and all six clip durations match.
+Before/after previews use the same neutral studio light and cameras.
+This is a material refinement, not a measured FPS improvement.
+
+LICENCE
+Project artwork: CC BY-SA 4.0. No TPS Demo or other game's assets incorporated.
+Build and preview scripts: GPL v3, under the repository's source licence.
