@@ -65,3 +65,11 @@ Brand names and logos (Farmácias São João, Charrua, Fruki, Grêmio, Internaci
 | Mala de garupa (`assets/rio_grande_do_sul/gaucho/mala_garupa/`): ground, horse and shoulder versions | Modelled for this game from scratch (striped cotton saddle bag) by an AI-assisted Blender workflow | CC0 1.0 |
 | Generic storefronts (`assets/common/storefronts/`): pharmacy, market, bakery, bank shops and street-level modules, a generic fuel station | Modelled for this game (no brands) by an AI-assisted Blender workflow, furniture from the interiors pack; re-exported to share one atlas | CC0 1.0 |
 | Salvage (`assets/common/salvage/`): robot parts, the mech cannon (pickup, view model, shell), tower detector, drone battery, info glasses; damaged and LOD storefronts (`assets/common/storefronts/damaged`, `lod1`); TchêTube app icon | Modelled / drawn for this game by an AI-assisted workflow | CC0 1.0 |
+
+### Mercado shared material refinement
+
+The `mercado_publico` atlas refinement is original procedural artwork made
+for City Invaders (CC0 1.0, matching this asset group's `LICENSE.txt`).
+Generated reproducibly by `tools/assets/mercado_materials.py` using NumPy and
+Pillow. No TPS Demo textures, Material Maker graphs or other third-party
+artwork are included in this refinement.

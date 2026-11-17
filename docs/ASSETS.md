@@ -150,6 +150,35 @@ Everything there is procedural and reproducible:
 
 Godot plays video only as Ogg Theora: convert with `make_video.py convert in.mp4 out.ogv [width]`.
 
+## Mercado shared materials
+
+`tools/assets/mercado_materials.py` rebuilds the existing 2048 PBR atlas for
+`landmarks/mercado_publico/`: mineral plaster variation, wood grain and board
+joins, recessed floor grout, terracotta courses and painted-metal roughness.
+It uses original procedural textures, not the TPS demo's art or external
+Material Maker code. The caption cell is preserved pixel for pixel.
+
+```bash
+tools/.venv/bin/python tools/assets/mercado_materials.py \
+  godot/assets/rio_grande_do_sul/landmarks/mercado_publico
+```
+
+Requires NumPy and Pillow. Use `--output <folder>` for a separate candidate
+and `--report <file.json>` for geometry fingerprints and file sizes. An
+in-place rebuild is deterministic. The script replaces only embedded PNG
+buffer views and their external mirrors; vertices, UVs, indices, material
+settings, node names, layout and marker positions stay unchanged. It does
+not add triangles, materials or texture slots. PNG files may become larger;
+unchanged texture dimensions are not a measured frame-rate improvement.
+Keep both a facade and an eye-height interior comparison when revising it.
+
+The first refinement was checked against the original binary payloads (all
+non-image buffer views and scene/material definitions unchanged), with
+pixel-identical caption art, Khronos validation of all eight GLBs (no
+errors or warnings), and facade/interior captures on the Mercado map in
+a separate Godot 4.7.2 session. This was a visual/import check, not an FPS
+benchmark.
+
 ## Music
 
 Tracks (mp3 or ogg) go in `assets/<collection>/music/<station>/`. Every
