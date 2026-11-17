@@ -161,6 +161,7 @@ def load(osm_path, lat0, lon0, half_m, bounds=None, heights=None, whole=False):
     to the tile its inner point is in (west and south edges included), so
     neighbouring tiles meet without a gap or a building made twice."""
     proj = project(lat0, lon0)
+    load.foreign = []
     data = json.loads(Path(osm_path).read_text())
     area = box(*bounds) if bounds else box(-half_m, -half_m, half_m, half_m)
     water = water_polygon(data, proj, area)
@@ -226,6 +227,9 @@ def load(osm_path, lat0, lon0, half_m, bounds=None, heights=None, whole=False):
         def mine(p):
             q = p.representative_point()
             return x0 <= q.x < x1 and y0 <= q.y < y1
+        # the neighbours' buildings that reach into this tile: no part of it,
+        # but nobody can walk there (osm2gltf writes them for the navigation mesh)
+        load.foreign = [b for b in placed if not mine(b[0]) and b[0].intersects(area)]
         placed = [b for b in placed if mine(b[0])]
 
     park_sectors = []

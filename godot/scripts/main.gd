@@ -714,6 +714,12 @@ func in_bounds(p: Vector3, margin := 0.0) -> bool:
 			and p.z > bounds.position.y + margin and p.z < bounds.end.y - margin
 
 
+## Where people and robots may walk to: the map, and with the open-world
+## prototype the tiles that are in with their navigation mesh.
+func in_world(p: Vector3, margin := 0.0) -> bool:
+	return in_bounds(p, margin) or (is_instance_valid(open_world_node) and open_world_node.call("walkable", p, margin))
+
+
 ## Distance from the origin to the farthest map corner (dropship entry/exit).
 func map_reach() -> float:
 	var r := 0.0
@@ -1179,6 +1185,8 @@ func _load_city() -> void:
 		if data.has("bounds"):
 			var b: Array = data["bounds"]       # [min_x, max_x, min_z, max_z]
 			bounds = Rect2(b[0], b[2], b[1] - b[0], b[3] - b[2])
+		# a tile: the neighbouring tiles' buildings that reach into it (holes in the navmesh)
+		OpenWorld.obstacles(nav_region, data.get("foreign", []))
 	_edge_walls()
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--open-world="):
@@ -4661,10 +4669,11 @@ func _occluders() -> void:
 ## Open-world prototype (open_world.gd, docs/OPEN_WORLD.md): the maps named
 ## (comma separated) come in and go out round the player as tiles next to
 ## the round's own map. DevAgent: eval expr=main.open_world("owb").
+const OpenWorld := preload("res://scripts/open_world.gd")
 var open_world_node: Node
 func open_world(ids: String) -> Dictionary:
 	if not is_instance_valid(open_world_node):
-		open_world_node = preload("res://scripts/open_world.gd").new()
+		open_world_node = OpenWorld.new()
 		open_world_node.name = "OpenWorld"
 		open_world_node.set("main", self)
 		add_child(open_world_node)

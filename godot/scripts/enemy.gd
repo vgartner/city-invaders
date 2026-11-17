@@ -880,7 +880,7 @@ func _pick_patrol_goal() -> void:
 		if commander and post != Vector3.INF:
 			guess = post + Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU) * randf_range(3.0, 14.0)
 		var pos := NavigationServer3D.map_get_closest_point(map, guess)
-		if not get_tree().current_scene.in_bounds(pos, 10.0):
+		if not get_tree().current_scene.in_world(pos, 10.0):
 			continue
 		# only goals on the street network it stands on
 		var path := NavigationServer3D.map_get_path(map, global_position, pos, true)

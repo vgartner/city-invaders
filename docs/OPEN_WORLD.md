@@ -24,17 +24,31 @@ godot --path godot -- --devagent --open-world=owb      # or from the command lin
   (`ResourceLoader.load_threaded_request`), its scene and collision shapes
   are built on a worker thread, and one frame puts it into the tree. Beyond
   220 m (`UNLOAD_M`) it is freed.
+- **Navigation**: once in, the tile gets a navigation mesh of its own. Its
+  colliders are read (1 ms), the mesh is baked on a thread
+  (`NavigationServer3D.bake_from_source_geometry_data_async`, 0.1 s for a
+  250 m tile) and added as a region of the same map. Two meshes baked apart
+  stop an agent's radius short of the shared edge, so along the tile's edge,
+  every 2.5 m where both sides can be walked, a `NavigationLink3D` joins
+  them (26 on the test edge). The neighbours' buildings that reach into a
+  tile (`<id>.spawn.json` `foreign`, written by the pipeline in tile mode)
+  are `NavigationObstacle3D`s: holes in its mesh, in the round's map too.
+- **People and robots**: the tile brings 14 passers-by of its own
+  (`TILE_PEOPLE`); people and robots choose goals in a tile that has its
+  mesh (`main.in_world`), and robots chasing a player follow across the
+  edge. When a tile is due to leave, its passers-by leave the streets with
+  it; a robot in it keeps the tile until it is gone.
 - The map's invisible border walls move out to enclose the tiles, and its
   horizon (far ground and towers, which would stand where the tiles are) is
   hidden.
-- `main.open_world_node.report()` lists every step with its time;
+- `main.open_world_node.report()` lists every step with its time,
+  `census()` the people and robots in each tile;
   `open_world_node.threaded = false` builds on the main thread instead, to
   compare.
 
-A tile brings its streets, buildings and collision only. **Not yet**: the
-navigation mesh (so no people, robots or traffic there), props (trees,
-lamps, benches), landmarks, occluders, pickups, and anything about
-multiplayer. The round's own map never leaves.
+**Not yet**: traffic (the road graph is the round's map's), props (trees,
+lamps, benches), landmarks, occluders, pickups, robots spawned in a tile,
+and anything about multiplayer. The round's own map never leaves.
 
 ## The test tiles
 
@@ -71,6 +85,15 @@ The streets continue across the edge, the player walks from one tile into
 the other, and `errors` stays empty through the rounds of loading and
 unloading.
 
+**Navigation** (the same machine): the tile's mesh was baked and linked
+3 s after the player came near; a path from the round's map to a point 60 m
+into the tile was found; of three robots set down in the map with the
+player standing in the tile, two had crossed the edge 24 s later, and the
+tile stayed while they were in it; `errors` empty. The passers-by thinned
+out during the test because the busy machine ran under 48 fps (the
+performance guard), so how they spread between map and tile over time is
+still to be watched.
+
 **Textures were the weight.** The first tile cost about 0.8 GB of video
 memory: Godot imports the images it extracts from a glb lossless, four
 bytes a pixel. Imported compressed for the GPU
@@ -89,9 +112,10 @@ models and people are still imported lossless and hold 4-6 GB
 2. **Edges, the rest.** A tile does not know the neighbouring tile's
    buildings that reach over the edge: its trees and props may stand inside
    one, and a wall facing one gets windows instead of a blind wall.
-3. **Navigation by tile**: a navigation region per tile, linked at the
-   edges, baked when the tile is built instead of at load.
-4. **People, traffic, robots, props and landmarks by tile**, with the road
+3. **Navigation, the rest.** The round's map still bakes its mesh at load,
+   on the main thread (most of the loading time): every tile, the first
+   one too, should bake on a thread or come with its mesh baked.
+4. **Traffic, props, landmarks and robot spawns by tile**, with the road
    graph joined across tiles.
 5. **A far view**: low buildings of the tiles that are not loaded.
 6. **Multiplayer**: the server keeps the tiles round every player.

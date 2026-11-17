@@ -878,6 +878,7 @@ def main():
         films = {k: v["film"] for k, v in blds.items() if v.get("film")}
     area, buildings, parks, streets = osmcity.load(args.osm, args.lat, args.lon, args.half, args.bounds, heights,
                                                    whole=args.tile)
+    foreign = list(osmcity.load.foreign)      # neighbouring tiles' buildings reaching into this one
     if TERRAIN:
         # flat in reality: the hand-made landmarks' lots, squares, small parks, pitches, playgrounds
         # a landmark's lot is level with the car street in front of it (the Usina with
@@ -1723,7 +1724,11 @@ def main():
     bx = map_box.bounds   # Godot x/z: x east, z = -north
     args.out.with_suffix(".spawn.json").write_text(json.dumps({
         "spawn": spawn, "half": args.half, "crowd": crowd, "elev": elev,
-        "bounds": [bx[0], bx[2], -bx[3], -bx[1]]}))     # [min_x, max_x, min_z, max_z]
+        "bounds": [bx[0], bx[2], -bx[3], -bx[1]],       # [min_x, max_x, min_z, max_z]
+        # a tile: where the neighbours' buildings stand in it - holes in its navigation mesh
+        "foreign": [{"ring": [[round(x, 2), round(-y, 2)] for x, y in list(p.exterior.coords)[:-1]],
+                     "base": round(min(ground(x, y) for x, y in p.exterior.coords), 2), "height": round(h, 1)}
+                    for p, h, _t in foreign]}))
 
     # ---- road graph for traffic ---------------------------------------------
     graph = _road_graph([(one, ln) for k, one, ln in traffic_roads if k in VEHICLE_ROADS], area)

@@ -657,7 +657,7 @@ func _pick_goal(radius: float, from := Vector3.INF, away := Vector3.ZERO) -> voi
 		var dir := away if away != Vector3.ZERO and attempt < PICK_TRIES / 2 else Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU)
 		dir = dir.rotated(Vector3.UP, randf_range(-0.6, 0.6))
 		var pos := NavigationServer3D.map_get_closest_point(map, base + dir * randf_range(radius * 0.5, radius))
-		if not get_tree().current_scene.in_bounds(pos, 10.0) or pos.distance_to(global_position) < radius * 0.3:
+		if not get_tree().current_scene.in_world(pos, 10.0) or pos.distance_to(global_position) < radius * 0.3:
 			continue    # off the map, or snapped back next to us (a wall in the way)
 		if _reaches(pos):
 			_pause = randf_range(1.0, 5.0)
