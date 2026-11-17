@@ -70,7 +70,7 @@ def buildings(map_id):
         return _cache[stamp]
     heights = {k: v["height"] for k, v in read_json(user).items() if not k.startswith("_") and v.get("height")}
     _, bl, _, _ = osmcity.load(ROOT / c["osm"], c["lat"], c["lon"], c.get("half", 150),
-                                 c.get("bounds"), heights)
+                                 c.get("bounds"), heights, whole=bool(c.get("tile")))
     terrain = None
     if c.get("terrain"):
         from osm2gltf import Terrain
@@ -189,6 +189,8 @@ def rebuild(map_id):
         cmd += ["--terrain", str(ROOT / c["terrain"])]
     if c.get("ring"):
         cmd += ["--ring"]                                # car roads end at the outer road loop
+    if c.get("tile"):
+        cmd += ["--tile"]                                # a tile of a larger city: whole buildings, no horizon
     if c.get("kit_facades"):
         k = c["kit_facades"]                             # "all", or the block (x, z) whose buildings get them
         cmd += ["--kit-facades", k if isinstance(k, str) else ",".join(map(str, k))]
@@ -196,6 +198,12 @@ def rebuild(map_id):
             "--materials", str(ROOT / "godot/assets/materials"), "--start", *map(str, c["start"]),
             "--out", str(ROOT / c["out"])]
     subprocess.run(cmd, check=True, cwd=ROOT)
+    # the new glb's textures: imported compressed for the GPU (texture_imports.py)
+    out = ROOT / c["out"]
+    glbs = [g for g in (out, out.with_name(out.stem + "_horizon.glb"), out.with_name(out.stem + "_collision.glb"))
+            if g.exists()]
+    subprocess.run([sys.executable, str(ROOT / "tools" / "map" / "texture_imports.py"), "--force", *map(str, glbs)],
+                   check=True, cwd=ROOT)
 
 
 def main():

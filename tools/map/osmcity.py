@@ -148,18 +148,30 @@ def water_polygon(data, proj, extent):
     return unary_union(water).intersection(extent) if water else None
 
 
-def load(osm_path, lat0, lon0, half_m, bounds=None, heights=None):
+TILE_CONTEXT_M = 80.0     # a tile places its buildings among the neighbours this far out
+
+
+def load(osm_path, lat0, lon0, half_m, bounds=None, heights=None, whole=False):
     """bounds: (min_x, min_y, max_x, max_y) in metres (y north), else a square
     of half size half_m. Water inside the bounds is cut out of the area.
     heights: {"way/123": metres} overrides (tools/map/building_photo.py); every
-    building's tags carry its OSM id as "@id"."""
+    building's tags carry its OSM id as "@id".
+    whole: the map is a tile of a larger city (docs/OPEN_WORLD.md) - no free
+    margin at its edge, and a building is not cut there: it belongs, whole,
+    to the tile its inner point is in (west and south edges included), so
+    neighbouring tiles meet without a gap or a building made twice."""
     proj = project(lat0, lon0)
     data = json.loads(Path(osm_path).read_text())
     area = box(*bounds) if bounds else box(-half_m, -half_m, half_m, half_m)
     water = water_polygon(data, proj, area)
     if water is not None and not water.is_empty:
         area = area.difference(water)
-    inner = area.buffer(-EDGE_MARGIN_M, join_style=2)
+    inner = area if whole else area.buffer(-EDGE_MARGIN_M, join_style=2)
+    x0, y0, x1, y1 = (bounds or (-half_m, -half_m, half_m, half_m))
+    if whole:
+        # the same buildings, in the same order, as the neighbouring tiles see
+        near = box(x0 - TILE_CONTEXT_M, y0 - TILE_CONTEXT_M, x1 + TILE_CONTEXT_M, y1 + TILE_CONTEXT_M)
+        near_water = water_polygon(data, proj, near)
     buildings, parks, streets = [], [], []
     ways = {el["id"]: el for el in data["elements"] if el["type"] == "way"}
     for el in data["elements"]:
@@ -188,7 +200,14 @@ def load(osm_path, lat0, lon0, half_m, bounds=None, heights=None):
     buildings.sort(key=lambda b: -b[0].area)
     placed, placed_union = [], []
     for poly, tags in buildings:
-        poly = Polygon(poly.exterior).intersection(inner)
+        if whole:
+            if not poly.intersects(near):
+                continue
+            poly = Polygon(poly.exterior)
+            if near_water is not None and not near_water.is_empty:
+                poly = poly.difference(near_water)
+        else:
+            poly = Polygon(poly.exterior).intersection(inner)
         poly = poly.buffer(-ERODE_M, join_style=2)
         if placed_union:
             poly = poly.difference(unary_union(placed_union).buffer(MIN_GAP_M, join_style=2))
@@ -202,6 +221,12 @@ def load(osm_path, lat0, lon0, half_m, bounds=None, heights=None):
             h = (heights or {}).get(tags["@id"]) or building_height(tags, p.area)
             placed.append((p, float(h), tags))
             placed_union.append(p)
+
+    if whole:
+        def mine(p):
+            q = p.representative_point()
+            return x0 <= q.x < x1 and y0 <= q.y < y1
+        placed = [b for b in placed if mine(b[0])]
 
     park_sectors = []
     for park in parks:

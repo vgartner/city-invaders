@@ -858,6 +858,9 @@ def main():
     ap.add_argument("--kit-facades", default="",
                     help="x,z (game metres): the block round that point gets the facades baked from the modular kit "
                          "(godot/assets/common/facades_kit) on its generated buildings; \"all\" for every block")
+    ap.add_argument("--tile", action="store_true",
+                    help="a tile of a larger city (docs/OPEN_WORLD.md): buildings are not cut at the edge "
+                         "(each belongs whole to one tile) and no horizon is made")
     ap.add_argument("--ring", action="store_true",
                     help="traffic keeps inside the outermost road loop of the map (no car route runs into the border)")
     ap.add_argument("--out", type=Path, required=True, help="output .glb")
@@ -873,7 +876,8 @@ def main():
         models = {k: v["model"] for k, v in blds.items() if v.get("model")}
         fits = {k: v for k, v in blds.items() if v.get("model")}
         films = {k: v["film"] for k, v in blds.items() if v.get("film")}
-    area, buildings, parks, streets = osmcity.load(args.osm, args.lat, args.lon, args.half, args.bounds, heights)
+    area, buildings, parks, streets = osmcity.load(args.osm, args.lat, args.lon, args.half, args.bounds, heights,
+                                                   whole=args.tile)
     if TERRAIN:
         # flat in reality: the hand-made landmarks' lots, squares, small parks, pitches, playgrounds
         # a landmark's lot is level with the car street in front of it (the Usina with
@@ -1633,7 +1637,12 @@ def main():
             wall(sky, fam, a2, b2, tbase + hh, math.dist(a2, b2) / ftw, hh / fth, -1.0, top_abs=True)
         sky.poly(pbr("concrete_roof"), corners + corners[:1], tbase + hh, 6.0, absolute=True)
         n_sky += 1
-    _export(sky, images, normals, roughs, args.out.with_name(args.out.stem + "_horizon.glb"))
+    horizon_glb = args.out.with_name(args.out.stem + "_horizon.glb")
+    if args.tile:
+        horizon_glb.unlink(missing_ok=True)       # the neighbouring tiles are the far view
+        horizon_glb.with_name(horizon_glb.name + ".import").unlink(missing_ok=True)
+    else:
+        _export(sky, images, normals, roughs, horizon_glb)
     _export(col, images, normals, roughs, args.out.with_name(args.out.stem + "_collision.glb"))
     print("horizon towers:", n_sky)
 

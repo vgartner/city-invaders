@@ -14,12 +14,12 @@
  ],
  "out": "godot/city/owb.glb",
  "bounds": [
-  -100,
+  0,
   100,
   250,
   350
  ],
- "ring": true,
  "kit_facades": "all",
- "user": "maps/poa/user"
+ "user": "maps/poa/user",
+ "tile": true
 }

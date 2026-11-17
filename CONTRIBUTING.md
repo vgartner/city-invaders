@@ -7,7 +7,8 @@ all welcome.
 
 1. Install [Godot 4.7](https://godotengine.org), [Git LFS](https://git-lfs.com) and Python 3.12+,
    then clone (the maps, models and sounds come through Git LFS) and import once:
-   `cd godot && godot --headless --path . --import`.
+   `python3 tools/map/texture_imports.py` (the maps' textures use an eighth of
+   the video memory with it), then `cd godot && godot --headless --path . --import`.
 2. `./run-godot.sh` (starts the game with the DevAgent enabled).
 3. Working with an AI agent (Codex, Claude Code, Cursor...)? Point it at
    [AGENTS.md](AGENTS.md); setup per tool is in [docs/AGENTS.md](docs/AGENTS.md).

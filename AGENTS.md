@@ -16,6 +16,7 @@ can play it, look at it and test its own changes.
 ```bash
 git lfs install                      # models, textures, sounds and maps come through Git LFS
 git clone https://github.com/vgartner/city-invaders.git && cd city-invaders
+python3 tools/map/texture_imports.py                        # the maps' textures: compressed for the GPU
 cd godot && godot --headless --path . --import && cd ..     # once, a few minutes
 python3 -m venv tools/.venv && tools/.venv/bin/pip install numpy shapely trimesh pillow scipy requests duckdb
 ./run-godot.sh                       # the game, with the DevAgent on port 24690

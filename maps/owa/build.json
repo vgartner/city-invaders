@@ -14,12 +14,12 @@
  ],
  "out": "godot/city/owa.glb",
  "bounds": [
-  -100,
+  0,
   -150,
   250,
   100
  ],
- "ring": true,
  "kit_facades": "all",
- "user": "maps/poa/user"
+ "user": "maps/poa/user",
+ "tile": true
 }

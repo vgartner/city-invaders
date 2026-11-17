@@ -38,47 +38,57 @@ multiplayer. The round's own map never leaves.
 
 ## The test tiles
 
-Two tiles cut from the Centro's sources, sharing an edge (z = -100):
+Two 250 m tiles cut from the Centro's sources, sharing an edge (z = -100),
+with `"tile": true` in their `build.json` ([MAP_PIPELINE.md](MAP_PIPELINE.md)):
+a building on the edge belongs whole to one of them, and neither keeps a
+free margin there.
 
 ```bash
-tools/.venv/bin/python tools/map/building_photo.py rebuild owa    # 350 x 250 m, the round's map
+tools/.venv/bin/python tools/map/building_photo.py rebuild owa    # the round's map
 tools/.venv/bin/python tools/map/building_photo.py rebuild owb    # its northern neighbour
 godot --headless --path godot --import
 ```
 
 `maps/owa/build.json` and `maps/owb/build.json` are in the repository; the
-built files (`godot/city/owa*`, `owb*`, about 95 and 72 MB) are not.
+built files (`godot/city/owa*`, `owb*`, about 85 and 53 MB) are not.
 
 ## What it showed (November 2026)
 
-One run on a MacBook M3 Max that was swapping at the time, so the frame
-times are rough - to be repeated on a quiet machine:
+Runs on a MacBook M3 Max that was swapping at the time, so the frame times
+are rough - to be repeated on a quiet machine:
 
-| | |
-|---|---|
-| Reading the tile's files (loader thread) | 0.9 s |
-| Building scene and collision (worker thread) | 0.2-0.3 s |
-| The frame that puts it into the tree | 12-14 ms |
-| Worst frame while a tile came in, built on a worker thread | 59-200 ms over four runs |
-| Worst frame, built on the main thread | 156 ms |
-| Texture memory, one tile more | about +0.8 GB (5.4 to 6.3 GB), given back when it leaves |
+| | 350 x 250 m, cut at the edge | 250 m tile |
+|---|---|---|
+| Reading the tile's files (loader thread) | 0.9 s | |
+| Building scene and collision (worker thread) | 0.2-0.3 s | |
+| The frame that puts it into the tree | 12-14 ms | |
+| Until the tile is in, from 120 m away | 1-2 s | 1.5-2.5 s |
+| Worst frame while it came in (worker thread, 3-4 runs) | 59-200 ms | 37-69 ms |
+| Worst frame, built on the main thread | 156 ms | 100 ms |
+| Buildings in both tiles / cut at the edge | cut, 3 m free each side | 0 in both, 17 whole across the edge |
 
 The streets continue across the edge, the player walks from one tile into
-the other, and `errors` stays empty through four rounds of loading and
-unloading. The step on the main thread is small; the remaining hitches come
-from elsewhere (uploading the tile's textures and meshes to the GPU is the
-first suspect) and need a profile.
+the other, and `errors` stays empty through the rounds of loading and
+unloading.
+
+**Textures were the weight.** The first tile cost about 0.8 GB of video
+memory: Godot imports the images it extracts from a glb lossless, four
+bytes a pixel. Imported compressed for the GPU
+(`tools/map/texture_imports.py`, now part of `rebuild` and of the setup),
+the 250 m tile's 119 million pixels take 0.1-0.2 GB. The game's reading of
+texture memory moves by more than that between runs, because the game's own
+models and people are still imported lossless and hold 4-6 GB
+([PERFORMANCE.md](PERFORMANCE.md)): that is the next thing to compress.
 
 ## What an open world still needs
 
-1. **Smaller tiles and less texture.** A 350 x 250 m tile holds 0.8 GB of
-   textures, most of it one photo per building. Kit facades
-   ([MAP_PIPELINE.md](MAP_PIPELINE.md)) cost a building only its footprint,
-   height, style and colour: tiles of about 250 m with photos kept for the
-   main streets and the landmarks.
-2. **Clean edges.** The pipeline cuts a building at the tile's edge and
-   keeps 3 m free inside it (`EDGE_MARGIN_M`): a building belongs whole to
-   the tile its centre is in, and streets are cut exactly at the edge.
+1. **Less texture still.** Most of a tile is one photo per building. Kit
+   facades ([MAP_PIPELINE.md](MAP_PIPELINE.md)) cost a building only its
+   footprint, height, style and colour: photos kept for the main streets
+   and the landmarks. And the game's own textures compressed for the GPU.
+2. **Edges, the rest.** A tile does not know the neighbouring tile's
+   buildings that reach over the edge: its trees and props may stand inside
+   one, and a wall facing one gets windows instead of a blind wall.
 3. **Navigation by tile**: a navigation region per tile, linked at the
    edges, baked when the tile is built instead of at load.
 4. **People, traffic, robots, props and landmarks by tile**, with the road

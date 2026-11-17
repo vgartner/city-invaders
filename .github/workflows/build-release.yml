@@ -114,7 +114,9 @@ jobs:
           restore-keys: import-${{ env.GODOT_VERSION }}-
 
       - name: Import the project
-        run: godot --headless --path godot --import 2>&1 | tail -n 40
+        run: |
+          python3 tools/map/texture_imports.py        # the maps' textures: compressed for the GPU
+          godot --headless --path godot --import 2>&1 | tail -n 40
 
       - name: Export the game and one package per map
         run: |

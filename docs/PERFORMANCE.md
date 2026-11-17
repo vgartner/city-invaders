@@ -960,3 +960,17 @@ triangles - the kit materials are one per style, part, colour and finish
 machine was swapping (three walks round the block gave 62, 75 and 35 fps).
 Still to measure on a quiet machine, with the parallax modes
 (`main.set_kit_parallax(0 / 1 / 2)`) in the same session.
+
+## Texture memory (November 2026)
+
+The DevAgent `perf` reports 4-6 GB of texture memory in a round. Godot
+imports a texture lossless unless told otherwise (the editor switches one
+to GPU compression when it draws it in 3D; a headless import never does),
+and no `.import` file is in the repository, so every texture is four bytes
+a pixel in video memory. The maps' textures (about 200 million pixels a
+map, 1.1 GB) are now imported compressed (`tools/map/texture_imports.py`,
+S3TC/BPTC: 0.15-0.25 GB); the pictures look the same. The game's own assets
+are not yet: `godot/assets` holds 4.3 billion pixels of textures - the
+interiors 740 million, the cars 370, the sport props 290, the weapons 240 -
+of which a round loads a part. Compressing those (not the interface's
+images) is the next step, with a look at each kind of model afterwards.

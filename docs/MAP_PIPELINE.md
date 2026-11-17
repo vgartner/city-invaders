@@ -57,6 +57,12 @@ one folder of hand edits (the Centro phases do). `bounds` are metres from the ce
 `half` makes a square instead. Keep maps around 400 x 400 m: bigger maps cost
 frame rate.
 
+`"tile": true` makes the map a tile of a larger city ([OPEN_WORLD.md](OPEN_WORLD.md)):
+no free margin at its edge, a building is not cut there but belongs whole to
+the tile its inner point is in (the same answer in the neighbouring tile,
+which places its buildings among the same neighbours up to 80 m out), and
+no horizon is made.
+
 ## 2. Data
 
 ```bash
@@ -123,6 +129,14 @@ tools/.venv/bin/python tools/map/building_photo.py rebuild <map>
 cd godot && godot --headless --path . --import        # import the new glb
 ./run-godot.sh
 ```
+
+`rebuild` also writes the map's images next to the glb
+(`godot/city/<map>_<n>.png`, the files Godot would extract) with import
+settings that compress them for the GPU (`tools/map/texture_imports.py`):
+Godot's own default for an extracted image is lossless, four bytes a pixel
+in video memory - over a gigabyte for one map - and only the editor, drawing
+the texture in 3D, would change it. After a fresh clone run
+`python3 tools/map/texture_imports.py` once before the first import.
 
 Add the map to `MAPS` in `godot/scripts/main.gd` to make it a phase.
 
