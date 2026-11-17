@@ -5,7 +5,8 @@ extends Node
 ## <id>_collision.glb, <id>.spawn.json with its bounds): its meshes, its
 ## collision and a navigation mesh of its own, baked on a thread once it is
 ## in and joined to the meshes round it by links across the edge, so people
-## and robots walk over. No traffic, props or landmarks of its own yet.
+## and robots walk over; its street furniture and its landmarks. No traffic
+## of its own yet.
 ##
 ## Started by `main.open_world("owb")` (DevAgent `eval`) or `-- --open-world=owb`.
 ## Each step is timed (`report()`): reading the files on a loader thread,
@@ -18,6 +19,7 @@ const CHECK_S := 0.25
 const LINK_STEP_M := 2.5    # a navigation link every so often along a tile's edge
 const LINK_REACH_M := 1.2   # from this far outside the edge to this far inside
 const TILE_PEOPLE := 14     # passers-by a tile brings
+const FRAME_MS := 4.0       # street furniture: this much building a frame
 
 var main: Node
 var threaded := true        # false: build on the main thread (to compare the hitch)
@@ -99,18 +101,49 @@ func _process(dt: float) -> void:
 		if t["state"] == "out" and d < LOAD_M:
 			t["state"] = "loading"
 			t["t0"] = Time.get_ticks_usec()
-			ResourceLoader.load_threaded_request(_glb(id), "", true)
-			if ResourceLoader.exists(_col(id)):
-				ResourceLoader.load_threaded_request(_col(id), "", true)
+			t["paths"] = _files(id)
+			for path in t["paths"]:
+				ResourceLoader.load_threaded_request(path, "", true)
 		elif t["state"] == "in" and d > UNLOAD_M:
 			if not _vacate(t["rect"]):
 				continue                       # a robot is in it: the tile stays
 			var t0 := Time.get_ticks_usec()
 			t["nav"] = false
+			for lm in t.get("landmarks", []):
+				main._landmark_nodes.erase(lm)
+			t.erase("landmarks")
+			t.erase("held")
 			(t["node"] as Node).queue_free()
 			t["node"] = null
 			t["state"] = "out"
 			_note(id, "unload", t0)
+
+
+## What a tile reads on the loader thread: its city, its collision, and the
+## models of its landmarks (a shop closed until someone walks in: its light
+## version; a set laid out from pieces: the pieces).
+func _files(id: String) -> Array:
+	var out := [_glb(id)]
+	if ResourceLoader.exists(_col(id)):
+		out.append(_col(id))
+	var path := "res://city/%s.landmarks.json" % id
+	if not FileAccess.file_exists(path):
+		return out
+	var data = JSON.parse_string(FileAccess.get_file_as_string(path))
+	for l in (data if data is Array else []):
+		var model := String(l.get("model", ""))
+		var models := []
+		if model.ends_with("layout.json") and FileAccess.file_exists(model):
+			var lay: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(model))
+			for inst in lay.get("instances", []):
+				models.append(model.get_base_dir().path_join(inst["model"]).simplify_path())
+		elif not model.ends_with(".json"):
+			var lod: String = main._lod_path(model)
+			models.append(lod if main._closed_shop(l) and ResourceLoader.exists(lod) else model)
+		for m in models:
+			if ResourceLoader.exists(m) and not out.has(m):
+				out.append(m)
+	return out
 
 
 func _distance(r: Rect2, p: Vector2) -> float:
@@ -120,9 +153,7 @@ func _distance(r: Rect2, p: Vector2) -> float:
 
 
 func _poll_loading(id: String, t: Dictionary) -> void:
-	var paths := [_glb(id)]
-	if ResourceLoader.exists(_col(id)):
-		paths.append(_col(id))
+	var paths: Array = t["paths"]
 	for path in paths:
 		var st := ResourceLoader.load_threaded_get_status(path)
 		if st == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
@@ -130,7 +161,12 @@ func _poll_loading(id: String, t: Dictionary) -> void:
 		if st != ResourceLoader.THREAD_LOAD_LOADED:
 			t["state"] = "failed"
 			return
-	t["scenes"] = paths.map(func(path: String) -> PackedScene: return ResourceLoader.load_threaded_get(path))
+	# the city and its collision first; the landmarks' models are held so the
+	# main thread's load() of each finds it ready
+	var loaded: Array = paths.map(func(path: String) -> Resource: return ResourceLoader.load_threaded_get(path))
+	var n := 2 if ResourceLoader.exists(_col(id)) else 1
+	t["scenes"] = loaded.slice(0, n)
+	t["held"] = loaded.slice(n)
 	_note(id, "read files (loader thread)", t["t0"])
 	t["t0"] = Time.get_ticks_usec()
 	if threaded:
@@ -186,7 +222,63 @@ func _enter(id: String, t: Dictionary) -> void:
 	main._kit_facades(city, true)
 	t["state"] = "in"
 	_note(id, "enter the tree (main thread)", t0)
-	_bake(id, t)
+	await _furnish(id, t, root)
+	if is_instance_valid(root) and t["node"] == root:
+		_bake(id, t)
+
+
+## The tile's street furniture (<id>.props.json: trees, lamps, signs, benches)
+## and its landmarks and shops (<id>.landmarks.json, <id>.shells.json), built
+## the way the round's map builds its own, a few per frame. They are scenery
+## with collision: a tile's lamp cannot be shot out or knocked over.
+func _furnish(id: String, t: Dictionary, root: Node3D) -> void:
+	var t0 := Time.get_ticks_usec()
+	var props: Node3D = main.Props.new()
+	props.name = "Props"
+	root.add_child(props)
+	await props.call("build", "res://city/%s.props.json" % id, FRAME_MS)
+	if not is_instance_valid(root) or t["node"] != root:
+		return
+	for body in props.find_children("*", "CollisionObject3D", true, false):
+		for key in ["prop_index", "crush"]:      # indices into the map's own props
+			if body.has_meta(key):
+				body.remove_meta(key)
+	_note(id, "street furniture, %d pieces, %d ms a frame (main thread)" % [props.get_child_count(), FRAME_MS], t0)
+	var worst := 0.0
+	var total := 0.0
+	var slow := []
+	var n0: int = main._landmark_nodes.size()
+	var pickups: int = main.landmark_pickups.size()
+	var todo := []
+	for kind in ["landmarks", "shells"]:
+		var path := "res://city/%s.%s.json" % [id, kind]
+		if FileAccess.file_exists(path):
+			var data = JSON.parse_string(FileAccess.get_file_as_string(path))
+			for l in (data if data is Array else []):
+				todo.append([kind, l])
+	for item in todo:
+		await get_tree().process_frame
+		if not is_instance_valid(root) or t["node"] != root:
+			return
+		var t1 := Time.get_ticks_usec()
+		main.landmark_into = root
+		if item[0] == "landmarks":
+			main._landmark(item[1])
+		else:
+			main._shell(item[1])
+		main.landmark_into = null
+		var ms := (Time.get_ticks_usec() - t1) / 1000.0
+		if ms > 20.0:
+			slow.append("%s %.0f ms" % [String(item[1].get("model", item[1].get("kind", "?"))).get_file(), ms])
+		worst = maxf(worst, ms)
+		total += ms
+	t["landmarks"] = main._landmark_nodes.slice(n0)
+	main.landmark_pickups.resize(pickups)        # the round's pickups are already out
+	events.append({"id": id, "what": "%d landmarks and shops, one a frame (main thread): worst %.1f ms %s" % [todo.size(), worst, ", ".join(slow)],
+			"ms": snappedf(total, 0.1)})
+	# their collision is merged a frame later: the navmesh bake reads it
+	for k in 2:
+		await get_tree().physics_frame
 
 
 ## Is the point inside a tile people can walk in (its navigation mesh is in)?
@@ -244,16 +336,20 @@ func _baked(id: String, root: Node3D, nm: NavigationMesh, t1: int) -> void:
 	root.add_child(region)
 	# the map takes the new region in on a later sync (built on a thread): link after it
 	var map: RID = main.get_world_3d().navigation_map
-	var before := NavigationServer3D.map_get_iteration_id(map)
+	var probe := Vector3.INF
+	if nm.get_polygon_count() > 0:
+		probe = nm.get_vertices()[nm.get_polygon(0)[0]]
 	for k in 600:
 		await get_tree().physics_frame
-		if NavigationServer3D.map_get_iteration_id(map) != before and k > 2:
+		if probe == Vector3.INF or NavigationServer3D.map_get_closest_point(map, probe).distance_to(probe) < 0.3:
 			break
 	if not is_instance_valid(root):
 		return
+	_note(id, "navigation region taken in by the map", t0)
+	t0 = Time.get_ticks_usec()
 	var n := _link(root, tiles[id]["rect"])
 	tiles[id]["nav"] = true
-	_note(id, "navigation region and %d links across the edge (main thread)" % n, t0)
+	_note(id, "%d links across the edge (main thread)" % n, t0)
 	# passers-by of its own (the server's): they leave with the tile
 	if multiplayer.is_server():
 		for k in TILE_PEOPLE:
@@ -276,6 +372,9 @@ func _link(root: Node3D, r: Rect2) -> int:
 		var out := (b - a).normalized().orthogonal()
 		if out.dot((a + b) / 2.0 - centre) < 0:
 			out = -out
+		var beyond := (a + b) / 2.0 + out * 5.0
+		if not main.in_world(Vector3(beyond.x, 0.0, beyond.y)):
+			continue                             # nothing walkable on that side
 		var steps := int(a.distance_to(b) / LINK_STEP_M)
 		for k in range(1, steps):
 			var e := a.lerp(b, float(k) / steps)

@@ -55,12 +55,18 @@ const CRUSH := {"waste_basket": [0.25, 2.0], "crate": [0.25, 2.0], "plastic_crat
 		"container": [1.0, 3.0], "bike_rack": [1.0, 4.0], "orelhao": [1.0, 5.0]}
 
 
-func build(path: String) -> void:
+## frame_ms > 0: a few props a frame, that many milliseconds each (a tile
+## coming into a running round, open_world.gd) - await it then.
+func build(path: String, frame_ms := 0.0) -> void:
 	if not FileAccess.file_exists(path):
 		return
 	var props: Array = JSON.parse_string(FileAccess.get_file_as_string(path))
 	_covered_n = 0
+	var t0 := Time.get_ticks_usec()
 	for p in props:
+		if frame_ms > 0.0 and (Time.get_ticks_usec() - t0) / 1000.0 > frame_ms:
+			await get_tree().process_frame
+			t0 = Time.get_ticks_usec()
 		var pos := Vector3(p["pos"][0], p["pos"][1], p["pos"][2])
 		var yaw: float = p.get("yaw", 0.0)
 		match p["type"]:

@@ -24,7 +24,15 @@ godot --path godot -- --devagent --open-world=owb      # or from the command lin
   (`ResourceLoader.load_threaded_request`), its scene and collision shapes
   are built on a worker thread, and one frame puts it into the tree. Beyond
   220 m (`UNLOAD_M`) it is freed.
-- **Navigation**: once in, the tile gets a navigation mesh of its own. Its
+- **Street furniture and landmarks**: the tile's `<id>.props.json` (trees,
+  lamps, signs, benches, bus shelters) is built by the same `props.gd` as
+  the map's, 4 ms of it a frame; its landmarks and shops
+  (`<id>.landmarks.json`, `<id>.shells.json`) by the map's own
+  `_landmark`, one a frame, their models read beforehand on the loader
+  thread. They leave with the tile. A tile's props are scenery with
+  collision: a lamp there cannot be shot out or knocked over, and its
+  pickups and the map editor's edits are not applied.
+- **Navigation**: after that the tile gets a navigation mesh of its own. Its
   colliders are read (1 ms), the mesh is baked on a thread
   (`NavigationServer3D.bake_from_source_geometry_data_async`, 0.1 s for a
   250 m tile) and added as a region of the same map. Two meshes baked apart
@@ -46,9 +54,9 @@ godot --path godot -- --devagent --open-world=owb      # or from the command lin
   `open_world_node.threaded = false` builds on the main thread instead, to
   compare.
 
-**Not yet**: traffic (the road graph is the round's map's), props (trees,
-lamps, benches), landmarks, occluders, pickups, robots spawned in a tile,
-and anything about multiplayer. The round's own map never leaves.
+**Not yet**: traffic (the road graph is the round's map's), occluders,
+pickups, robots spawned in a tile, and anything about multiplayer. The
+round's own map never leaves.
 
 ## The test tiles
 
@@ -94,6 +102,15 @@ out during the test because the busy machine ran under 48 fps (the
 performance guard), so how they spread between map and tile over time is
 still to be watched.
 
+**Street furniture and landmarks**: the test tile has 850 pieces of street
+furniture and nine landmarks and shops - the Mercado Público, the Paço
+Municipal, the Chalé da Praça XV, the Talavera fountain. With them the tile
+is complete (furniture, landmarks, navigation, links) 1.2-2.4 s after the
+player comes near. The furniture takes 0.36 s spread over frames; a shop
+costs a frame of about 25 ms; the Mercado Público, a set laid out from many
+pieces, costs one frame of 170 ms - the worst frame of each of three runs
+(174-180 ms). Building a set a few pieces a frame is still to do.
+
 **Textures were the weight.** The first tile cost about 0.8 GB of video
 memory: Godot imports the images it extracts from a glb lossless, four
 bytes a pixel. Imported compressed for the GPU
@@ -115,8 +132,9 @@ models and people are still imported lossless and hold 4-6 GB
 3. **Navigation, the rest.** The round's map still bakes its mesh at load,
    on the main thread (most of the loading time): every tile, the first
    one too, should bake on a thread or come with its mesh baked.
-4. **Traffic, props, landmarks and robot spawns by tile**, with the road
-   graph joined across tiles.
+4. **Traffic and robot spawns by tile**, with the road graph joined across
+   tiles; a tile's props breakable like the map's; a big landmark built
+   over several frames.
 5. **A far view**: low buildings of the tiles that are not loaded.
 6. **Multiplayer**: the server keeps the tiles round every player.
 7. **The pipeline in tiles**: one command that cuts a city into a grid and

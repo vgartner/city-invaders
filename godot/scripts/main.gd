@@ -4434,7 +4434,7 @@ func _shell(sh: Dictionary) -> void:
 	c /= ring.size()
 	var root := Node3D.new()
 	root.name = "shell_" + String(sh["kind"])
-	nav_region.add_child(root)
+	_landmark_parent().add_child(root)
 	_landmark_nodes.append(root)
 	root.set_meta("landmark", {"id": "shell", "model": sh["interior"], "label": sh["caption"]})
 	var wall := StandardMaterial3D.new()
@@ -4607,7 +4607,7 @@ func _landmark_site(l: Dictionary) -> void:
 	var p: Array = l["pos"]
 	m.position = Vector3(p[0], p[1], p[2])
 	m.rotation.y = l["yaw"] + deg_to_rad(float(l.get("yaw_offset", 0.0)))
-	nav_region.add_child(m)       # its structure is a navmesh obstacle like the city's
+	_landmark_parent().add_child(m)       # its structure is a navmesh obstacle like the city's
 	m.configure(l["model"], l)
 	m.name = String(l["model"]).get_base_dir().get_file()
 	m.set_meta("landmark", l)
@@ -4728,6 +4728,13 @@ func set_kit_parallax(mode: int) -> void:
 
 
 const LAMP_FADE_M := 30.0
+## Where landmarks are added: the map's navigation region, or the tile being
+## built (open_world.gd sets landmark_into while it adds a tile's).
+var landmark_into: Node
+func _landmark_parent() -> Node:
+	return landmark_into if is_instance_valid(landmark_into) else nav_region
+
+
 ## One hand-made model of the map (<city>.landmarks.json, or a user edit).
 func _landmark(l: Dictionary) -> void:
 	if not (FileAccess.file_exists(l["model"]) if String(l["model"]).ends_with(".json") else ResourceLoader.exists(l["model"])):
@@ -4751,7 +4758,7 @@ func _landmark(l: Dictionary) -> void:
 	# the user edits may fit a model to its footprint: "scale", "yaw_offset" (degrees)
 	m.rotation.y = l["yaw"] + deg_to_rad(float(l.get("yaw_offset", 0.0)))
 	m.scale = Vector3.ONE * float(l.get("scale", 1.0))
-	nav_region.add_child(m)       # its walls are navmesh obstacles like the city's
+	_landmark_parent().add_child(m)       # its walls are navmesh obstacles like the city's
 	_storefront_lod.call_deferred(m, l)
 	_landmark_nodes.append(m)
 	m.set_meta("landmark", l)
