@@ -30,3 +30,9 @@ maps/*/facades/commons_clean_contact.png
 # exported game builds
 /build/
 .DS_Store
+
+# open-world prototype test tiles (docs/OPEN_WORLD.md): rebuilt, not committed
+godot/city/owa*
+godot/city/owb*
+maps/owa/out/
+maps/owb/out/

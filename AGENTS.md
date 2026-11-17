@@ -176,6 +176,7 @@ trust a run on a machine that is swapping.
 | [docs/ASSETS.md](docs/ASSETS.md) | model conventions, rigs, the Blender scripts, asking for assets |
 | [docs/DEVAGENT.md](docs/DEVAGENT.md) | the DevAgent: every method, F1/F2/F3/F5, autoplay |
 | [docs/PERFORMANCE.md](docs/PERFORMANCE.md) | frame budget, how to measure, past findings |
+| [docs/OPEN_WORLD.md](docs/OPEN_WORLD.md) | the open-world prototype: map tiles streamed in round the player, what it measured, what is missing |
 | [docs/ONLINE.md](docs/ONLINE.md), `server/README.md` | the online services (API, the Bah assistant, Git LFS server) |
 | [docs/AGENTS.md](docs/AGENTS.md) | agent setup per tool, roles, recipes, cost habits |
 | [docs/BUILDING.md](docs/BUILDING.md), [docs/LICENSING.md](docs/LICENSING.md), [docs/ROADMAP.md](docs/ROADMAP.md), [docs/MODDING.md](docs/MODDING.md) | releases, licences, plans, mods |

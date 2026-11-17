@@ -1180,6 +1180,9 @@ func _load_city() -> void:
 			var b: Array = data["bounds"]       # [min_x, max_x, min_z, max_z]
 			bounds = Rect2(b[0], b[2], b[1] - b[0], b[3] - b[2])
 	_edge_walls()
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--open-world="):
+			open_world(arg.substr(13))
 	props = Props.new()
 	props.name = "Props"
 	nav_region.add_child(props)      # poles and trunks must be navmesh obstacles
@@ -4655,6 +4658,24 @@ func _occluders() -> void:
 		nav_region.add_child(oi)
 
 
+## Open-world prototype (open_world.gd, docs/OPEN_WORLD.md): the maps named
+## (comma separated) come in and go out round the player as tiles next to
+## the round's own map. DevAgent: eval expr=main.open_world("owb").
+var open_world_node: Node
+func open_world(ids: String) -> Dictionary:
+	if not is_instance_valid(open_world_node):
+		open_world_node = preload("res://scripts/open_world.gd").new()
+		open_world_node.name = "OpenWorld"
+		open_world_node.set("main", self)
+		add_child(open_world_node)
+		_map_nodes.append(open_world_node)
+	var added := []
+	for id in ids.split(",", false):
+		if open_world_node.call("add_tile", id):
+			added.append(id)
+	return {"added": added}
+
+
 ## The generated buildings' walls baked from the modular kit (osm2gltf
 ## --kit-facades, assets/common/facades_kit): their height map turns the flat
 ## wall's windows, sills and cornices into depth (parallax) - glTF has no
@@ -4662,8 +4683,9 @@ func _occluders() -> void:
 const KIT_FACADES := "res://assets/common/facades_kit/"
 const KIT_PARALLAX := 10.0          # 0.7 m of relief over a 6 m tile
 var _kit_mats: Array = []
-func _kit_facades(city: Node) -> void:
-	_kit_mats.clear()
+func _kit_facades(city: Node, more := false) -> void:
+	if not more:
+		_kit_mats.clear()
 	for mi in city.find_children("kit_*", "MeshInstance3D", true, false):
 		var base := String(mi.name).get_slice("@", 0)
 		var parts := base.trim_prefix("kit_").split("_")
