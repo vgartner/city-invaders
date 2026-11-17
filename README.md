@@ -18,7 +18,7 @@ the [latest release](https://github.com/vgartner/city-invaders/releases/latest)
 and run it. The setup is small: it downloads the game and the maps you pick
 (about 1.6 GB for the game and the first map) and checks every file. Run it
 again to add a map. It is not code-signed yet, so Windows SmartScreen asks
-once - *More info*, then *Run anyway*.
+once - *More info*, then *Run anyway* ([code signing policy](docs/CODE_SIGNING.md)).
 
 Each map is its own file in the release (`CityInvaders-map-<id>.pck`): to
 install by hand, put `CityInvaders.exe` and `CityInvaders.pck` in a folder
@@ -237,7 +237,7 @@ How to work with an AI agent and send changes: [Build it with us](#build-it-with
 | [tools/video/README.md](tools/video/README.md) | gameplay video rules, recording workflow, interaction checks and delivery |
 | [docs/PERFORMANCE.md](docs/PERFORMANCE.md) | frame-rate budget, how to measure, findings |
 | [docs/ONLINE.md](docs/ONLINE.md), [docs/MODDING.md](docs/MODDING.md) | Bah, reports, mods; the server side is in `server/README.md` |
-| [docs/BUILDING.md](docs/BUILDING.md) | exporting a release (Windows `.exe`) |
+| [docs/BUILDING.md](docs/BUILDING.md), [docs/CODE_SIGNING.md](docs/CODE_SIGNING.md) | exporting a release (Windows `.exe`); the code signing policy |
 | [docs/ROADMAP.md](docs/ROADMAP.md), [docs/IDEAS.md](docs/IDEAS.md) | where the project is going |
 | [docs/LICENSING.md](docs/LICENSING.md), [godot/assets/CREDITS.md](godot/assets/CREDITS.md) | licences of the data and assets, their sources |
 | [AGENTS.md](AGENTS.md), [docs/AGENTS.md](docs/AGENTS.md) | for AI coding agents: rules, testing, a file index, setup per tool |

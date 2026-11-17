@@ -143,6 +143,8 @@ DEVAGENT_PORT=24691 tools/devagent/devagent.py errors
   editor binary has no `maps/` next to it).
 - The build is not code-signed: Windows SmartScreen asks for confirmation the
   first time ("More info", then "Run anyway"); macOS needs "Open Anyway" once.
+  [CODE_SIGNING.md](CODE_SIGNING.md) is the policy for signing the Windows
+  files (an application to the SignPath Foundation).
 - In `--headless` (the dummy renderer), a map loaded while the game runs
   reports RID errors in a round; with a renderer it plays fine. The tests
   download a map, start the game again and play it from `user://map_packs/`.
