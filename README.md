@@ -194,7 +194,7 @@ account needed.
 ```bash
 git clone https://github.com/vgartner/city-invaders.git
 cd city-invaders
-python3 tools/map/texture_imports.py                       # the maps' textures: compressed for the GPU
+python3 tools/map/texture_imports.py                       # 3D textures: compressed for the GPU
 cd godot && godot --headless --path . --import && cd ..    # once, a few minutes
 ./run-godot.sh                                             # macOS / Linux
 ```

@@ -42,6 +42,15 @@ used below (`people/`, `cars/`...) are relative to their collection.
 - Keep triangle counts reasonable: ~15-30k for characters and vehicles,
   more only for set pieces seen up close
 
+**Textures are imported compressed for the GPU** (docs/PERFORMANCE.md):
+after adding or changing a model, run
+`godot --headless --path godot -s ../tools/build/texture_usage.gd` (it
+lists the textures the models draw with and how, in
+`tools/build/texture_imports.json`), then
+`python3 tools/map/texture_imports.py` and the import again. An image that
+must stay exact - one the interface shows, a height map - is simply not in
+that list.
+
 ### People (`people/`, `vendors/`, `police/`, riders)
 
 The pedestrians share one rig: the 52 `mixamorig:` bones of the MakeHuman

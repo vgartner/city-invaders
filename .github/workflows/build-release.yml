@@ -115,7 +115,7 @@ jobs:
 
       - name: Import the project
         run: |
-          python3 tools/map/texture_imports.py        # the maps' textures: compressed for the GPU
+          python3 tools/map/texture_imports.py        # 3D textures: compressed for the GPU
           godot --headless --path godot --import 2>&1 | tail -n 40
 
       - name: Export the game and one package per map

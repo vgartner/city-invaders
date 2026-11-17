@@ -963,14 +963,31 @@ Still to measure on a quiet machine, with the parallax modes
 
 ## Texture memory (November 2026)
 
-The DevAgent `perf` reports 4-6 GB of texture memory in a round. Godot
-imports a texture lossless unless told otherwise (the editor switches one
-to GPU compression when it draws it in 3D; a headless import never does),
-and no `.import` file is in the repository, so every texture is four bytes
-a pixel in video memory. The maps' textures (about 200 million pixels a
-map, 1.1 GB) are now imported compressed (`tools/map/texture_imports.py`,
-S3TC/BPTC: 0.15-0.25 GB); the pictures look the same. The game's own assets
-are not yet: `godot/assets` holds 4.3 billion pixels of textures - the
-interiors 740 million, the cars 370, the sport props 290, the weapons 240 -
-of which a round loads a part. Compressing those (not the interface's
-images) is the next step, with a look at each kind of model afterwards.
+Godot imports a texture lossless unless told otherwise (the editor switches
+one to GPU compression when it draws it in 3D; a headless import never
+does), and no `.import` file is in the repository: every texture was four
+bytes a pixel in video memory. `tools/map/texture_imports.py` now writes the
+import settings before Godot does (S3TC/BPTC; a normal map as two channels):
+
+- the **maps'** images (about 200 million pixels a map: 1.1 GB lossless,
+  0.15-0.25 GB compressed);
+- the **models'** textures - 1,184 of them, 4.3 billion pixels, listed with
+  their use (colour, normal map, data) in `tools/build/texture_imports.json`.
+  `tools/build/texture_usage.gd` makes that list from the models' materials:
+  run it again after adding or changing a model. Images no model draws
+  with (the interface's) and height maps are not in it and stay lossless.
+
+Texture memory reported by the DevAgent `perf`, a few seconds into a round,
+the same view before and after the models' textures (the maps' already
+compressed):
+
+| | before | after |
+|---|---|---|
+| Gasômetro | 4,062 MB | 2,356 MB |
+| Centro | 6,198 MB | 2,622 MB |
+| Mercado | 4,854 MB | 2,344 MB |
+| Centro (poa) | 5,491 MB | 2,530 MB |
+
+Close-ups of vehicles, people, the weapon in hand and the Theatro's
+interior showed no difference. What is left (about 2.3 GB on a 6260 x 2656
+screen) is not yet broken down: the render buffers are part of it.
