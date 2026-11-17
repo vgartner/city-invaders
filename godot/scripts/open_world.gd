@@ -8,7 +8,9 @@ extends Node
 ## and robots walk over; its street furniture and its landmarks. No traffic
 ## of its own yet.
 ##
-## Started by `main.open_world("owb")` (DevAgent `eval`) or `-- --open-world=owb`.
+## A round on a tile of a world (tools/map/tiles.py, <name>.world.json) starts
+## it by itself; or `main.open_world("<id or world>")` (DevAgent `eval`), or
+## `-- --open-world=<id or world>`.
 ## Each step is timed (`report()`): reading the files on a loader thread,
 ## building the scene and its collision on a worker thread, and the frame
 ## that puts it into the tree - the one the player can feel.
@@ -27,6 +29,27 @@ var tiles := {}             # id -> {rect, state, node, task, t0, ...}
 var events: Array = []      # [{id, what, ms}, ...] in order
 var _since := 0.0
 var _walls: StaticBody3D
+
+
+## The tiles of a world (res://city/<name>.world.json, made by
+## tools/map/tiles.py), or none if there is no such world.
+static func world_tiles(world: String) -> Array:
+	var path := "res://city/%s.world.json" % world
+	if not FileAccess.file_exists(path):
+		return []
+	var data = JSON.parse_string(FileAccess.get_file_as_string(path))
+	var out := []
+	for t in (data.get("tiles", []) if data is Dictionary else []):
+		out.append(String(t["id"]))
+	return out
+
+
+## The world a map is a tile of, or "".
+static func world_of(map_id: String) -> String:
+	for f in DirAccess.get_files_at("res://city"):
+		if f.ends_with(".world.json") and world_tiles(f.trim_suffix(".world.json")).has(map_id):
+			return f.trim_suffix(".world.json")
+	return ""
 
 
 func add_tile(id: String) -> bool:

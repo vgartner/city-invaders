@@ -1188,6 +1188,10 @@ func _load_city() -> void:
 		# a tile: the neighbouring tiles' buildings that reach into it (holes in the navmesh)
 		OpenWorld.obstacles(nav_region, data.get("foreign", []))
 	_edge_walls()
+	# a tile of a world (tools/map/tiles.py): the other tiles come and go round the player
+	var world := OpenWorld.world_of(map_id)
+	if world != "":
+		open_world(world)
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--open-world="):
 			open_world(arg.substr(13))
@@ -4667,8 +4671,9 @@ func _occluders() -> void:
 
 
 ## Open-world prototype (open_world.gd, docs/OPEN_WORLD.md): the maps named
-## (comma separated) come in and go out round the player as tiles next to
-## the round's own map. DevAgent: eval expr=main.open_world("owb").
+## (comma separated; or a world, for all its tiles) come in and go out round
+## the player as tiles next to the round's own map. A round on a tile of a
+## world does it by itself. DevAgent: eval expr=main.open_world("<id>").
 const OpenWorld := preload("res://scripts/open_world.gd")
 var open_world_node: Node
 func open_world(ids: String) -> Dictionary:
@@ -4680,8 +4685,11 @@ func open_world(ids: String) -> Dictionary:
 		_map_nodes.append(open_world_node)
 	var added := []
 	for id in ids.split(",", false):
-		if open_world_node.call("add_tile", id):
-			added.append(id)
+		# a world's name stands for all its tiles but the round's own map
+		var tiles: Array = OpenWorld.world_tiles(id)
+		for tid in (tiles if not tiles.is_empty() else [id]):
+			if tid != map_id and open_world_node.call("add_tile", tid):
+				added.append(tid)
 	return {"added": added}
 
 

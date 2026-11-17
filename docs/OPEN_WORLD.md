@@ -10,13 +10,24 @@ player feeling it?
 
 ## What the prototype does
 
-`godot/scripts/open_world.gd`. With a round running on one map, other maps
-of the same source and frame are registered as tiles:
+`godot/scripts/open_world.gd`. A **world** is a grid of tiles cut from one
+city's data, each a map of its own:
 
 ```bash
-DEVAGENT_PORT=24691 tools/devagent/devagent.py eval 'expr=main.open_world("owb")'
-godot --path godot -- --devagent --open-world=owb      # or from the command line
+tools/.venv/bin/python tools/map/tiles.py poa --name centro_world --bounds -350 -330 400 420
+godot --headless --path godot --import
+DEVAGENT_PORT=24691 tools/devagent/devagent.py launch
+DEVAGENT_PORT=24691 tools/devagent/devagent.py start_solo map=centro_world_1_1
 ```
+
+`tiles.py` cuts the area (metres from the source map's centre, y north)
+into tiles of 250 m (`--size`), writes `maps/<name>_<column>_<row>/build.json`
+for each (the source map's data, photos and hand edits, `"tile": true`),
+builds them and lists them in `godot/city/<name>.world.json`. A round
+started on one of the tiles finds the world it belongs to and registers the
+others: they come and go round the player. The round's own tile never
+leaves. Single maps can be registered too: `main.open_world("<id>")`
+(DevAgent `eval`) or `-- --open-world=<id or world>`.
 
 - A tile is known by its bounds (`<id>.spawn.json`). When the player comes
   within 120 m of them (`LOAD_M`) the tile's `<id>.glb` and
@@ -58,26 +69,25 @@ godot --path godot -- --devagent --open-world=owb      # or from the command lin
 pickups, robots spawned in a tile, and anything about multiplayer. The
 round's own map never leaves.
 
-## The test tiles
+## The test world
 
-Two 250 m tiles cut from the Centro's sources, sharing an edge (z = -100),
-with `"tile": true` in their `build.json` ([MAP_PIPELINE.md](MAP_PIPELINE.md)):
-a building on the edge belongs whole to one of them, and neither keeps a
-free margin there.
-
-```bash
-tools/.venv/bin/python tools/map/building_photo.py rebuild owa    # the round's map
-tools/.venv/bin/python tools/map/building_photo.py rebuild owb    # its northern neighbour
-godot --headless --path godot --import
-```
-
-`maps/owa/build.json` and `maps/owb/build.json` are in the repository; the
-built files (`godot/city/owa*`, `owb*`, about 85 and 53 MB) are not.
+`centro_world`: 3 x 3 tiles of 250 m over the Centro (750 x 750 m, from the
+Mercado Público and the quay to the Praça da Matriz), built by the command
+above in 64 s and imported in 56 s; 525 MB of glb. Its files
+(`godot/city/centro_world*`, `maps/centro_world_*/`) are not in the
+repository: build it to try the open world.
 
 ## What it showed (November 2026)
 
-Runs on a MacBook M3 Max that was swapping at the time, so the frame times
-are rough - to be repeated on a quiet machine:
+**The grid.** A round on the centre tile and a tour of all nine - 2.1 km in
+jumps of 50 m every 2.5 s, the pace of a car: 24 tiles came in and 20 left,
+two to four of the eight neighbours in at a time, 54-74 fps, texture memory
+between 0.9 and 2.5 GB, `errors` empty. 24 frames took over 100 ms (the
+worst about 200 ms, one of 590 ms): the landmarks' frames below, and
+whatever else a tile brings when it enters, still to be profiled.
+
+The numbers below are from the first tests with two tiles, on a MacBook M3
+Max that was swapping at the time, so the frame times are rough:
 
 | | 350 x 250 m, cut at the edge | 250 m tile |
 |---|---|---|
@@ -137,5 +147,9 @@ models and people are still imported lossless and hold 4-6 GB
    over several frames.
 5. **A far view**: low buildings of the tiles that are not loaded.
 6. **Multiplayer**: the server keeps the tiles round every player.
-7. **The pipeline in tiles**: one command that cuts a city into a grid and
-   a list of tiles the game reads.
+7. **The round's own tile leaving too**: today it stays, with its
+   navigation mesh, its people and the round's goals; a world needs every
+   tile equal, and the round's state (robots to destroy, the exit) apart
+   from any one of them.
+8. **A tile's files smaller**: 40-90 MB of glb each; the menu, the release
+   packages and the map editor know nothing of worlds yet.

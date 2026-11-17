@@ -61,7 +61,8 @@ frame rate.
 no free margin at its edge, a building is not cut there but belongs whole to
 the tile its inner point is in (the same answer in the neighbouring tile,
 which places its buildings among the same neighbours up to 80 m out), and
-no horizon is made.
+no horizon is made. `tools/map/tiles.py <map> --name <world> --bounds ...`
+cuts an area of a map's data into a grid of such tiles and builds them.
 
 ## 2. Data
 

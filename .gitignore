@@ -31,8 +31,6 @@ maps/*/facades/commons_clean_contact.png
 /build/
 .DS_Store
 
-# open-world prototype test tiles (docs/OPEN_WORLD.md): rebuilt, not committed
-godot/city/owa*
-godot/city/owb*
-maps/owa/out/
-maps/owb/out/
+# the open-world test grid (docs/OPEN_WORLD.md, tools/map/tiles.py): rebuilt, not committed
+godot/city/centro_world*
+maps/centro_world_*/
