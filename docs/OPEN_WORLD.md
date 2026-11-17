@@ -57,6 +57,14 @@ leaves. Single maps can be registered too: `main.open_world("<id>")`
   mesh (`main.in_world`), and robots chasing a player follow across the
   edge. When a tile is due to leave, its passers-by leave the streets with
   it; a robot in it keeps the tile until it is gone.
+- **Traffic**: the tile's streets (`<id>.roads.json`) join the round's road
+  graph, which every vehicle drives by. In tile mode a tile's streets run
+  to its very edge, so the neighbour's start at the same points: a node
+  where the graph already has one is that node. The ways into the tile's
+  streets are open while it is in; when it leaves they close (its edges
+  stay in the graph, unreachable, for when it comes back) and the traffic
+  in it comes back in at a border street of the map. A vehicle someone
+  left in a tile keeps the tile.
 - The map's invisible border walls move out to enclose the tiles, and its
   horizon (far ground and towers, which would stand where the tiles are) is
   hidden.
@@ -65,9 +73,9 @@ leaves. Single maps can be registered too: `main.open_world("<id>")`
   `open_world_node.threaded = false` builds on the main thread instead, to
   compare.
 
-**Not yet**: traffic (the road graph is the round's map's), occluders,
-pickups, robots spawned in a tile, and anything about multiplayer. The
-round's own map never leaves.
+**Not yet**: occluders, pickups, robots and traffic spawned in a tile
+(vehicles drive in from the round's map; bus lines and stops stay the
+map's), and anything about multiplayer. The round's own map never leaves.
 
 ## The test world
 
@@ -121,6 +129,14 @@ costs a frame of about 25 ms; the Mercado Público, a set laid out from many
 pieces, costs one frame of 170 ms - the worst frame of each of three runs
 (174-180 ms). Building a set a few pieces a frame is still to do.
 
+**Traffic** (the grid): vehicles started on the map's streets that lead to
+the northern edge drove into the neighbouring tile and on through it to
+the far edge of the world, 240 m away, where they came back in at a border
+street of the map; one turned at a junction inside the tile and drove back.
+With the tile gone no vehicle was left in it. In two minutes of ordinary
+traffic (17 vehicles) none happened to cross: few streets lead over an
+edge, and nothing spawns in a tile yet.
+
 **Textures were the weight.** The first tile cost about 0.8 GB of video
 memory: Godot imports the images it extracts from a glb lossless, four
 bytes a pixel. Imported compressed for the GPU
@@ -142,8 +158,8 @@ models and people are still imported lossless and hold 4-6 GB
 3. **Navigation, the rest.** The round's map still bakes its mesh at load,
    on the main thread (most of the loading time): every tile, the first
    one too, should bake on a thread or come with its mesh baked.
-4. **Traffic and robot spawns by tile**, with the road graph joined across
-   tiles; a tile's props breakable like the map's; a big landmark built
+4. **Traffic and robots spawned by tile**, bus lines across tiles; a
+   tile's props breakable like the map's; a big landmark built
    over several frames.
 5. **A far view**: low buildings of the tiles that are not loaded.
 6. **Multiplayer**: the server keeps the tiles round every player.

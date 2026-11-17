@@ -60,8 +60,9 @@ frame rate.
 `"tile": true` makes the map a tile of a larger city ([OPEN_WORLD.md](OPEN_WORLD.md)):
 no free margin at its edge, a building is not cut there but belongs whole to
 the tile its inner point is in (the same answer in the neighbouring tile,
-which places its buildings among the same neighbours up to 80 m out), and
-no horizon is made. `tools/map/tiles.py <map> --name <world> --bounds ...`
+which places its buildings among the same neighbours up to 80 m out), its
+road graph runs to the very edge (a map's stops 4 m short), and no horizon
+is made. `tools/map/tiles.py <map> --name <world> --bounds ...`
 cuts an area of a map's data into a grid of such tiles and builds them.
 
 ## 2. Data

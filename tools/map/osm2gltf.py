@@ -1731,7 +1731,7 @@ def main():
                     for p, h, _t in foreign]}))
 
     # ---- road graph for traffic ---------------------------------------------
-    graph = _road_graph([(one, ln) for k, one, ln in traffic_roads if k in VEHICLE_ROADS], area)
+    graph = _road_graph([(one, ln) for k, one, ln in traffic_roads if k in VEHICLE_ROADS], area, inset=0.0 if args.tile else 4.0)
     graph["crossings"] = zebras
     # named streets for the street-name label and the GPS map: [name, [[x, z], ...]]
     graph["streets"] = []
@@ -2051,10 +2051,12 @@ def _export(batch, images, normals, roughs, path):
     scene.export(path)
 
 
-def _road_graph(vehicle, area):
+def _road_graph(vehicle, area, inset=4.0):
     """Vehicle roads split at junctions: nodes and edges (Godot x/z) with
-    the one-way flag, clipped to the playable area."""
-    inner = area.buffer(-4.0)
+    the one-way flag, clipped to the playable area - `inset` metres inside
+    it; a tile's streets run to its very edge (inset 0), where the
+    neighbouring tile's streets start at the same points."""
+    inner = area.buffer(-inset) if inset else area
     lines = []
     for one, ln in vehicle:
         clipped = ln.intersection(inner)

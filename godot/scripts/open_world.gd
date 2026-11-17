@@ -5,8 +5,8 @@ extends Node
 ## <id>_collision.glb, <id>.spawn.json with its bounds): its meshes, its
 ## collision and a navigation mesh of its own, baked on a thread once it is
 ## in and joined to the meshes round it by links across the edge, so people
-## and robots walk over; its street furniture and its landmarks. No traffic
-## of its own yet.
+## and robots walk over; its street furniture and its landmarks; and its
+## streets, joined to the round's road graph, so traffic drives in and out.
 ##
 ## A round on a tile of a world (tools/map/tiles.py, <name>.world.json) starts
 ## it by itself; or `main.open_world("<id or world>")` (DevAgent `eval`), or
@@ -81,13 +81,13 @@ func census() -> Dictionary:
 	var out := {}
 	for id in tiles:
 		var r: Rect2 = tiles[id]["rect"]
-		var n := [0, 0]
-		for k in 2:
-			for c in ([main.civilians_root, main.enemies_root][k] as Node).get_children():
+		var n := [0, 0, 0]
+		for k in 3:
+			for c in ([main.civilians_root, main.enemies_root, main.traffic_root][k] as Node).get_children():
 				var p: Vector3 = (c as Node3D).global_position
 				if r.has_point(Vector2(p.x, p.z)):
 					n[k] += 1
-		out[id] = {"people": n[0], "robots": n[1]}
+		out[id] = {"people": n[0], "robots": n[1], "vehicles": n[2]}
 	return out
 
 
@@ -121,6 +121,8 @@ func _process(dt: float) -> void:
 	for id in tiles:
 		var t: Dictionary = tiles[id]
 		var d := _distance(t["rect"], p)
+		if t["state"] == "in" and not t.get("streets", false):
+			_streets_in(id, t)
 		if t["state"] == "out" and d < LOAD_M:
 			t["state"] = "loading"
 			t["t0"] = Time.get_ticks_usec()
@@ -136,6 +138,7 @@ func _process(dt: float) -> void:
 				main._landmark_nodes.erase(lm)
 			t.erase("landmarks")
 			t.erase("held")
+			_streets_out(t)
 			(t["node"] as Node).queue_free()
 			t["node"] = null
 			t["state"] = "out"
@@ -421,13 +424,88 @@ func _on_mesh(map: RID, at: Vector2) -> Vector3:
 	return q if Vector2(q.x, q.z).distance_to(at) < 0.7 else Vector3.INF
 
 
-## Before a tile leaves: passers-by in it leave the streets; a robot in it
-## keeps the tile (false).
+## The tile's streets (<id>.roads.json) join the round's road graph, which
+## every vehicle drives by: its nodes and edges are added once (a node at a
+## place the graph already has one - a street cut at the edge - is that
+## node), and the ways out of its nodes are opened while the tile is in.
+## Traffic then turns into the tile like into any street.
+const NODE_MATCH_M := 1.0
+func _streets_in(id: String, t: Dictionary) -> void:
+	var g: Dictionary = main.road_graph
+	if not g.has("edges") or not g.has("out"):
+		return                                   # the round's streets are not in yet
+	t["streets"] = true
+	if not t.has("ways"):
+		var path := "res://city/%s.roads.json" % id
+		t["ways"] = []
+		if not FileAccess.file_exists(path):
+			return
+		var t0 := Time.get_ticks_usec()
+		var tg: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
+		var nodes: Array = g["nodes"]
+		var index := []                          # the tile's node -> the graph's
+		var known: int = nodes.size()
+		var joined := 0
+		for n in tg["nodes"]:
+			var at := Vector2(n[0], n[1])
+			var found := -1
+			for k in known:                          # not the tile's own nodes just added
+				if absf(nodes[k][0] - at.x) < NODE_MATCH_M and absf(nodes[k][1] - at.y) < NODE_MATCH_M:
+					found = k
+					break
+			if found < 0:
+				nodes.append(n)
+				found = nodes.size() - 1
+			else:
+				joined += 1
+			index.append(found)
+		for e in tg["edges"]:
+			var edge: Dictionary = e.duplicate()
+			edge["a"] = index[int(e["a"])]
+			edge["b"] = index[int(e["b"])]
+			g["edges"].append(edge)
+			g["len"].append(main._edge_length(edge))
+			var i: int = g["edges"].size() - 1
+			t["ways"].append([int(edge["a"]), [i, true]])
+			if not edge["oneway"]:
+				t["ways"].append([int(edge["b"]), [i, false]])
+		_note(id, "streets: %d edges joined to the road graph at %d nodes" % [tg["edges"].size(), joined], t0)
+	for w in t["ways"]:
+		(g["out"] as Dictionary).get_or_add(w[0], []).append(w[1])
+
+
+## The tile leaves: the ways into its streets close (the edges stay in the
+## graph, unreachable, for when it comes back).
+func _streets_out(t: Dictionary) -> void:
+	t["streets"] = false
+	var g: Dictionary = main.road_graph
+	if not g.has("out"):
+		return
+	for w in t.get("ways", []):
+		var ways: Array = (g["out"] as Dictionary).get(w[0], [])
+		for k in ways.size():
+			if ways[k][0] == w[1][0] and ways[k][1] == w[1][1]:
+				ways.remove_at(k)
+				break
+
+
+## Before a tile leaves: passers-by in it leave the streets and traffic in it
+## comes back in at a border street of the map; a robot in it, or a vehicle
+## someone left there, keeps the tile (false).
 func _vacate(r: Rect2) -> bool:
 	var area := r.grow(3.0)
 	for e in main.enemies_root.get_children():
 		if area.has_point(Vector2((e as Node3D).global_position.x, (e as Node3D).global_position.z)):
 			return false
+	var traffic := []
+	for v in main.traffic_root.get_children():
+		if area.has_point(Vector2((v as Node3D).global_position.x, (v as Node3D).global_position.z)):
+			if v.get("driver_peer") != 0 or not v.get("occupied"):
+				return false
+			traffic.append(v)
+	if multiplayer.is_server():
+		for v in traffic:
+			v.call("_enter_from_edge")
 	if multiplayer.is_server():
 		for c in main.civilians_root.get_children():
 			if area.has_point(Vector2((c as Node3D).global_position.x, (c as Node3D).global_position.z)):
