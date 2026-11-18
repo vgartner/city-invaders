@@ -25,8 +25,8 @@ into tiles of 250 m (`--size`), writes `maps/<name>_<column>_<row>/build.json`
 for each (the source map's data, photos and hand edits, `"tile": true`),
 builds them and lists them in `godot/city/<name>.world.json`. A round
 started on one of the tiles finds the world it belongs to and registers the
-others: they come and go round the player. The round's own tile never
-leaves. Single maps can be registered too: `main.open_world("<id>")`
+others: they come and go round the player, and so does the round's own
+tile (below). Single maps can be registered too: `main.open_world("<id>")`
 (DevAgent `eval`) or `-- --open-world=<id or world>`.
 
 - A tile is known by its bounds (`<id>.spawn.json`). When the player comes
@@ -97,7 +97,48 @@ leaves. Single maps can be registered too: `main.open_world("<id>")`
   compare.
 
 **Not yet**: occluders, pickups, dropships landing in a tile, bus lines
-and stops (they stay the map's), and anything about multiplayer. The round's own map never leaves.
+and stops (they stay the map's), and anything about multiplayer.
+
+**The round's own map leaves too** (`_home_check`, one player). Everything
+the round's map built hangs under its navigation region: the city and its
+collision, the street furniture, the landmarks, the occluders. When the
+player is 220 m from its bounds and stands on a tile:
+
+- the city's meshes and collision are freed - that is the memory;
+- the rest sleeps where it is: the region hidden, out of the physics, its
+  navigation mesh off, and the people, vehicles, pickups, containers and
+  antennas inside hidden and stopped (meta `asleep`);
+- its streets close like a tile's (traffic entries recomputed, the map's
+  share of the traffic no longer wanted), and the links between its mesh
+  and the tiles' go off;
+- the round's robots left in it go, and the Director sends others where the
+  player is. A heavy mech (a goal of the round) or a collector (people
+  aboard) keeps the map in;
+- `main.home_out` is true and `main.in_world()` no longer counts the map.
+
+The round's state is not the map's: goals, score, the exit, the Director
+stay in `main`. At 120 m the city is read and built on threads like a tile
+and all of it wakes up as it was - the navigation mesh is not baked again,
+a lamp shot out stays out, a parked car is where it was - and links are
+made to the tiles that came in meanwhile. `report()` lists it as `@home`.
+
+Measured on the centre tile of the test world, two games open on the
+machine: leaving takes 4-6 ms on the main thread and puts 160-190 nodes
+to sleep; draw calls 2,260 -> 1,330, nodes 18,000 -> 9,300, static memory
+377 -> 326 MB, texture memory 2,940 -> 2,280 MB. Coming back: 130-290 ms
+reading and 320-730 ms building on threads, 13-15 ms entering the tree,
+22-44 ms for 35 links. Two rounds out and back, with and without the
+Director's robots: the map the same as before in the screenshots.
+
+Not done: with more than one player the map stays; a dropship cannot land
+and no container is delivered while the player is outside the map (those
+still pick spots by the map's bounds); the landmarks and the street
+furniture sleep in memory instead of leaving.
+
+Seen in these tests and not looked into: with robots alive and the player
+teleported 400 m at a time, Godot's path search reports "It's not expect
+to not find the most reachable polygons" now and then - also in a run
+where the map never left.
 
 ## The test world
 
@@ -202,10 +243,11 @@ models and people are still imported lossless and hold 4-6 GB
    breakable like the map's; a big landmark built over several frames.
 5. **A far view**: low buildings of the tiles that are not loaded.
 6. **Multiplayer**: the server keeps the tiles round every player.
-7. **The round's own tile leaving too**: today it stays, with its
-   navigation mesh, its people and the round's goals; a world needs every
-   tile equal, and the round's state (robots to destroy, the exit) apart
-   from any one of them.
+7. **The round's own tile, the rest**: it leaves and comes back now (one
+   player), but as itself: its landmarks, street furniture and navigation
+   mesh sleep in memory. Every tile equal means the round's map built
+   through the tile path from the start, with its breakable props and
+   fixed pickups as a tile's.
 8. **A tile's files smaller**: 40-90 MB of glb each; the menu, the release
    packages and the map editor know nothing of worlds yet.
 

@@ -716,8 +716,10 @@ func in_bounds(p: Vector3, margin := 0.0) -> bool:
 
 ## Where people and robots may walk to: the map, and with the open-world
 ## prototype the tiles that are in with their navigation mesh.
+var home_out := false        # open world: the round's own map is unloaded (open_world.gd _home_out)
 func in_world(p: Vector3, margin := 0.0) -> bool:
-	return in_bounds(p, margin) or (is_instance_valid(open_world_node) and open_world_node.call("walkable", p, margin))
+	return (in_bounds(p, margin) and not home_out) \
+			or (is_instance_valid(open_world_node) and open_world_node.call("walkable", p, margin))
 
 
 ## Distance from the origin to the farthest map corner (dropship entry/exit).
@@ -1125,6 +1127,7 @@ func _fill_phases() -> void:
 
 
 func _load_city() -> void:
+	home_out = false
 	nav_region = NavigationRegion3D.new()
 	nav_region.name = "Navigation"
 	nav_region.process_mode = Node.PROCESS_MODE_PAUSABLE
