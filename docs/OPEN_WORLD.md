@@ -245,9 +245,11 @@ models and people are still imported lossless and hold 4-6 GB
 2. **Edges, the rest.** A tile does not know the neighbouring tile's
    buildings that reach over the edge: its trees and props may stand inside
    one, and a wall facing one gets windows instead of a blind wall.
-3. **Navigation, the rest.** The round's map still bakes its mesh at load,
-   on the main thread (most of the loading time): every tile, the first
-   one too, should bake on a thread or come with its mesh baked.
+3. **Navigation, the rest.** Measured (PERFORMANCE.md, loading time step
+   by step): the round's map reads its colliders in 40-55 ms on the main
+   thread and bakes for 0.7-0.8 s on a thread - it was not the slow step
+   of loading. What is left is a mesh that comes baked with the tile
+   instead of being baked when it enters.
 4. **Bus lines across tiles**, dropships landing in a tile; a tile's props
    breakable like the map's; a big landmark built over several frames.
 5. **A far view**: low buildings of the tiles that are not loaded.

@@ -34,7 +34,7 @@ Clients:
 | `spawn_enemy x y z variant` | a trooper, mech or drone |
 | `kill_enemies`, `set_director enabled phase`, `set_god enabled`, `set_sun` | test helpers |
 | `say text seconds` | a message to the player, on screen |
-| `eval expr` | evaluate a GDScript expression with `main`, `player`, `tree`, `nav`, `map` bound |
+| `eval expr` | evaluate a GDScript expression with `main`, `player`, `tree`, `nav`, `map` bound; `main.load_times` is how long each step of loading the map took |
 
 ## Talking to the assistant from the game
 

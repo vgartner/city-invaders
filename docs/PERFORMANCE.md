@@ -400,6 +400,30 @@ pipelines; native `_show_weapon` times were 0.054-0.113 ms, with a 21.3 ms
 maximum frame in that fixed paused probe. This does not prewarm every
 combat effect, light variant or later scene.
 
+**Loading time, step by step (2026-11-18).** `main.load_times` (DevAgent:
+`eval expr=main.load_times`) records how long each step of loading a map
+took. On the Gasômetro, 19.2 s from the menu to the round, two games open
+on the machine: 3.2 s reading the map's files on threads, 0.5 s the city's
+scene and collision, 0.4 s street furniture, 1.0 s landmarks, 0.04 s
+reading the colliders for the navigation mesh and 0.8 s baking it on a
+thread, 1.4 s placing people and traffic, **7.5 s sharing identical
+textures**, 0.6 s warming up weapons and effects, 0.3 s the look all
+round. The navigation mesh, long taken for the slow step, is not: the
+SHA-256 of 1,430 imported texture files (1.2 GiB) on the main thread was.
+
+`TextureSharing.prepare()` now works the keys out before the pass: it
+collects the files, reads their lengths and hashes them on worker threads
+(a file whose length no other shares is not hashed), and keeps what it
+hashed in `user://texture_hashes.json` (per file: modified time, length,
+key; dropped when the game's version or executable changes, since files in
+a PCK have no date of their own). The same textures are shared as before
+(639 duplicates on the Gasômetro). Sharing takes 2.2 s the first time a
+map is loaded and 0.3-0.4 s after; from the menu to the round the
+Gasômetro takes 13.4 s the first time and 11.5 s after (19.2 s before),
+the Centro 13.5 s, the Mercado 11.0 s, Porto Alegre 12.2 s, the test
+world's centre tile 10.4 s. One run each, not on a quiet machine. The
+sharing test passes in the project; its PCK variant was not run again.
+
 A subsequent two-minute autoplay (seed 7, scale 1, 2545x1080 viewport,
 6260x2656 window, VSync on) averaged 60.0 FPS, p99 22.4 ms and maximum
 87.8 ms, with no >100 ms frames or script errors. It fired 11 rounds,

@@ -781,6 +781,15 @@ static func available_maps() -> Array:
 ## Load a city behind a loading screen: the big glTF scenes stream in on a
 ## worker thread (progress bar), then the city is assembled and the street
 ## navmesh baked; the round only starts once everything is in place.
+## How long each step of loading the map took, in ms, in order
+## (DevAgent: eval expr=main.load_times).
+var load_times := {}
+var _load_t0 := 0
+func _load_mark(step: String) -> void:
+	load_times[step] = snappedf((Time.get_ticks_usec() - _load_t0) / 1000.0, 0.1)
+	_load_t0 = Time.get_ticks_usec()
+
+
 func enter_map(id: String) -> void:
 	if map_id != "":
 		while not nav_ready:          # already loading (e.g. host_map arrived twice)
@@ -792,6 +801,8 @@ func enter_map(id: String) -> void:
 		if m[0] == id:
 			label = m[1]
 	_show_loading("Loading " + label)
+	load_times = {}
+	_load_t0 = Time.get_ticks_usec()
 	await get_tree().process_frame     # let the loading screen paint first
 	await get_tree().process_frame
 	var paths := [_city(".glb"), _city("_collision.glb"), _city("_horizon.glb")].filter(
@@ -817,8 +828,10 @@ func enter_map(id: String) -> void:
 		ResourceLoader.load_threaded_get(p)    # now cached: _load_city's load() is instant
 	_set_loading(0.7, "Building the city...")
 	await get_tree().process_frame
+	_load_mark("read the map's files (threads)")
 	_load_city()
 	_load_roads()
+	_load_mark("streets")
 	_set_loading(0.8, "Mapping the streets for robots and people...")
 	_warm_people_request()              # read from disk on threads while the navmesh bakes
 	var t := 0.0
@@ -826,12 +839,15 @@ func enter_map(id: String) -> void:
 		t += get_process_delta_time()
 		_set_loading(0.8 + 0.18 * (1.0 - exp(-t / 4.0)), "Mapping the streets for robots and people...")
 		await get_tree().process_frame
+	_load_mark("navigation mesh: bake (thread)")
 	await wait_for_navmesh()
+	_load_mark("navigation mesh: taken in by the map")
 	_set_loading(0.96, "Assembling the robots...")
 	await get_tree().process_frame
 	_warm_models()                     # ships and every robot kind loaded (and kept) now
 	for k in Enemy.VARIANTS:
 		Wreck.prepare(Enemy.VARIANTS[k]["model"])     # split into plates now, not at the first kill
+	_load_mark("robots and ships")
 	_set_loading(0.97, "Filling the streets...")
 
 
@@ -900,16 +916,18 @@ func _finish_loading() -> void:
 			or (not multiplayer.is_server() and civilians_root.get_child_count() == 0)):
 		t += get_process_delta_time()
 		await get_tree().process_frame
+	_load_mark("people and traffic placed")
 	_set_loading(0.985, "Sharing identical textures...")
 	await get_tree().process_frame
 	var sharing := preload("res://scripts/texture_sharing.gd").new()
 	var share_start := Time.get_ticks_usec()
 	var texture_before := RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TEXTURE_MEM_USED)
+	await sharing.prepare(_warm.values(), self, get_tree())    # the files hashed on threads
 	for scene in _warm.values():
 		sharing.resource(scene)
 	sharing.tree(self)
-	print("Texture sharing: %d checked, %d duplicates (%.1f MiB imported files), %.2f s" % [
-			sharing.checked, sharing.shared, sharing.shared_bytes / 1048576.0,
+	print("Texture sharing: %d checked, %d hashed, %d duplicates (%.1f MiB imported files), %.2f s" % [
+			sharing.checked, sharing.hashed, sharing.shared, sharing.shared_bytes / 1048576.0,
 			(Time.get_ticks_usec() - share_start) / 1000000.0])
 	texture_sharing_stats = {"checked": sharing.checked, "shared": sharing.shared,
 			"seconds": (Time.get_ticks_usec() - share_start) / 1000000.0,
@@ -918,6 +936,7 @@ func _finish_loading() -> void:
 	await get_tree().process_frame
 	texture_sharing_stats["texture_after_mb"] = RenderingServer.get_rendering_info(
 			RenderingServer.RENDERING_INFO_TEXTURE_MEM_USED) / 1048576.0
+	_load_mark("identical textures shared")
 	_set_loading(0.99, "Getting ready...")
 	var pl: Node3D = null
 	for p in players_root.get_children():
@@ -927,6 +946,7 @@ func _finish_loading() -> void:
 		await pl.prewarm_view_models()
 		await pl.prewarm_impact_fx()
 		await _prewarm_container(pl.camera)
+		_load_mark("weapons, effects and container warmed up")
 		var yaw := pl.rotation.y
 		for k in 8:
 			pl.rotation.y = yaw + k * TAU / 8.0
@@ -934,6 +954,7 @@ func _finish_loading() -> void:
 			await get_tree().process_frame
 		pl.rotation.y = yaw
 	await get_tree().process_frame
+	_load_mark("a look all round (meshes and shaders to the GPU)")
 	_set_loading(1.0, "Ready")
 	_hide_loading()
 	if not driven:   # leave the mouse free while the DevAgent drives the game
@@ -1159,11 +1180,13 @@ func _load_city() -> void:
 		for mi in col.find_children("*", "MeshInstance3D", true, false):
 			(mi as MeshInstance3D).create_trimesh_collision()
 			(mi as MeshInstance3D).visible = false
+	_load_mark("city: scene and collision")
 	_water(city)
 	_matte_grass(city)
 	_add_grass_detail(city)
 	_kit_facades(city)
 	_occluders()
+	_load_mark("city: water, grass, kit facades, occluders")
 	# double-sided collision: rays started inside a volume must still hit it
 	for cs in city.find_children("*", "CollisionShape3D", true, false):
 		if cs.shape is ConcavePolygonShape3D:
@@ -1202,8 +1225,11 @@ func _load_city() -> void:
 	props = Props.new()
 	props.name = "Props"
 	nav_region.add_child(props)      # poles and trunks must be navmesh obstacles
+	_load_mark("city: horizon, bounds, world")
 	props.build(_city(".props.json"))
+	_load_mark("street furniture")
 	_landmarks()
+	_load_mark("landmarks")
 	_ambience()
 	_pigeons()
 	_quero_queros.call_deferred()
@@ -1233,7 +1259,9 @@ func _load_city() -> void:
 			NavigationServer3D.region_set_navigation_mesh(nav_region.get_rid(), nm)
 		print("navmesh baked: %d polygons, %d islands of %d polygons dropped" % [nm.get_polygon_count(), went.x, went.y])
 		nav_ready = true)
+	_load_mark("ambience")
 	nav_region.bake_navigation_mesh(true)
+	_load_mark("navigation mesh: read the colliders (main thread)")
 
 
 # ---- networking -----------------------------------------------------------
