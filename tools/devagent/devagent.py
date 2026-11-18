@@ -13,6 +13,7 @@ import os
 import socket
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -57,7 +58,8 @@ def launch(wait=90, headless=False):
     headless: no window (AI and physics still run; no screenshots)."""
     if reachable():
         return "already running"
-    log = open("/tmp/claude-501/devagent-game.log", "w") if Path("/tmp/claude-501").exists() else subprocess.DEVNULL
+    # the game's output, one file per port: two test games do not write over each other
+    log = open(Path(tempfile.gettempdir()) / f"city-invaders-devagent-{PORT}.log", "w")
     subprocess.Popen(["godot"] + (["--headless"] if headless else []) + ["--path", str(GODOT_DIR), "--", "--devagent"],
                      stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
     t0 = time.time()

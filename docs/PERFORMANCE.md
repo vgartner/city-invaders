@@ -238,7 +238,9 @@ runs. A longer normal-director session and other maps are still untested.
 
 ## Play-through benchmark (October 2026)
 
-`tools/bench/play_bench.py [label]` plays the same route in a test instance, the
+`tools/bench/play_bench.py [label]` (port 24691; `DEVAGENT_PORT=24693 ...` when
+another agent's test game has that one - `kit_bench.py` and `cell_bench.py`
+follow it) plays the same route in a test instance, the
 way a player does: walking and running down a Centro street, a fight with
 the machine gun (robots dropped in front), into the Theatro São Pedro and
 out, into a shop and out, a car driven a few blocks. Per stretch it prints

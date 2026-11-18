@@ -6,7 +6,7 @@ driven a few blocks. Per stretch: frame times (median, 95th and 99th
 percentile, worst, frames over 33 / 100 ms) and the hitches with what had
 just entered the scene.
 
-    tools/bench/play_bench.py [label]          # a test instance on port 24691
+    tools/bench/play_bench.py [label]          # a test instance on port 24691 (DEVAGENT_PORT: another)
 
 Run it with the player's own game closed (two games share the GPU) and
 compare runs only with the same resolution setting.
@@ -20,7 +20,12 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-ENV = dict(os.environ, DEVAGENT_PORT="24691")
+# the test game's port: 24691, or DEVAGENT_PORT when another agent's test game
+# has that one - never the player's game
+PORT = int(os.environ.get("DEVAGENT_PORT", 24691))
+if PORT == 24690:
+    sys.exit("port 24690 is the player's game: run the bench on a test port (DEVAGENT_PORT=24691, 24693, ...)")
+ENV = dict(os.environ, DEVAGENT_PORT=str(PORT))
 
 
 def call(*a):
@@ -154,7 +159,7 @@ def main():
     label = sys.argv[1] if len(sys.argv) > 1 else "run"
     while True:
         try:
-            socket.create_connection(("127.0.0.1", 24691), timeout=1).close()
+            socket.create_connection(("127.0.0.1", PORT), timeout=1).close()
             call("quit")
             time.sleep(2)
         except OSError:

@@ -48,7 +48,7 @@ def main():
     import socket
     while True:
         try:
-            socket.create_connection(("127.0.0.1", 24691), timeout=1).close()
+            socket.create_connection(("127.0.0.1", pb.PORT), timeout=1).close()
             pb.call("quit")
             time.sleep(2)
         except OSError:

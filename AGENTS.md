@@ -88,6 +88,9 @@ first: it records the approved movement, encounter, interaction and delivery rul
    | 24690 | the player's game, started by `./run-godot.sh` - read it (`get_state`, `screenshot`, `inbox`), answer with `say`; never `start_solo`, `teleport` or `quit` it |
    | 24691 | your test instance: `DEVAGENT_PORT=24691 $P tools/devagent/devagent.py launch`, then `start_solo map=gasometro`, drive it, `quit` when done |
 
+   Another agent's test game already on 24691 (`lsof -nP -iTCP:24691 -sTCP:LISTEN`)?
+   Take another port (24693, ...): the tools follow `DEVAGENT_PORT`.
+
 3. Drive it through the DevAgent ([docs/DEVAGENT.md](docs/DEVAGENT.md)):
    `hold_keys` (real input), `teleport`, `screenshot width=800 hud=false`,
    `eval`, `audit_ground`, `nav_probe`, `errors`. Check numbers, then look at

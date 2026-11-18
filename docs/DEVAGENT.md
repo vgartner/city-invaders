@@ -26,7 +26,7 @@ Clients:
 | `hold_keys actions seconds` | hold game actions (`forward`, `right`, `jump`, ...) through the real input path |
 | `tap action` | press an action once (`use`, `reload`, `weapon_3`, `design`) |
 | `audit_ground tolerance` | vehicles, pedestrians, robots standing off the street (sunk or floating) |
-| `errors limit` | latest script errors from the game log |
+| `errors limit` | this game's latest script errors: those in the log file as it started, then every one as it happens (the log file itself, `user://logs/godot.log`, belongs to whichever game of the project started last - with two games open it is not this game's) |
 | `inspect id` | an NPC's AI state, goal, navigation and automatic diagnoses |
 | `raycast from to mask` | physics ray |
 | `nav_probe points=[[x,y,z],...]`, `nav_probe landmark_pickups=true` | can a player walk there: metres to the nearest walkable (navmesh) point and how far from it a path from the start ends (0 = reachable, -1 = no path) |

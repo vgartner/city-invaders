@@ -24,6 +24,9 @@ func _ready() -> void:
 		set_process_input(false)
 		set_process_unhandled_key_input(false)
 		return
+	_error_log = ErrorLog.new()
+	OS.add_logger(_error_log)
+	_boot_errors = _log_file_errors()
 	var port := int(OS.get_environment("DEVAGENT_PORT")) if OS.has_environment("DEVAGENT_PORT") else PORT
 	var err := _server.listen(port, "127.0.0.1")
 	print("DevAgent listening on 127.0.0.1:%d (%s)" % [port, error_string(err)])
@@ -1056,17 +1059,54 @@ func _m_census(_p: Dictionary):
 	return {"civilians": civ, "robots": rob}
 
 
-func _m_errors(p: Dictionary):
-	## The latest SCRIPT ERROR / ERROR lines from the game log.
+## This game's errors as they happen. The log file (user://logs/godot.log) is
+## one for every game of the project on the machine and belongs to the one
+## started last: with two games open - the player's and a test, or two
+## agents' tests - it showed the other game's errors.
+class ErrorLog extends Logger:
+	var lines: Array[String] = []
+	var lock := Mutex.new()
+
+	func _log_error(function: String, file: String, line: int, code: String, rationale: String, _editor_notify: bool,
+			error_type: int, _script_backtraces: Array[ScriptBacktrace]) -> void:
+		var what := rationale if rationale != "" else code
+		if error_type == ERROR_TYPE_WARNING or "leaked" in what:
+			return
+		lock.lock()
+		if lines.size() < 5000:
+			lines.append("%s: %s | at: %s (%s:%d)" % ["SCRIPT ERROR" if error_type == ERROR_TYPE_SCRIPT else "ERROR",
+					what, function, file, line])
+		lock.unlock()
+
+	func all() -> Array:
+		lock.lock()
+		var out: Array = lines.duplicate()
+		lock.unlock()
+		return out
+
+
+var _error_log: ErrorLog
+var _boot_errors: Array = []      # from the log file as the game started: errors from before the DevAgent was up
+
+
+## SCRIPT ERROR / ERROR lines of the log file, each with the line after it (where it happened).
+func _log_file_errors() -> Array:
 	var path := ProjectSettings.globalize_path("user://logs/godot.log")
-	if not FileAccess.file_exists(path):
-		return {"errors": []}
-	var lines := FileAccess.get_file_as_string(path).split("\n")
 	var out := []
+	if not FileAccess.file_exists(path):
+		return out
+	var lines := FileAccess.get_file_as_string(path).split("\n")
 	for i in lines.size():
 		var l := lines[i]
 		if l.begins_with("SCRIPT ERROR") or (l.begins_with("ERROR") and not "leaked" in l):
 			out.append(l + (" | " + lines[i + 1].strip_edges() if i + 1 < lines.size() else ""))
+	return out
+
+
+func _m_errors(p: Dictionary):
+	## The latest SCRIPT ERROR / ERROR lines of this game: those in the log
+	## file when it started, then every one since.
+	var out: Array = _boot_errors + (_error_log.all() if _error_log else [])
 	return {"errors": out.slice(max(0, out.size() - int(p.get("limit", 15))))}
 
 
