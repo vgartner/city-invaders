@@ -135,10 +135,19 @@ and no container is delivered while the player is outside the map (those
 still pick spots by the map's bounds); the landmarks and the street
 furniture sleep in memory instead of leaving.
 
-Seen in these tests and not looked into: with robots alive and the player
-teleported 400 m at a time, Godot's path search reports "It's not expect
-to not find the most reachable polygons" now and then - also in a run
-where the map never left.
+**Islands in the navigation mesh.** A baked mesh has patches nobody can
+walk to - the top of a newsstand, of a wall, of a parked lorry. With robots
+alive in a world, Godot's path search reported "It's not expect to not find
+the most reachable polygons" now and then: a path asked for across a link
+to such a patch (probed with 784 path queries from one point of the centre
+tile: the same 6 targets in the tile to the east raised it in two runs out
+of three; the engine's source calls it a geometry problem). So every mesh,
+a tile's and the round's map's, drops its islands after the bake
+(`OpenWorld.drop_islands`): groups of joined polygons under 150 m2 that do
+not reach the edge of the tile. The Gasômetro loses 73 islands (214 of
+14,000 polygons), a tile 18 to 33. After it: 1,568 queries and two rounds
+out and back with the Director's robots, no error. A larger patch that
+cannot be reached stays (an enclosed yard), so the message may still come.
 
 ## The test world
 

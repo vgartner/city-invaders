@@ -74,6 +74,9 @@ effects (shots, explosions, robot wrecks, leaves) run on every peer.
 
 The navmesh is baked at load time from the static colliders on layer 1 inside
 the map bounds; robots, pedestrians and pickups use it.
+After the bake, islands nobody can walk to (the top of a newsstand or a
+wall: joined polygons under 150 m2 away from the map's edge) are dropped
+(`OpenWorld.drop_islands`), so nobody is born and no goal is picked on one.
 
 ## Phases and maps
 

@@ -1227,7 +1227,11 @@ func _load_city() -> void:
 			Vector3(bounds.size.x + 20, elev.y - elev.x + 6, bounds.size.y + 20))
 	nav_region.navigation_mesh = nm
 	nav_region.bake_finished.connect(func():
-		print("navmesh baked")
+		# islands nobody can walk to (kiosk roofs, wall tops) go: see OpenWorld.drop_islands
+		var went := OpenWorld.drop_islands(nm, bounds)
+		if went.x > 0:
+			NavigationServer3D.region_set_navigation_mesh(nav_region.get_rid(), nm)
+		print("navmesh baked: %d polygons, %d islands of %d polygons dropped" % [nm.get_polygon_count(), went.x, went.y])
 		nav_ready = true)
 	nav_region.bake_navigation_mesh(true)
 

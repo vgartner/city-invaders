@@ -361,6 +361,82 @@ static func obstacles(parent: Node, foreign: Array) -> void:
 		parent.add_child(o)
 
 
+## A baked mesh has islands nobody can walk to: the top of a newsstand, of a
+## wall, of a parked lorry. People were born on them (and stood on a kiosk
+## roof), goals were picked on them, and a path asked for across a link to
+## one makes Godot's search report an error. This drops every group of
+## joined polygons under ISLAND_M2 that does not reach the edge of `rect`
+## (where a neighbouring tile may carry it on). Returns how many groups and
+## polygons went.
+const ISLAND_M2 := 150.0
+const ISLAND_EDGE_M := 2.0
+static func drop_islands(nm: NavigationMesh, rect: Rect2) -> Vector2i:
+	var verts := nm.get_vertices()
+	var count := nm.get_polygon_count()
+	var parent := PackedInt32Array()
+	parent.resize(count)
+	for i in count:
+		parent[i] = i
+	var edges := {}                              # an edge by its two ends (to 5 cm) -> the first polygon with it
+	var polys := []
+	for i in count:
+		var poly := nm.get_polygon(i)
+		polys.append(poly)
+		var keys := []
+		for v in poly:
+			var q: Vector3 = verts[v]
+			keys.append(Vector3i(roundi(q.x * 20.0), roundi(q.y * 20.0), roundi(q.z * 20.0)))
+		for k in keys.size():
+			var a: Vector3i = keys[k]
+			var b: Vector3i = keys[(k + 1) % keys.size()]
+			var key := [a, b] if a < b else [b, a]
+			if not edges.has(key):
+				edges[key] = i
+				continue
+			var x: int = edges[key]
+			while parent[x] != x:
+				x = parent[x]
+			var y := i
+			while parent[y] != y:
+				y = parent[y]
+			if x != y:
+				parent[y] = x
+	var inner := rect.grow(-ISLAND_EDGE_M)
+	var area := {}                               # group -> square metres
+	var edge := {}                               # group -> it reaches the edge
+	var root := PackedInt32Array()
+	root.resize(count)
+	for i in count:
+		var x := i
+		while parent[x] != x:
+			x = parent[x]
+		root[i] = x
+		var poly: PackedInt32Array = polys[i]
+		var m2 := 0.0
+		for k in range(2, poly.size()):
+			m2 += (verts[poly[k - 1]] - verts[poly[0]]).cross(verts[poly[k]] - verts[poly[0]]).length() / 2.0
+		area[x] = area.get(x, 0.0) + m2
+		if not edge.has(x):
+			for v in poly:
+				if not inner.has_point(Vector2(verts[v].x, verts[v].z)):
+					edge[x] = true
+					break
+	var gone := {}
+	for x in area:
+		if area[x] < ISLAND_M2 and not edge.has(x):
+			gone[x] = true
+	if gone.is_empty():
+		return Vector2i.ZERO
+	nm.clear_polygons()
+	var dropped := 0
+	for i in count:
+		if gone.has(root[i]):
+			dropped += 1
+		else:
+			nm.add_polygon(polys[i])
+	return Vector2i(gone.size(), dropped)
+
+
 ## The tile's own navigation mesh: its colliders are read here, the mesh is
 ## baked on a thread, and when it is in, links join it to what is round it.
 func _bake(id: String, t: Dictionary) -> void:
@@ -377,13 +453,15 @@ func _bake(id: String, t: Dictionary) -> void:
 	_note(id, "read colliders for the navmesh (main thread)", t0)
 	var t1 := Time.get_ticks_usec()
 	NavigationServer3D.bake_from_source_geometry_data_async(nm, source, func() -> void:
-		_baked.call_deferred(id, root, nm, t1))
+		WorkerThreadPool.add_task(func() -> void:
+			var went := drop_islands(nm, r)
+			_baked.call_deferred(id, root, nm, t1, went)))
 
 
-func _baked(id: String, root: Node3D, nm: NavigationMesh, t1: int) -> void:
+func _baked(id: String, root: Node3D, nm: NavigationMesh, t1: int, went: Vector2i) -> void:
 	if not is_instance_valid(root) or not tiles.has(id) or tiles[id]["node"] != root:
 		return                                  # the tile left while its mesh was baking
-	_note(id, "bake the navmesh (thread), %d polygons" % nm.get_polygon_count(), t1)
+	_note(id, "bake the navmesh (thread), %d polygons, %d islands of %d polygons dropped" % [nm.get_polygon_count(), went.x, went.y], t1)
 	var t0 := Time.get_ticks_usec()
 	var region := NavigationRegion3D.new()
 	region.name = "Navigation"
