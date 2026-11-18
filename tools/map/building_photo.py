@@ -189,6 +189,8 @@ def rebuild(map_id):
         cmd += ["--terrain", str(ROOT / c["terrain"])]
     if c.get("ring"):
         cmd += ["--ring"]                                # car roads end at the outer road loop
+    if c.get("corridor"):
+        cmd += ["--corridor"]                            # street widths by lanes, parking and the gap between facades
     if c.get("tile"):
         cmd += ["--tile"]                                # a tile of a larger city: whole buildings, no horizon
     if c.get("kit_facades"):

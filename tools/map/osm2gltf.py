@@ -447,12 +447,69 @@ CARRIAGEWAY_M = {"motorway": 14.0, "trunk": 14.0, "primary": 14.0, "secondary": 
                  "unclassified": 7.0, "residential": 7.0, "living_street": 6.0, "service": 4.5}
 
 
-def _carriageway(osm, proj):
+# the corridor rule (--corridor): a street is as wide as its lanes and the cars
+# parked along it, and as the buildings on both sides let it be
+LANE_M = {"motorway": 3.6, "trunk": 3.5, "primary": 3.4, "secondary": 3.3, "tertiary": 3.2}     # others 3.0
+PARKING_M = 2.2              # a row of parked cars along a kerb
+WALK_MIN_M = 2.5             # the pavement a street leaves on each side, where the buildings stand close
+WALK_FILL_M = 4.5            # a gap up to twice this between kerb and facade is all pavement
+CORRIDOR_REACH_M = 25.0      # facades are looked for this far from the street's line
+
+
+def _corridor(line, tree, shapes):
+    """How far apart the buildings on the two sides of a street stand: facade
+    to facade across its line, sampled every 10 m, the narrow end of what was
+    found (the 15th percentile - a kiosk or one house forward of the rest
+    does not narrow the whole street). None with fewer than three samples
+    that have a building on both sides."""
+    gaps = []
+    d = 5.0
+    while d < line.length - 4.0:
+        a, b = line.interpolate(d), line.interpolate(d + 1.0)
+        tx, ty = b.x - a.x, b.y - a.y
+        n = math.hypot(tx, ty) or 1.0
+        sides = []
+        for sign in (1.0, -1.0):
+            ray = LineString([(a.x, a.y), (a.x - ty / n * sign * CORRIDOR_REACH_M, a.y + tx / n * sign * CORRIDOR_REACH_M)])
+            best = None
+            for k in tree.query(ray):
+                hit = ray.intersection(shapes[k])
+                if not hit.is_empty:
+                    best = a.distance(hit) if best is None else min(best, a.distance(hit))
+            sides.append(best)
+        if sides[0] is not None and sides[1] is not None:
+            gaps.append(sides[0] + sides[1])
+        d += 10.0
+    if len(gaps) < 3:
+        return None
+    gaps.sort()
+    return gaps[int(len(gaps) * 0.15)]
+
+
+def _carriageway(osm, proj, corridor=False):
     """Where the cars drive: every motor street as wide as OSM says (its
     `width`, else its `lanes` at 3.2 m, else a width by its kind - narrower
-    when one-way), plus the car parks. This is the asphalt; nothing else is."""
+    when one-way), plus the car parks. This is the asphalt; nothing else is.
+
+    `corridor`: without a `width`, a street is its lanes (OSM's, else one each
+    way) and what the buildings leave: the gap between the facades less a
+    pavement on each side, no narrower than the lanes alone and no wider than
+    the lanes with cars parked along both kerbs. Where no buildings face each
+    other, the lanes and one row of parked cars; an avenue (primary,
+    secondary) is its lanes alone. The facades are OSM's own
+    (not the map's cut of them), so every tile of a world lays the same street."""
     from shapely.geometry import Polygon
+    from shapely.strtree import STRtree
     parts = []
+    shapes, tree = [], None
+    if corridor:
+        for el in osm:
+            if el["type"] == "way" and "building" in el.get("tags", {}) and len(el.get("geometry", [])) >= 4:
+                poly = Polygon([proj(p["lat"], p["lon"]) for p in el["geometry"]])
+                if poly.is_valid and poly.area > 20.0:
+                    shapes.append(poly)
+        tree = STRtree(shapes)
+    measured = wider = 0
     for el in osm:
         t = el.get("tags", {})
         if el["type"] != "way" or len(el.get("geometry", [])) < 2:
@@ -469,6 +526,25 @@ def _carriageway(osm, proj):
             w = float((str(t.get("width", "")).split() or ["0"])[0].replace(",", "."))
         except ValueError:
             w = 0.0
+        line = LineString([proj(p["lat"], p["lon"]) for p in el["geometry"]])
+        if not w and corridor and kind != "service":
+            try:
+                lanes = int(t.get("lanes", "0"))
+            except ValueError:
+                lanes = 0
+            lanes = lanes or (1 if t.get("oneway") == "yes" else 2)
+            bare = lanes * LANE_M.get(kind, 3.0)
+            # an avenue is two one-way streets side by side in OSM, the gap between
+            # its facades holds both: it is its lanes, and the strip between the
+            # two stays
+            avenue = kind in ("motorway", "trunk", "primary", "secondary")
+            w = bare if avenue else bare + PARKING_M
+            gap = None if avenue else _corridor(line, tree, shapes)
+            if gap is not None:
+                measured += 1
+                w = min(max(gap - 2 * WALK_MIN_M, bare), bare + 2 * PARKING_M)
+            old = 3.2 * int(t["lanes"]) if str(t.get("lanes", "")).isdigit() else CARRIAGEWAY_M[kind] * (0.6 if t.get("oneway") == "yes" else 1.0)
+            wider += w > old + 0.3
         if not w:
             try:
                 w = 3.2 * int(t.get("lanes", "0"))
@@ -477,7 +553,9 @@ def _carriageway(osm, proj):
         if not w:
             w = CARRIAGEWAY_M[kind] * (0.6 if t.get("oneway") == "yes" else 1.0)
         # round ends: where two ways of a street meet at an angle no wedge of grass is left
-        parts.append(LineString([proj(p["lat"], p["lon"]) for p in el["geometry"]]).buffer(max(w, 3.0) / 2))
+        parts.append(line.buffer(max(w, 3.0) / 2))
+    if corridor:
+        print(f"streets by the corridor rule: {measured} measured between facades, {wider} wider than before")
     return unary_union(parts) if parts else Point(9e9, 9e9).buffer(0.1)
 
 
@@ -861,6 +939,9 @@ def main():
     ap.add_argument("--tile", action="store_true",
                     help="a tile of a larger city (docs/OPEN_WORLD.md): buildings are not cut at the edge "
                          "(each belongs whole to one tile) and no horizon is made")
+    ap.add_argument("--corridor", action="store_true",
+                    help="street widths from lanes, parked cars and the gap between the facades; "
+                         "the pavement fills that gap from kerb to wall")
     ap.add_argument("--ring", action="store_true",
                     help="traffic keeps inside the outermost road loop of the map (no car route runs into the border)")
     ap.add_argument("--out", type=Path, required=True, help="output .glb")
@@ -905,7 +986,7 @@ def main():
     # a generated building stops at the kerb: OSM footprints a little off the
     # street line (or a street a little off its own) must not reach into the
     # lanes. Hand-made models keep their footprint.
-    carriageway = _carriageway(osm, proj)
+    carriageway = _carriageway(osm, proj, args.corridor)
     cw_prep = prep(carriageway)
     clipped, dropped, kept = 0, 0, []
     kerb_zone = prep(carriageway.buffer(1.5, join_style=2))
@@ -1418,6 +1499,15 @@ def main():
     kerb_walk = carriageway.buffer(SIDEWALK_M, join_style=2).difference(carriageway) \
         .intersection(footprint.buffer(25.0)).intersection(street_surface).difference(pedestrian)
     blocks = unary_union([blocks, kerb_walk])
+    if args.corridor:
+        # between kerb and facade the ground is pavement, not a 3 m strip at the
+        # kerb, another at the wall and a lawn in between: every gap up to
+        # 2 x WALK_FILL_M wide between the asphalt and a building is closed
+        # (wider ones - front gardens, squares - keep their grass)
+        solid = unary_union([carriageway, footprint])
+        fill = solid.buffer(WALK_FILL_M, join_style=2).buffer(-WALK_FILL_M, join_style=2).difference(solid) \
+            .intersection(carriageway.buffer(2 * WALK_FILL_M + 1.0)).intersection(street_surface).difference(pedestrian)
+        blocks = unary_union([blocks, fill])
     sidewalks0 = blocks.difference(footprint.buffer(0.05))
     lawn = street_surface.difference(asphalt_area).difference(pedestrian).difference(sidewalks0)
     slivers = [g for g in parts_of(lawn) if g.area < 4.0 or g.buffer(-0.6).is_empty]
