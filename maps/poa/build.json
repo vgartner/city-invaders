@@ -20,5 +20,6 @@
   340
  ],
  "ring": true,
+ "corridor": true,
  "kit_facades": "all"
 }

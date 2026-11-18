@@ -25,7 +25,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-KEEP = ("osm", "lat", "lon", "facades", "terrain", "textures", "kit_facades")
+KEEP = ("osm", "lat", "lon", "facades", "terrain", "textures", "kit_facades", "corridor")
 
 
 def main():

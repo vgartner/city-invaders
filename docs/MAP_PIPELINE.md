@@ -206,8 +206,8 @@ it to know which OSM building is where (map editor, DevAgent `selection`).
   the map border (all streets are still drawn). Where the loops cover less
   than a quarter of the map the traffic stays as it was - the map's bounds
   should then be widened to the next road loop out
-- `"corridor": true` in `build.json` (`--corridor`; a pilot, off unless a
-  map asks for it): **street widths by the corridor rule**. Without it a
+- `"corridor": true` in `build.json` (`--corridor`, on for the four maps;
+  `tiles.py` hands it on to a world's tiles): **street widths by the corridor rule**. Without it a
   street with no `width` in OSM is its `lanes` at 3.2 m, else a width by
   its kind, times 0.6 when one-way: measured on three maps the asphalt took
   about 30 % of the gap between the facades (a one-way residential street
@@ -225,9 +225,10 @@ it to know which OSM building is where (map editor, DevAgent `selection`).
   - the pavement fills the gap from kerb to wall where it is up to 9 m
     (`WALK_FILL_M`); wider gaps keep their grass.
 
-  Tried on the Gasômetro: one-way residential 4.2 -> 6.7 m across, one-way
+  On the Gasômetro: one-way residential 4.2 -> 6.7 m across, one-way
   tertiary 6.4 -> 10.5 m; 825 buildings instead of 828 (three more small
-  ones stood in the wider lanes). Not done: moving a street to the middle
+  ones stood in the wider lanes), the Centro 782 instead of 783, the
+  Mercado and Porto Alegre as many as before. Not done: moving a street to the middle
   of its corridor (OSM's line is 1-3 m off it, so one pavement is wider
   than the other)
 - paved paths across lawns and parks (OSM footways, paths, cycleways and steps that are not street sidewalks or dirt tracks) drawn as paving
