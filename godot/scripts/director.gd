@@ -123,8 +123,8 @@ func _spawn_near(player: Node3D) -> void:
 		var pos := NavigationServer3D.map_get_closest_point(map, guess)
 		if pos == Vector3.ZERO or pos.distance_to(player.global_position) < 20.0:
 			continue
-		if not get_tree().current_scene.in_bounds(pos, 6.0):
-			continue    # keep away from the open map edge
+		if not get_tree().current_scene.in_world(pos, 6.0):
+			continue    # keep away from the open edge of the map (or of a tile that is in)
 		# must be reachable: the path from the player has to end at the spawn
 		var path := NavigationServer3D.map_get_path(map, player.global_position, pos, true)
 		if path.is_empty() or path[path.size() - 1].distance_to(pos) > 1.5:
@@ -145,7 +145,7 @@ func _spread() -> float:
 func _alive() -> int:
 	var n := 0
 	for e in enemies_root.get_children():
-		if e.is_alive():
+		if e.is_alive() and not e.has_meta("tile"):   # an open-world tile's own patrol is not the round's
 			n += 1
 	return n
 

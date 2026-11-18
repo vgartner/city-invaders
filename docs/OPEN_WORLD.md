@@ -56,15 +56,30 @@ leaves. Single maps can be registered too: `main.open_world("<id>")`
   (`TILE_PEOPLE`); people and robots choose goals in a tile that has its
   mesh (`main.in_world`), and robots chasing a player follow across the
   edge. When a tile is due to leave, its passers-by leave the streets with
-  it; a robot in it keeps the tile until it is gone.
+  it.
+- **Robots**: the tile brings 4 robots on patrol (`TILE_ROBOTS`), born on
+  its mesh at least 60 m from every player. They carry the tile's id (meta
+  `tile`) and are apart from the round's: the Director does not count them
+  against its limit, so the waves come as before. A tile that leaves takes
+  the tiles' robots standing in it; when it comes back it makes only those
+  of its own that are no longer alive elsewhere. A robot of the round (from
+  a ship, a collector, a mech) in a tile still keeps the tile until it is
+  gone.
 - **Traffic**: the tile's streets (`<id>.roads.json`) join the round's road
   graph, which every vehicle drives by. In tile mode a tile's streets run
   to its very edge, so the neighbour's start at the same points: a node
   where the graph already has one is that node. The ways into the tile's
   streets are open while it is in; when it leaves they close (its edges
   stay in the graph, unreachable, for when it comes back) and the traffic
-  in it comes back in at a border street of the map. A vehicle someone
-  left in a tile keeps the tile.
+  in it drives back in at an edge.
+  Each tile brings 6 vehicles (`TILE_TRAFFIC`, no buses), started on its
+  streets, up to what the loaded world should hold (the map's 16 and 6 a
+  tile); when a tile leaves, as many go with it and the rest drive back in.
+  Where traffic drives in is worked out again whenever a tile's streets
+  open or close: the dead ends at the edge of what is loaded, not the
+  map's edge where a tile carries the street on. A vehicle whose driver ran
+  from the robots goes with its tile; one a player drives or has driven
+  (meta `taken`) keeps the tile.
 - The map's invisible border walls move out to enclose the tiles, and its
   horizon (far ground and towers, which would stand where the tiles are) is
   hidden.
@@ -73,9 +88,8 @@ leaves. Single maps can be registered too: `main.open_world("<id>")`
   `open_world_node.threaded = false` builds on the main thread instead, to
   compare.
 
-**Not yet**: occluders, pickups, robots and traffic spawned in a tile
-(vehicles drive in from the round's map; bus lines and stops stay the
-map's), and anything about multiplayer. The round's own map never leaves.
+**Not yet**: occluders, pickups, dropships landing in a tile, bus lines
+and stops (they stay the map's), and anything about multiplayer. The round's own map never leaves.
 
 ## The test world
 
@@ -135,7 +149,17 @@ the far edge of the world, 240 m away, where they came back in at a border
 street of the map; one turned at a junction inside the tile and drove back.
 With the tile gone no vehicle was left in it. In two minutes of ordinary
 traffic (17 vehicles) none happened to cross: few streets lead over an
-edge, and nothing spawns in a tile yet.
+edge, and nothing spawned in a tile then.
+
+**Robots and traffic born in the tiles**: a round on the centre tile with
+two neighbours in started with 20 robots (8 of them the tiles', 4 each) and
+28 vehicles; walking between the northern and the southern edge twice,
+tiles came and went three times and the numbers stayed level (23-24
+robots, 34 vehicles driving with three tiles in), `errors` empty. Before
+abandoned vehicles left with their tile, one robot attack was enough to
+keep a tile for good. One tile (the western one) held about half the
+traffic at any time: most of the streets that end at the world's edge are
+there, so most vehicles drive in there - the entries want weighting.
 
 **Textures were the weight.** The first tile cost about 0.8 GB of video
 memory: Godot imports the images it extracts from a glb lossless, four
@@ -158,9 +182,9 @@ models and people are still imported lossless and hold 4-6 GB
 3. **Navigation, the rest.** The round's map still bakes its mesh at load,
    on the main thread (most of the loading time): every tile, the first
    one too, should bake on a thread or come with its mesh baked.
-4. **Traffic and robots spawned by tile**, bus lines across tiles; a
-   tile's props breakable like the map's; a big landmark built
-   over several frames.
+4. **Bus lines across tiles**, dropships landing in a tile, traffic
+   driving in spread evenly over the world's edge; a tile's props
+   breakable like the map's; a big landmark built over several frames.
 5. **A far view**: low buildings of the tiles that are not loaded.
 6. **Multiplayer**: the server keeps the tiles round every player.
 7. **The round's own tile leaving too**: today it stays, with its

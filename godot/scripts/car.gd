@@ -882,6 +882,7 @@ func take(peer: int, by: Node3D) -> void:
 	if occupied:
 		apply_damage(0, by)
 	driver_peer = peer
+	set_meta("taken", true)                   # a player's from now on (the open world keeps its tile)
 	_path = PackedVector3Array()
 	_speed = 0.0
 	collision_mask = 1 | 2 | 8 | 16 | 32      # 8: the map's edge walls

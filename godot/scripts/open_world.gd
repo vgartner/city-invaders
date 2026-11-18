@@ -21,6 +21,9 @@ const CHECK_S := 0.25
 const LINK_STEP_M := 2.5    # a navigation link every so often along a tile's edge
 const LINK_REACH_M := 1.2   # from this far outside the edge to this far inside
 const TILE_PEOPLE := 14     # passers-by a tile brings
+const TILE_ROBOTS := 4      # robots on patrol a tile brings
+const TILE_TRAFFIC := 6     # vehicles a tile's streets bring
+const ROBOT_CLEAR_M := 60.0 # no robot is born nearer a player than this
 const FRAME_MS := 4.0       # street furniture: this much building a frame
 
 var main: Node
@@ -123,6 +126,8 @@ func _process(dt: float) -> void:
 		var d := _distance(t["rect"], p)
 		if t["state"] == "in" and not t.get("streets", false):
 			_streets_in(id, t)
+		if t["state"] == "in" and t.get("streets", false) and not t.get("cars", false):
+			_traffic_in(t)
 		if t["state"] == "out" and d < LOAD_M:
 			t["state"] = "loading"
 			t["t0"] = Time.get_ticks_usec()
@@ -130,15 +135,14 @@ func _process(dt: float) -> void:
 			for path in t["paths"]:
 				ResourceLoader.load_threaded_request(path, "", true)
 		elif t["state"] == "in" and d > UNLOAD_M:
-			if not _vacate(t["rect"]):
-				continue                       # a robot is in it: the tile stays
+			if not _vacate(t):
+				continue                       # a robot of the round is in it: the tile stays
 			var t0 := Time.get_ticks_usec()
 			t["nav"] = false
 			for lm in t.get("landmarks", []):
 				main._landmark_nodes.erase(lm)
 			t.erase("landmarks")
 			t.erase("held")
-			_streets_out(t)
 			(t["node"] as Node).queue_free()
 			t["node"] = null
 			t["state"] = "out"
@@ -383,6 +387,29 @@ func _baked(id: String, root: Node3D, nm: NavigationMesh, t1: int) -> void:
 			if at != Vector3.ZERO:
 				main._civ_seq += 1
 				main.civ_spawner.spawn({"id": main._civ_seq, "pos": at + Vector3(0, 0.1, 0), "model": main.Civilian.pick()})
+		_robots_in(id, region)
+
+
+## Server: the tile's own robots on patrol, away from the players. They carry
+## the tile's id (meta "tile") and leave with whatever tile they are in when
+## it goes; those of the tile still alive elsewhere are not made again.
+func _robots_in(id: String, region: NavigationRegion3D) -> void:
+	var have := 0
+	for e in main.enemies_root.get_children():
+		if e.get_meta("tile", "") == id and e.has_method("is_alive") and e.is_alive():
+			have += 1
+	var players: Array = main.players_root.get_children()
+	for attempt in 40:
+		if have >= TILE_ROBOTS:
+			break
+		var at := NavigationServer3D.region_get_random_point(region.get_rid(), 1, true)
+		if at == Vector3.ZERO or not (tiles[id]["rect"] as Rect2).grow(-8.0).has_point(Vector2(at.x, at.z)):
+			continue
+		if players.any(func(pl): return (pl as Node3D).global_position.distance_to(at) < ROBOT_CLEAR_M):
+			continue
+		var e: Node = main.enemy_spawner.spawn({"id": main._next_enemy_id(), "pos": at + Vector3(0, 0.2, 0)})
+		e.set_meta("tile", id)
+		have += 1
 
 
 ## Two meshes baked apart stop an agent's radius short of the shared edge:
@@ -472,12 +499,14 @@ func _streets_in(id: String, t: Dictionary) -> void:
 		_note(id, "streets: %d edges joined to the road graph at %d nodes" % [tg["edges"].size(), joined], t0)
 	for w in t["ways"]:
 		(g["out"] as Dictionary).get_or_add(w[0], []).append(w[1])
+	_entries()
 
 
 ## The tile leaves: the ways into its streets close (the edges stay in the
 ## graph, unreachable, for when it comes back).
 func _streets_out(t: Dictionary) -> void:
 	t["streets"] = false
+	t["cars"] = false
 	var g: Dictionary = main.road_graph
 	if not g.has("out"):
 		return
@@ -487,29 +516,119 @@ func _streets_out(t: Dictionary) -> void:
 			if ways[k][0] == w[1][0] and ways[k][1] == w[1][1]:
 				ways.remove_at(k)
 				break
+	_entries()
 
 
-## Before a tile leaves: passers-by in it leave the streets and traffic in it
-## comes back in at a border street of the map; a robot in it, or a vehicle
-## someone left there, keeps the tile (false).
-func _vacate(r: Rect2) -> bool:
-	var area := r.grow(3.0)
+## Where traffic drives in: the dead ends of the streets open now, at the edge
+## of what is loaded (the same rule as main._load_roads, with the tiles).
+func _entries() -> void:
+	var g: Dictionary = main.road_graph
+	var open := {}                               # edge -> true: a way leads onto it
+	for node in g["out"]:
+		for w in g["out"][node]:
+			open[int(w[0])] = true
+	var degree := {}
+	for i in open:
+		var e: Dictionary = g["edges"][i]
+		degree[int(e["a"])] = degree.get(int(e["a"]), 0) + 1
+		degree[int(e["b"])] = degree.get(int(e["b"]), 0) + 1
+	var entries := []
+	for i in open:
+		var e: Dictionary = g["edges"][i]
+		for spec in [[int(e["a"]), true], [int(e["b"]), false]]:
+			var n: Array = g["nodes"][spec[0]]
+			if degree[spec[0]] == 1 and (spec[1] or not e["oneway"]) and not _inside(Vector2(n[0], n[1]), 20.0):
+				entries.append([i, spec[1]])
+	g["entries"] = entries
+
+
+## In the map or a tile whose streets are open, `margin` from the edge of
+## their union (a point on the seam between two of them is inside).
+func _inside(p: Vector2, margin: float) -> bool:
+	for d in [Vector2(margin, 0), Vector2(-margin, 0), Vector2(0, margin), Vector2(0, -margin)]:
+		var q: Vector2 = p + d
+		var found: bool = main.in_bounds(Vector3(q.x, 0.0, q.y))
+		for id in tiles:
+			if found:
+				break
+			found = tiles[id].get("streets", false) and (tiles[id]["rect"] as Rect2).has_point(q)
+		if not found:
+			return false
+	return true
+
+
+## The round's moving traffic: its own driver aboard, no player's.
+func _moving() -> Array:
+	var out := []
+	for v in main.traffic_root.get_children():
+		if v.get("occupied") and v.get("driver_peer") == 0 and not v.has_meta("taken"):
+			out.append(v)
+	return out
+
+
+## Traffic the loaded world should hold: the map's, and each open tile's.
+func _traffic_wanted() -> int:
+	var n := int(round(main.TRAFFIC * main.density()))
+	for id in tiles:
+		if tiles[id].get("streets", false):
+			n += TILE_TRAFFIC
+	return n
+
+
+## Server: vehicles start on the tile's streets, up to what the world should hold.
+func _traffic_in(t: Dictionary) -> void:
+	var ways: Array = t["ways"]
+	if not multiplayer.is_server() or ways.is_empty() or not main._round_live:
+		return
+	t["cars"] = true
+	var g: Dictionary = main.road_graph
+	for k in mini(TILE_TRAFFIC, _traffic_wanted() - _moving().size()):
+		var way: Array = ways.pick_random()[1]
+		var model: int = main.Car.pick()
+		while main.Car.kind_of(main.Car.MODELS[model]) == "bus" \
+				or (main.Car.MODELS[model].contains("trailer") and g["len"][way[0]] < 150.0):
+			model = main.Car.pick()
+		main._car_seq += 1
+		main.car_spawner.spawn({"id": main._car_seq, "model": model, "driver": main.Civilian.pick_walker(),
+				"edge": way[0], "forward": way[1]})
+
+
+## Before a tile leaves: a robot of the round in it, or a vehicle a player
+## drives or has driven, keeps the tile (false). Else its streets close; the
+## robots the tiles brought, the passers-by and the vehicles their drivers ran
+## from go with it; of the traffic in it, what the world now holds too much of
+## goes too and the rest drives back in at an edge.
+func _vacate(t: Dictionary) -> bool:
+	var area: Rect2 = (t["rect"] as Rect2).grow(3.0)
+	var robots := []
 	for e in main.enemies_root.get_children():
 		if area.has_point(Vector2((e as Node3D).global_position.x, (e as Node3D).global_position.z)):
-			return false
+			if not e.has_meta("tile"):
+				return false
+			robots.append(e)
 	var traffic := []
 	for v in main.traffic_root.get_children():
 		if area.has_point(Vector2((v as Node3D).global_position.x, (v as Node3D).global_position.z)):
-			if v.get("driver_peer") != 0 or not v.get("occupied"):
+			if v.get("driver_peer") != 0 or v.has_meta("taken"):
 				return false
 			traffic.append(v)
-	if multiplayer.is_server():
-		for v in traffic:
+	_streets_out(t)
+	if not multiplayer.is_server():
+		return true
+	for e in robots:
+		e.queue_free()
+	var spare: int = _moving().size() - _traffic_wanted()
+	for v in traffic:
+		if not v.get("occupied"):
+			v.queue_free()
+		elif spare > 0 and v.get("kind") != "bus":
+			spare -= 1
+			v.queue_free()
+		else:
 			v.call("_enter_from_edge")
-	if multiplayer.is_server():
-		for c in main.civilians_root.get_children():
-			if area.has_point(Vector2((c as Node3D).global_position.x, (c as Node3D).global_position.z)):
-				c.queue_free()
+	for c in main.civilians_root.get_children():
+		if area.has_point(Vector2((c as Node3D).global_position.x, (c as Node3D).global_position.z)):
+			c.queue_free()
 	return true
 
 
