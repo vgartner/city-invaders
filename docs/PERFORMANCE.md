@@ -993,3 +993,63 @@ compressed):
 Close-ups of vehicles, people, the weapon in hand and the Theatro's
 interior showed no difference. What is left (about 2.3 GB on a 6260 x 2656
 screen) is not yet broken down: the render buffers are part of it.
+
+## November 2026: shared bus distance tables
+
+`car.gd::_dist_to_edge` used to scan every edge at each Dijkstra expansion,
+repeating the calculation for each bus junction and border re-entry. It now
+uses `bus_routes.gd`: one incoming-edge index and up to 32 read-only target
+tables owned by the road graph, shared across buses. FIFO eviction bounds
+memory; no static map references are retained. New maps get fresh state;
+streamed streets invalidate state on both opening and closing. An edge-count
+guard catches appended streets. Call `BusRoutes.invalidate(graph)` after
+in-place cost, endpoint or direction edits.
+
+The same frontier ordering, edge ordering, two target endpoint seeds and
+`_cheapest` tie handling are retained. This pass changes calculation cost,
+not the driving trajectory or which closed tile edges routing considers.
+
+Godot 4.7.2 on M3 Max, paired measurements in one headless process, microseconds:
+
+| Map | Original cold median | Indexed cold median | Original repeated median | Cached repeated median |
+|---|---:|---:|---:|---:|
+| Gasometro | 854 | 45 | 849 | 2 |
+| Centro | 876 | 34 | 908 | 2 |
+| Mercado | 837 | 23 | 303 | 1 |
+| POA | 687 | 16 | 685 | 1 |
+
+Cold queries cover every target edge. The repeated workload cycles through
+16 targets for 160 queries, so its first pass can miss the bounded cache.
+Timers have microsecond resolution; these are function-cost measurements,
+not an FPS benchmark. Before making the change, the unchanged production
+function was also measured separately (cold medians 605-840 us).
+
+Regression checks compare all 237 target distance tables and 10,409 option
+choices with a retained copy of the pre-cache algorithm. Additional fixtures
+check shared read-only tables, one-way/unreachable roads, edited costs and
+directions, appended edges, map isolation, FIFO eviction, and the actual
+open-world tile close/reopen invalidation hooks.
+
+Reproduce from the repository root:
+
+```sh
+BUS_BENCH_REPORT=/tmp/bus-routes.json godot --headless --path godot \
+  res://../tools/bench/bus_routes_bench.tscn
+```
+
+A natural Centro baseline observed only seven queries in 62 seconds (3,983 us
+total, 1,004 us maximum). This is a small intermittent saving in current maps,
+not evidence that bus routing caused large hitches. Runtime rosters were not
+seeded, so their overall frame rates are not a controlled A/B comparison.
+Counters are available through
+`main.road_graph.get("_bus_routes", {}).get("stats", {})`: calls, hits, builds,
+evictions and build time; they reset on invalidation. The reverse index and
+cached tables trade bounded graph memory for less repeated computation.
+
+The optimised Centro smoke run lasted 127 seconds: 31 natural requests,
+26 hits, five table builds (420 us build total, 173 us maximum). Seven buses
+were inspected in the live traffic; moving buses and normal braking were
+observed. Runtime `errors` was empty before and after. The post-change
+roster differs from the baseline, so these counts demonstrate cache use,
+not a controlled traffic/FPS speedup. Tests used a separate DevAgent session
+on port 24698 and ended it afterwards; no player session was controlled.

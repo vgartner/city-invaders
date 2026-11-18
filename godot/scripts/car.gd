@@ -4,6 +4,7 @@ extends AnimatableBody3D
 ## respected), picks a random continuation at every junction and brakes for
 ## anything in front of it. Clients mirror position/rotation.
 
+const BusRoutes := preload("res://scripts/bus_routes.gd")
 const Library := preload("res://scripts/model_library.gd")
 ## kind -> folder, share of the traffic, cruise speed (m/s), extra offset to
 ## the right of the lane, riding clip and the ground speed it was animated at
@@ -724,26 +725,9 @@ func _bus_pick(options: Array) -> Variant:
 	return _cheapest(options, target, dist)
 
 
-## Shortest way (metres) from every node to the street `target` (Dijkstra
-## over the allowed travel directions; the graphs are small).
+## Shared shortest distances to the target street; preserves the legacy routing rules.
 func _dist_to_edge(target: int) -> Dictionary:
-	var te: Dictionary = graph["edges"][target]
-	var dist := {int(te["a"]): 0.0, int(te["b"]): 0.0}
-	var frontier: Array = dist.keys()
-	while not frontier.is_empty():
-		frontier.sort_custom(func(x, y): return dist[x] < dist[y])
-		var n: int = frontier.pop_front()
-		for i in graph["edges"].size():
-			var e: Dictionary = graph["edges"][i]
-			# edges that lead INTO n in an allowed direction
-			for spec in [[int(e["a"]), int(e["b"]), true], [int(e["b"]), int(e["a"]), false]]:
-				if spec[1] != n or (not spec[2] and e["oneway"]):
-					continue
-				var nd: float = dist[n] + graph["len"][i]
-				if nd < dist.get(spec[0], INF):
-					dist[spec[0]] = nd
-					frontier.append(spec[0])
-	return dist
+	return BusRoutes.distances(graph, target)
 
 
 ## Of [edge, forward] options, the one on the shortest way to `target`; null if none leads there.

@@ -15,6 +15,7 @@ extends Node
 ## building the scene and its collision on a worker thread, and the frame
 ## that puts it into the tree - the one the player can feel.
 
+const BusRoutes := preload("res://scripts/bus_routes.gd")
 const LOAD_M := 120.0       # a tile comes in when the player is this near its bounds
 const UNLOAD_M := 220.0     # and goes out beyond this
 const CHECK_S := 0.25
@@ -518,6 +519,7 @@ func _streets_in(id: String, t: Dictionary) -> void:
 	for w in t["ways"]:
 		(g["out"] as Dictionary).get_or_add(w[0], []).append(w[1])
 	_entries()
+	BusRoutes.invalidate(g)
 
 
 ## The tile leaves: the ways into its streets close (the edges stay in the
@@ -535,6 +537,7 @@ func _streets_out(t: Dictionary) -> void:
 				ways.remove_at(k)
 				break
 	_entries()
+	BusRoutes.invalidate(g)
 
 
 ## Where traffic drives in: the dead ends of the streets open now, at the edge

@@ -208,3 +208,14 @@ models and people are still imported lossless and hold 4-6 GB
    from any one of them.
 8. **A tile's files smaller**: 40-90 MB of glb each; the menu, the release
    packages and the map editor know nothing of worlds yet.
+
+## Bus distance cache
+
+Opening or closing a tile's streets invalidates `bus_routes.gd`'s graph-owned
+reverse adjacency and target tables. Replacing the round's graph also drops
+the cache. Appending edges has an additional size guard; edits to existing
+edge costs, endpoints or one-way flags must explicitly call
+`BusRoutes.invalidate(graph)`. The optimisation preserves the previous
+routing rules, including consideration of retained tile edges: respecting
+closed streets in shortest-distance searches remains a separate behaviour
+change. There are at most 32 cached target tables per graph.

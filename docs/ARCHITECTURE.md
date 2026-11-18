@@ -18,6 +18,7 @@ There are no hand-made scenes: `main.tscn` only holds `main.gd`.
 | `drone.gd` | URB-D3 flying drone: patrols above the street, circles and shoots players, calls idle robots |
 | `dropship.gd` | Brings reinforcements: flies in, hovers, lowers robots on a beam |
 | `director.gd` | AI director (Left 4 Dead style): intensity per player, BUILD_UP / PEAK / RELAX phases, waves, breather drops |
+| `bus_routes.gd` | Graph-owned, bounded reverse-distance cache shared by buses; reverse adjacency preserves existing route choices; invalidated by tile road changes |
 | `car.gd` | Traffic: cars, buses, the Charrua tanker, motorcycle couriers, cyclists, horsemen, and the parked armoured harvester. Follows the road graph; drivers bail out when shot; player-driven arcade handling |
 | `props.gd` | Street furniture from `<map>.props.json`: trees (with shot-able crowns), lamps, signals, bins, stalls, the tram, parked cars, street name signs; destructible props |
 | `pickup.gd` | Pickups: churrasco, chimarrão, remédio, Fruki, pala, ammo, weapons |
