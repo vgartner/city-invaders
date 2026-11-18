@@ -239,16 +239,19 @@ func _tree_mats() -> void:
 	_bark_mat.roughness = 1.0
 
 
-## Foliage-card tree: textured trunk plus crossed alpha-cut leaf planes at a
-## few heights. TREE_TEMPLATES shapes are built once; each street tree is one
-## of them, turned and scaled, drawn in batches (one draw call per template
-## and map cell instead of 13 per tree).
+## Shared branched templates: near and far meshes use the same tree ID so
+## foliage hits/shudders still move every representation. The legacy builder
+## below is retained only for the reproducible before/after preview.
 const TREE_TEMPLATES := 8
 var _tree_meshes: Array = []      # [[ArrayMesh, trunk height, crown radius], ...]
 var _batch := preload("res://scripts/batcher.gd").new()
 
 
 func _tree_template() -> Array:
+	return preload("res://scripts/vegetation_trees.gd").template(_tree_meshes.size())
+
+
+func _legacy_tree_template() -> Array:
 	var h := randf_range(5.5, 8.5)
 	var trunk_h := h * 0.55
 	var crown_r := randf_range(2.2, 3.2)
@@ -280,7 +283,6 @@ func _tree_template() -> Array:
 
 
 func _tree(pos: Vector3) -> void:
-	_tree_mats()
 	if _tree_meshes.is_empty():
 		for t in TREE_TEMPLATES:
 			_tree_meshes.append(_tree_template())
@@ -289,10 +291,11 @@ func _tree(pos: Vector3) -> void:
 	var trunk_h: float = tpl[1] * s
 	var crown_r: float = tpl[2] * s
 	var id := crowns.size()
-	_batch.add(tpl[0], Transform3D(Basis(Vector3.UP, randf() * TAU).scaled(Vector3.ONE * s), pos), null, 0.0,
-			GeometryInstance3D.SHADOW_CASTING_SETTING_ON, "tree%d" % id)
+	var xf := Transform3D(Basis(Vector3.UP, randf() * TAU).scaled(Vector3.ONE * s), pos)
+	_batch.add(tpl[0], xf, null, 60.0, GeometryInstance3D.SHADOW_CASTING_SETTING_ON, "tree%d" % id, 0.0, 0.0)
+	_batch.add(tpl[3], xf, null, 0.0, GeometryInstance3D.SHADOW_CASTING_SETTING_ON, "tree%d" % id, 60.0, 0.0)
 	var trunk_body := _pole_collider(pos, 0.25, trunk_h)
-	var centre := pos + Vector3(0, trunk_h + crown_r * 0.5, 0)
+	var centre := pos + Vector3(0, float(tpl[4]) * s, 0)
 	trunk_body.set_meta("tree_crown", centre)
 	var area := Area3D.new()
 	area.collision_layer = FOLIAGE_LAYER

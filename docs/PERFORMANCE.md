@@ -1053,3 +1053,36 @@ observed. Runtime `errors` was empty before and after. The post-change
 roster differs from the baseline, so these counts demonstrate cache use,
 not a controlled traffic/FPS speedup. Tests used a separate DevAgent session
 on port 24698 and ended it afterwards; no player session was controlled.
+
+## November 2026: vegetation quality study
+
+The old tree template has 72 triangles. The branched near/far templates have
+1,694/566: this deliberately increases geometry to improve close silhouettes
+and leaf detail. Eight templates share geometry/materials across maps and
+tiles. MultiMesh batching remains; its optional range beginning supports a
+60 m near/far split by batch bounds with the same hit/shudder reference ID.
+
+Blade grass is camera-local: 12 m cells, a 28 m shader fade, 6,000 instances
+maximum per active map/tile, 72 triangles per tuft (432,000 triangles at the
+cap). There is one shared opaque mesh/material, no grass shadows, no alpha
+cards and no grass colliders. Cells farther away are freed; closer missing
+cells can evict farther cached ones when full. The active map/tile owns the
+index and cells, so unloading it releases them. The far horizon has only the
+original ground with a matte, world-varied lawn shader.
+
+Indexing and placement yield between work chunks with a 1.8 ms target.
+This is a soft budget: a finishing upload, scheduling or one geometry
+operation can exceed it. Tuft mesh creation happens during loading. In the
+Gasometro smoke run the recorded generation-step maximum was 1.947 ms.
+Camera moves retained the 6,000 cap. Of 395 anchors sampled on two visits,
+all were on grass and maximum height error was below 0.000001 m. Non-grass
+surfaces were rejected during placement; grass had zero collision objects.
+Both near/far hit references existed and falling-leaf/shudder calls produced
+no runtime errors. The synthetic preview also samples its flat test surface.
+
+These are placement and geometry diagnostics, not proof of unchanged FPS:
+another agent's game was running. Before adopting the study on main, measure
+a sole visible instance at the same resolution, map, camera and population,
+especially in a dense grove, on lower graphics presets and across tile
+boundaries. More triangles and cutout foliage can raise GPU/shadow costs.
+The reproducible before/after visual scene is described in ASSETS.md.

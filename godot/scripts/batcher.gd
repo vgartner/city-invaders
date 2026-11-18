@@ -16,11 +16,11 @@ var _where := {}        # id -> [MultiMesh, index]
 ## Queue one copy of `mesh` at global transform `xf`. `id` (any value) lets
 ## ref() find it after build().
 func add(mesh: Mesh, xf: Transform3D, material: Material = null, vis_end := 0.0,
-		shadow := GeometryInstance3D.SHADOW_CASTING_SETTING_ON, id: Variant = null) -> void:
+		shadow := GeometryInstance3D.SHADOW_CASTING_SETTING_ON, id: Variant = null, vis_begin := 0.0, vis_margin := 5.0) -> void:
 	var cell := Vector2i(floori(xf.origin.x / CELL), floori(xf.origin.z / CELL))
-	var key := [mesh.get_rid(), material.get_rid() if material else RID(), cell, vis_end, shadow]
+	var key := [mesh.get_rid(), material.get_rid() if material else RID(), cell, vis_end, shadow, vis_begin, vis_margin]
 	if not _groups.has(key):
-		_groups[key] = {"mesh": mesh, "material": material, "shadow": shadow, "vis_end": vis_end,
+		_groups[key] = {"mesh": mesh, "material": material, "shadow": shadow, "vis_end": vis_end, "vis_begin": vis_begin, "vis_margin": vis_margin,
 				"xforms": [], "ids": []}
 	_groups[key]["xforms"].append(xf)
 	_groups[key]["ids"].append(id)
@@ -56,9 +56,11 @@ func build(parent: Node3D) -> int:
 		mmi.multimesh = mm
 		mmi.material_override = g["material"]
 		mmi.cast_shadow = g["shadow"]
+		mmi.visibility_range_begin = g["vis_begin"]
+		mmi.visibility_range_begin_margin = g["vis_margin"]
 		if g["vis_end"] > 0.0:
 			mmi.visibility_range_end = g["vis_end"]
-			mmi.visibility_range_end_margin = 5.0
+			mmi.visibility_range_end_margin = g["vis_margin"]
 		parent.add_child(mmi)
 		made += 1
 	_groups.clear()

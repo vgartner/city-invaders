@@ -1158,6 +1158,7 @@ func _load_city() -> void:
 			(mi as MeshInstance3D).visible = false
 	_water(city)
 	_matte_grass(city)
+	_add_grass_detail(city)
 	_kit_facades(city)
 	_occluders()
 	# double-sided collision: rays started inside a volume must still hit it
@@ -4117,6 +4118,14 @@ func _matte_grass(root: Node) -> void:
 				m.roughness_texture = null
 				m.roughness = 1.0
 				m.metallic_specular = 0.2
+				var lawn := ShaderMaterial.new()
+				lawn.shader = preload("res://assets/common/vegetation/lawn.gdshader")
+				lawn.set_shader_parameter("albedo_tex", m.albedo_texture)
+				lawn.set_shader_parameter("tint", m.albedo_color)
+				lawn.set_shader_parameter("normal_tex", m.normal_texture)
+				lawn.set_shader_parameter("use_normal", m.normal_enabled and m.normal_texture != null)
+				lawn.set_shader_parameter("normal_strength", m.normal_scale)
+				(mi as MeshInstance3D).set_surface_override_material(i, lawn)
 
 
 func _edge_length(e: Dictionary) -> float:
@@ -5821,3 +5830,11 @@ func random_pickup_point(avoid: Vector3) -> Vector3:
 		if not path.is_empty() and path[path.size() - 1].distance_to(pos) < 1.0:
 			return pos
 	return avoid
+
+
+## Local blade detail is visual only; the original lawn remains at all distances.
+func _add_grass_detail(city: Node3D) -> void:
+	var detail := preload("res://scripts/grass_detail.gd").new()
+	detail.name = "GrassDetail"
+	city.add_child(detail)
+	detail.setup(city)

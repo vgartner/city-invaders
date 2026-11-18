@@ -266,6 +266,7 @@ func _enter(id: String, t: Dictionary) -> void:
 	var city := root.get_node("City")
 	main._water(city)
 	main._matte_grass(city)
+	main._add_grass_detail(city)
 	main._kit_facades(city, true)
 	t["state"] = "in"
 	_note(id, "enter the tree (main thread)", t0)

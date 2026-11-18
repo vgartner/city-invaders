@@ -1,0 +1,9 @@
+Asset: broadleaf_twigs.png
+Creation date: 2026-11-18
+Method: built-in image generation tool, transparent_background=true.
+No reference images or third-party photographs were supplied.
+The output RGBA file is copied unchanged; actual dimensions are 1254 x 1254.
+The desired prompt resolution was not guaranteed by the tool.
+
+Prompt:
+Create a production-ready photorealistic PBR BASE COLOR foliage texture atlas for a realistic southern Brazilian city game. Square texture, ideally 2048x2048, transparent RGBA background. A 2 by 2 atlas with exactly FOUR separate small leafy twig fans, one fully contained in each quadrant with generous transparent padding, absolutely no overlap across quadrants. Each fan is a different natural arrangement of a thin brown forked woody twig bearing 15–25 individual broad elliptical green leaves, realistic leaf veins, petioles and curled leaf edges, healthy mature medium to deep olive green with a few muted yellow-green younger leaves. Leaves about 5–9 cm, each branch fan about 50–70 cm across. Branch axes spread diagonally into a natural airy irregular fan, not solid circular blobs. Include visible gaps between leaves and small projecting twigs. Botanical realism suitable for close first-person observation. Flat orthographic cutout capture, balanced neutral diffuse illumination, neutral white balance, no cast shadows, no directional sunlight, no ambient background or terrain. Preserve crisp silhouettes and alpha holes. No labels, no text, no frames, no borders, no full tree, no pot, no grass, no graphic illustration, no stylization, no white or black background. ONLY four isolated leafy twig clusters on true transparency.

@@ -279,3 +279,44 @@ six clips were played/seeked, damage triggered death and 29 rigid bodies
 were created by the plate shatter. Runtime `errors` was empty. The map still
 reports its existing navigation-radius rounding and excluded unreachable
 Fruki-pickup warnings; those are outside this asset change.
+
+## Branched trees and camera-local grass (vegetation study)
+
+`vegetation_trees.gd` builds eight shared deterministic templates with
+hierarchical branches and four original broadleaf twig cards. `props.gd`
+keeps trunk colliders, crown hit areas, falling leaves and shudder references;
+`batcher.gd` accepts an optional visibility-range beginning so near and far
+meshes share the tree ID. Near/far meshes contain 1,694/566 triangles and
+switch at 60 m by batch bounds (not individual instance distance). The prior 72-triangle template is retained for comparisons.
+
+`grass_detail.gd` indexes the active map's grass triangles, budgeted across
+frames. It follows the current camera with 12 m MultiMesh cells, a 28 m fade
+and a 6,000-instance cap per map/tile. Blade geometry has no alpha, shadow or
+collision. Ray queries accept only grass as the top world surface; roads,
+paths and props are excluded. The local random generators leave the
+simulation RNG alone. Cells and jobs are discarded when their tile is freed.
+`main.gd` and `open_world.gd` attach grass to active city scenes; the visual
+horizon receives the lawn material but no blades. Source transforms are
+converted to world metres for sampling and back to the cell's parent frame.
+
+The lawn shader retains the existing Grass004 base/normal textures, matte
+response and UVs, with low-frequency world-space colour variation. The sole
+added image is the original 1254-square transparent twig atlas (unchanged
+from the built-in image tool). Prompt, provenance and licences live in
+`assets/common/vegetation/`. No ProtonScatter asset/code is included.
+
+Matching 1280 x 720 before/after captures:
+
+```sh
+VEGETATION_OUTPUT=/tmp/vegetation godot --path godot \
+  res://../tools/bench/vegetation_preview.tscn
+```
+
+These are controlled visual comparisons, not a world FPS benchmark. Grass
+`diagnostics` records instances, candidate/rejected placements and generation
+step time; `audit_samples()` checks existing anchors against world surfaces.
+
+Crown hit-sphere height/radius are derived from the actual leaf-card vertices,
+so taller/narrower templates keep foliage-hit coverage. The preview audit
+checks every leaf vertex across all eight templates and exercises the real
+Props tree builder and falling-leaf call.
