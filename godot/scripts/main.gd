@@ -722,6 +722,23 @@ func in_world(p: Vector3, margin := 0.0) -> bool:
 			or (is_instance_valid(open_world_node) and open_world_node.call("walkable", p, margin))
 
 
+## The rectangles people and robots may walk in now: the map (unless it is
+## out) and the open-world tiles that are in.
+func world_areas() -> Array:
+	var out := [] if home_out else [bounds]
+	if is_instance_valid(open_world_node):
+		out.append_array(open_world_node.call("areas"))
+	return out
+
+
+## Where "can it be walked to?" is asked from: the map's spawn point, or a
+## player while the open world has the map out.
+func reach_from() -> Vector3:
+	if home_out and players_root.get_child_count() > 0:
+		return (players_root.get_child(0) as Node3D).global_position
+	return spawn_point
+
+
 ## Distance from the origin to the farthest map corner (dropship entry/exit).
 func map_reach() -> float:
 	var r := 0.0
@@ -2251,11 +2268,11 @@ func _drop_zone(from: Vector3, min_d: float, max_d: float, players: Array) -> Ar
 	for attempt in 40:
 		var dir := Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU)
 		var pos := NavigationServer3D.map_get_closest_point(map, from + dir * randf_range(min_d, max_d))
-		if not in_bounds(pos, 20.0):
+		if not in_world(pos, 20.0):
 			continue
 		if players.any(func(pl): return pl.global_position.distance_to(pos) < 45.0):
 			continue
-		var path := NavigationServer3D.map_get_path(map, spawn_point, pos, true)
+		var path := NavigationServer3D.map_get_path(map, reach_from(), pos, true)
 		if path.is_empty() or path[path.size() - 1].distance_to(pos) > 1.5:
 			continue
 		var roof := pos.y
@@ -5333,7 +5350,7 @@ func _hidden_point_near(pl: Node3D, toward := Vector3.ZERO) -> Vector3:
 		var dir := toward if toward != Vector3.ZERO else Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU)
 		dir = dir.rotated(Vector3.UP, randf_range(-0.5, 0.5))
 		var p := NavigationServer3D.map_get_closest_point(map, pl.global_position + dir * randf_range(45.0, 100.0))
-		if not in_bounds(p, 10.0) or p.distance_to(pl.global_position) < 35.0:
+		if not in_world(p, 10.0) or p.distance_to(pl.global_position) < 35.0:
 			continue
 		var q := PhysicsRayQueryParameters3D.create(p + Vector3(0, 1.6, 0), pl.global_position + Vector3(0, 1.6, 0), 1)
 		if not space.intersect_ray(q).is_empty():
@@ -5380,7 +5397,7 @@ func _collectors(delta: float) -> void:
 	var map := get_world_3d().navigation_map
 	for attempt in 40:
 		var p := NavigationServer3D.map_get_random_point(map, 1, true)
-		if not in_bounds(p, 15.0):
+		if not in_world(p, 15.0):
 			continue
 		if players_root.get_children().any(func(pl): return pl.global_position.distance_to(p) < 90.0):
 			continue
@@ -5411,10 +5428,16 @@ func _swarms(delta: float) -> void:
 
 ## A street point at the map's edge nearest to `at` (where a Coletor takes its catch).
 func edge_point_near(at: Vector3) -> Vector3:
-	var x0 := bounds.position.x + 12.0
-	var x1 := bounds.end.x - 12.0
-	var z0 := bounds.position.y + 12.0
-	var z1 := bounds.end.y - 12.0
+	var r := bounds                              # with the open world: the edge of what is loaded
+	var areas := world_areas()
+	if not areas.is_empty():
+		r = areas[0]
+		for a in areas:
+			r = r.merge(a)
+	var x0 := r.position.x + 12.0
+	var x1 := r.end.x - 12.0
+	var z0 := r.position.y + 12.0
+	var z1 := r.end.y - 12.0
 	var cands := [Vector3(x0, at.y, at.z), Vector3(x1, at.y, at.z), Vector3(at.x, at.y, z0), Vector3(at.x, at.y, z1)]
 	cands.sort_custom(func(a, b): return a.distance_to(at) < b.distance_to(at))
 	# the nearest edge at least 100 m off, so there is time to chase it down
@@ -5476,10 +5499,14 @@ func _container_spot() -> Vector3:
 		away.append(pl.global_position)
 	var best := Vector3.INF
 	var best_d := -1.0
+	var areas := world_areas()
+	if areas.is_empty():
+		return best
 	for attempt in 400:
-		var p := NavigationServer3D.map_get_closest_point(map, Vector3(randf_range(bounds.position.x, bounds.end.x), 0,
-				randf_range(bounds.position.y, bounds.end.y)))
-		if not in_bounds(p, 30.0):
+		var r: Rect2 = areas.pick_random()
+		var p := NavigationServer3D.map_get_closest_point(map, Vector3(randf_range(r.position.x, r.end.x), (elev.x + elev.y) / 2.0,
+				randf_range(r.position.y, r.end.y)))
+		if not in_world(p, 30.0):
 			continue
 		if _containers.any(func(c): return is_instance_valid(c) and Vector2(c.ground_spot.x, c.ground_spot.z).distance_to(Vector2(p.x, p.z)) < 120.0):
 			continue

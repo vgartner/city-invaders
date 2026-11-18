@@ -96,7 +96,7 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   `open_world_node.threaded = false` builds on the main thread instead, to
   compare.
 
-**Not yet**: occluders, pickups, dropships landing in a tile, bus lines
+**Not yet**: occluders, pickups, bus lines
 and stops (they stay the map's), and anything about multiplayer.
 
 **The round's own map leaves too** (`_home_check`, one player). Everything
@@ -130,10 +130,23 @@ reading and 320-730 ms building on threads, 13-15 ms entering the tree,
 22-44 ms for 35 links. Two rounds out and back, with and without the
 Director's robots: the map the same as before in the screenshots.
 
-Not done: with more than one player the map stays; a dropship cannot land
-and no container is delivered while the player is outside the map (those
-still pick spots by the map's bounds); the landmarks and the street
-furniture sleep in memory instead of leaving.
+Not done: with more than one player the map stays; the landmarks and the
+street furniture sleep in memory instead of leaving.
+
+**Ships, containers, collectors and swarms in the tiles.** What the round
+sends picks its place in the loaded world, not in the map's bounds
+(`main.in_world`, `main.world_areas()`): a dropship's drop zones, the spot
+a people container is set down on, where a collector is born and the edge
+it flees to (the edge of what is loaded), where a swarm appears. "Can it
+be walked to?" is asked from a player while the map is out
+(`main.reach_from()`). Ships cruise over the tallest roof loaded (a tile
+raises `main.city_top`). A container or an antenna standing in a tile that
+goes out sleeps there and wakes when the tile is back; the dropship's
+robots are the round's, so they keep their tile in like any robot of the
+round. Tested on the centre tile with the map out: a dropship called 400 m
+from the map set 6 robots down in the tile, a container was delivered in a
+tile, slept when its tile went and woke when it came back; the same calls
+on the Gasômetro as before.
 
 **Islands in the navigation mesh.** A baked mesh has patches nobody can
 walk to - the top of a newsstand, of a wall, of a parked lorry. With robots
@@ -147,7 +160,8 @@ a tile's and the round's map's, drops its islands after the bake
 not reach the edge of the tile. The Gasômetro loses 73 islands (214 of
 14,000 polygons), a tile 18 to 33. After it: 1,568 queries and two rounds
 out and back with the Director's robots, no error. A larger patch that
-cannot be reached stays (an enclosed yard), so the message may still come.
+cannot be reached stays (an enclosed yard), so the message may still come:
+it came once more in a later test (a container delivered in a tile).
 
 ## The test world
 
@@ -250,8 +264,9 @@ models and people are still imported lossless and hold 4-6 GB
    thread and bakes for 0.7-0.8 s on a thread - it was not the slow step
    of loading. What is left is a mesh that comes baked with the tile
    instead of being baked when it enters.
-4. **Bus lines across tiles**, dropships landing in a tile; a tile's props
-   breakable like the map's; a big landmark built over several frames.
+4. **Bus lines across tiles**; a tile's props breakable like the map's; a
+   big landmark built over several frames; the first people containers of
+   a round and the antenna are still placed in the round's map only.
 5. **A far view**: low buildings of the tiles that are not loaded.
 6. **Multiplayer**: the server keeps the tiles round every player.
 7. **The round's own tile, the rest**: it leaves and comes back now (one

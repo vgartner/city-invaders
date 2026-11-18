@@ -243,7 +243,9 @@ func _build(id: String) -> void:
 	city.name = "City"
 	root.add_child(city)
 	var custom := scenes.size() > 1
+	var top := 0.0
 	for mi in city.find_children("*", "MeshInstance3D", true, false):
+		top = maxf(top, (mi as MeshInstance3D).get_aabb().end.y)
 		var kind: String = main.city_mesh_kind(mi)
 		if (custom and kind in main.VISUAL_ONLY) or kind in main.NO_COLLISION:
 			continue
@@ -263,6 +265,7 @@ func _build(id: String) -> void:
 		if shape is ConcavePolygonShape3D:
 			(shape as ConcavePolygonShape3D).backface_collision = true
 	t["node"] = root
+	t["top"] = top
 	t.erase("scenes")
 
 
@@ -275,6 +278,9 @@ func _enter(id: String, t: Dictionary) -> void:
 	main._matte_grass(city)
 	main._add_grass_detail(city)
 	main._kit_facades(city, true)
+	main.city_top = maxf(main.city_top, t.get("top", 0.0))    # ships cruise over the tallest roof loaded
+	_wake(t.get("asleep", []))
+	t.erase("asleep")
 	t["state"] = "in"
 	_note(id, "enter the tree (main thread)", t0)
 	await _furnish(id, t, root)
@@ -334,6 +340,38 @@ func _furnish(id: String, t: Dictionary, root: Node3D) -> void:
 	# their collision is merged a frame later: the navmesh bake reads it
 	for k in 2:
 		await get_tree().physics_frame
+
+
+## The tiles people can walk in now, as rectangles.
+func areas() -> Array:
+	var out := []
+	for id in tiles:
+		if tiles[id]["nav"]:
+			out.append(tiles[id]["rect"])
+	return out
+
+
+## Things of the round standing where a tile or the map goes out (a people
+## container, an antenna; in the map also who and what is in it) sleep in
+## place - hidden, stopped, out of the physics - until it is back.
+func _sleep(nodes: Array, area: Rect2) -> Array:
+	var asleep := []
+	for n in nodes:
+		if is_instance_valid(n) and n is Node3D and not n.has_meta("asleep") \
+				and area.has_point(Vector2((n as Node3D).global_position.x, (n as Node3D).global_position.z)):
+			asleep.append([n, (n as Node).process_mode, (n as Node3D).visible])
+			n.set_meta("asleep", true)
+			(n as Node3D).visible = false
+			(n as Node).process_mode = Node.PROCESS_MODE_DISABLED
+	return asleep
+
+
+func _wake(asleep: Array) -> void:
+	for a in asleep:
+		if is_instance_valid(a[0]):
+			(a[0] as Node).process_mode = a[1]
+			(a[0] as Node3D).visible = a[2]
+			a[0].remove_meta("asleep")
 
 
 ## Is the point inside a tile people can walk in (its navigation mesh is in)?
@@ -793,6 +831,7 @@ func _vacate(t: Dictionary) -> bool:
 				return false
 			traffic.append(v)
 	_streets_out(t)
+	t["asleep"] = _sleep(main._containers + main._antennas, area)
 	if not multiplayer.is_server():
 		return true
 	for e in robots:
@@ -866,15 +905,8 @@ func _home_out() -> void:
 		if inside.call(e):
 			e.queue_free()                       # a tile's patrol; or the round's, and the Director sends others
 	# who and what is in it sleeps where it stands
-	var asleep := []
-	var sleepers: Array = main.civilians_root.get_children() + main.traffic_root.get_children() \
-			+ main.pickups_root.get_children() + main._containers + main._antennas
-	for n in sleepers:
-		if is_instance_valid(n) and inside.call(n) and not n.has_meta("asleep"):
-			asleep.append([n, (n as Node).process_mode, (n as Node3D).visible])
-			n.set_meta("asleep", true)
-			(n as Node3D).visible = false
-			(n as Node).process_mode = Node.PROCESS_MODE_DISABLED
+	var asleep := _sleep(main.civilians_root.get_children() + main.traffic_root.get_children()
+			+ main.pickups_root.get_children() + main._containers + main._antennas, area)
 	home["asleep"] = asleep
 	# its streets close
 	var g: Dictionary = main.road_graph
@@ -969,11 +1001,7 @@ func _home_in() -> void:
 		return
 	region.enabled = true
 	_home_links(true)
-	for a in home["asleep"]:
-		if is_instance_valid(a[0]):
-			(a[0] as Node).process_mode = a[1]
-			(a[0] as Node3D).visible = a[2]
-			a[0].remove_meta("asleep")
+	_wake(home["asleep"])
 	home["asleep"] = []
 	var g: Dictionary = main.road_graph
 	for w in home["ways"]:
