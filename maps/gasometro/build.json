@@ -20,5 +20,6 @@
  ],
  "out": "godot/city/gasometro.glb",
  "ring": true,
+ "corridor": true,
  "kit_facades": "all"
 }
