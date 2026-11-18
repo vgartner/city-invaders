@@ -223,14 +223,25 @@ it to know which OSM building is where (map editor, DevAgent `selection`).
   - an avenue (primary, secondary: two one-way streets side by side in
     OSM) is its bare lanes, so the strip between the two stays;
   - the pavement fills the gap from kerb to wall where it is up to 9 m
-    (`WALK_FILL_M`); wider gaps keep their grass.
+    (`WALK_FILL_M`); wider gaps keep their grass;
+  - a street stands in the middle of its corridor (`_centred_osm`): OSM
+    draws the line 1-3 m off it, which made one pavement wide and the other
+    narrow. Each street measured between facades is moved sideways by the
+    median of what its samples say (not under 0.3 m, at most 4 m); a
+    junction moves to where the moved streets meet and slides along a
+    street that stays (an avenue, a driveway); footways and the nodes on a
+    street (crossings, signals) follow the vertices they share. The build
+    reads a moved copy of the OSM file, so the asphalt, the markings, the
+    road graph and the terrain's street profiles all use the same lines;
+    the file in `maps/<map>/data/` is not changed.
 
   On the Gasômetro: one-way residential 4.2 -> 6.7 m across, one-way
   tertiary 6.4 -> 10.5 m; 825 buildings instead of 828 (three more small
   ones stood in the wider lanes), the Centro 782 instead of 783, the
-  Mercado and Porto Alegre as many as before. Not done: moving a street to the middle
-  of its corridor (OSM's line is 1-3 m off it, so one pavement is wider
-  than the other)
+  Mercado and Porto Alegre as many as before. Centring moved 34 of the
+  Gasômetro's 48 measured streets: 19 stood more than 1 m off the middle
+  before, 4 after (those more than 4 m off, most with an open lot on one
+  side), and nine of ten are now within 0.5 m (3.1 m before)
 - paved paths across lawns and parks (OSM footways, paths, cycleways and steps that are not street sidewalks or dirt tracks) drawn as paving
 - props from OSM nodes plus generated lamps (on the kerb side of sidewalks only; no two lamps, OSM's own included, closer than 14 m), trees where OSM has them,
   street name signs at corners, stalls and the tram on promenades

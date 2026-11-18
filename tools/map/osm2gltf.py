@@ -454,15 +454,27 @@ PARKING_M = 2.2              # a row of parked cars along a kerb
 WALK_MIN_M = 2.5             # the pavement a street leaves on each side, where the buildings stand close
 WALK_FILL_M = 4.5            # a gap up to twice this between kerb and facade is all pavement
 CORRIDOR_REACH_M = 25.0      # facades are looked for this far from the street's line
+CENTRE_MIN_M = 0.3           # a street this near the middle of its corridor stays where OSM drew it
+CENTRE_MAX_M = 4.0           # and none moves further than this
 
 
-def _corridor(line, tree, shapes):
-    """How far apart the buildings on the two sides of a street stand: facade
-    to facade across its line, sampled every 10 m, the narrow end of what was
-    found (the 15th percentile - a kiosk or one house forward of the rest
-    does not narrow the whole street). None with fewer than three samples
-    that have a building on both sides."""
-    gaps = []
+def _footprints(osm, proj):
+    """OSM's building outlines and a search tree over them."""
+    from shapely.geometry import Polygon
+    from shapely.strtree import STRtree
+    shapes = []
+    for el in osm:
+        if el["type"] == "way" and "building" in el.get("tags", {}) and len(el.get("geometry", [])) >= 4:
+            poly = Polygon([proj(p["lat"], p["lon"]) for p in el["geometry"]])
+            if poly.is_valid and poly.area > 20.0:
+                shapes.append(poly)
+    return shapes, STRtree(shapes)
+
+
+def _facades(line, tree, shapes):
+    """How far the facades stand from a street's line, sampled every 10 m:
+    (left, right) wherever a building was found on both sides."""
+    out = []
     d = 5.0
     while d < line.length - 4.0:
         a, b = line.interpolate(d), line.interpolate(d + 1.0)
@@ -478,12 +490,93 @@ def _corridor(line, tree, shapes):
                     best = a.distance(hit) if best is None else min(best, a.distance(hit))
             sides.append(best)
         if sides[0] is not None and sides[1] is not None:
-            gaps.append(sides[0] + sides[1])
+            out.append((sides[0], sides[1]))
         d += 10.0
+    return out
+
+
+def _corridor(line, tree, shapes):
+    """How far apart the buildings on the two sides of a street stand: facade
+    to facade across its line, the narrow end of what was found (the 15th
+    percentile - a kiosk or one house forward of the rest does not narrow the
+    whole street). None with fewer than three samples that have a building on
+    both sides."""
+    gaps = sorted(l + r for l, r in _facades(line, tree, shapes))
     if len(gaps) < 3:
         return None
-    gaps.sort()
     return gaps[int(len(gaps) * 0.15)]
+
+
+AVENUES = ("motorway", "trunk", "primary", "secondary")
+
+
+def _centred_osm(osm_path, lat, lon):
+    """The corridor rule's street lines: OSM draws a street 1-3 m off the
+    middle of the gap between its facades, which leaves a wide pavement on one
+    side and a narrow one on the other. Each street measured between facades
+    is moved sideways to the middle (the median of what its samples say, at
+    most CENTRE_MAX_M); a junction moves to where the moved streets meet, and
+    slides along a street that stays (an avenue, a driveway). Footways and
+    the nodes on a street (crossings, signals) follow the vertices they
+    share. Returns the path of a copy of the OSM file with the lines moved -
+    every part of the build reads the same streets."""
+    import atexit
+    import os
+    import tempfile
+    proj = osmcity.project(lat, lon)
+    kx, ky = 111320.0 * math.cos(math.radians(lat)), 110540.0
+    data = json.loads(Path(osm_path).read_text())
+    osm = data["elements"]
+    shapes, tree = _footprints(osm, proj)
+    want = defaultdict(list)          # vertex -> [(nx, ny, sideways metres)]: what each street through it asks
+    moved = 0
+    for el in osm:
+        t = el.get("tags", {})
+        kind = t.get("highway")
+        if el["type"] != "way" or kind not in CARRIAGEWAY_M or len(el.get("geometry", [])) < 2 \
+                or car_free(t) or t.get("area") == "yes":
+            continue
+        pts = [proj(p["lat"], p["lon"]) for p in el["geometry"]]
+        off = 0.0
+        if kind not in AVENUES and kind != "service":
+            sides = _facades(LineString(pts), tree, shapes)
+            if len(sides) >= 3:
+                off = float(np.median([(l - r) / 2 for l, r in sides]))
+                off = 0.0 if abs(off) < CENTRE_MIN_M else max(-CENTRE_MAX_M, min(CENTRE_MAX_M, off))
+                moved += off != 0.0
+        for i, p in enumerate(el["geometry"]):
+            for a, b in ((i - 1, i), (i, i + 1)):
+                if a < 0 or b >= len(pts):
+                    continue
+                tx, ty = pts[b][0] - pts[a][0], pts[b][1] - pts[a][1]
+                n = math.hypot(tx, ty)
+                if n > 0.01:
+                    want[(p["lat"], p["lon"])].append((-ty / n, tx / n, off))
+    shift = {}
+    for key, rows in want.items():
+        if not any(r[2] for r in rows):
+            continue
+        a = np.array([r[:2] for r in rows])
+        # streets nearly in line with each other say nothing about a move along them
+        d = np.linalg.lstsq(a, np.array([r[2] for r in rows]), rcond=0.3)[0]
+        n = float(np.hypot(*d))
+        if n > 1.5 * CENTRE_MAX_M:
+            d = d * (1.5 * CENTRE_MAX_M / n)
+        if n > 0.05:
+            shift[key] = (key[0] + d[1] / ky, key[1] + d[0] / kx)
+    for el in osm:
+        if el["type"] == "node" and (el.get("lat"), el.get("lon")) in shift:
+            el["lat"], el["lon"] = shift[(el["lat"], el["lon"])]
+        elif el["type"] == "way" and "highway" in el.get("tags", {}):
+            for p in el.get("geometry", []):
+                if (p["lat"], p["lon"]) in shift:
+                    p["lat"], p["lon"] = shift[(p["lat"], p["lon"])]
+    print(f"streets centred between their facades: {moved} moved, {len(shift)} vertices")
+    fd, tmp = tempfile.mkstemp(suffix=".json", prefix="osm-centred-")
+    with os.fdopen(fd, "w") as f:
+        json.dump(data, f)
+    atexit.register(lambda: os.path.exists(tmp) and os.remove(tmp))
+    return tmp
 
 
 def _carriageway(osm, proj, corridor=False):
@@ -499,16 +592,8 @@ def _carriageway(osm, proj, corridor=False):
     secondary) is its lanes alone. The facades are OSM's own
     (not the map's cut of them), so every tile of a world lays the same street."""
     from shapely.geometry import Polygon
-    from shapely.strtree import STRtree
     parts = []
-    shapes, tree = [], None
-    if corridor:
-        for el in osm:
-            if el["type"] == "way" and "building" in el.get("tags", {}) and len(el.get("geometry", [])) >= 4:
-                poly = Polygon([proj(p["lat"], p["lon"]) for p in el["geometry"]])
-                if poly.is_valid and poly.area > 20.0:
-                    shapes.append(poly)
-        tree = STRtree(shapes)
+    shapes, tree = _footprints(osm, proj) if corridor else ([], None)
     measured = wider = 0
     for el in osm:
         t = el.get("tags", {})
@@ -537,7 +622,7 @@ def _carriageway(osm, proj, corridor=False):
             # an avenue is two one-way streets side by side in OSM, the gap between
             # its facades holds both: it is its lanes, and the strip between the
             # two stays
-            avenue = kind in ("motorway", "trunk", "primary", "secondary")
+            avenue = kind in AVENUES
             w = bare if avenue else bare + PARKING_M
             gap = None if avenue else _corridor(line, tree, shapes)
             if gap is not None:
@@ -957,6 +1042,8 @@ def main():
         models = {k: v["model"] for k, v in blds.items() if v.get("model")}
         fits = {k: v for k, v in blds.items() if v.get("model")}
         films = {k: v["film"] for k, v in blds.items() if v.get("film")}
+    if args.corridor:
+        args.osm = _centred_osm(args.osm, args.lat, args.lon)
     area, buildings, parks, streets = osmcity.load(args.osm, args.lat, args.lon, args.half, args.bounds, heights,
                                                    whole=args.tile)
     foreign = list(osmcity.load.foreign)      # neighbouring tiles' buildings reaching into this one
