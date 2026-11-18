@@ -24,6 +24,9 @@ const TILE_PEOPLE := 14     # passers-by a tile brings
 const TILE_ROBOTS := 4      # robots on patrol a tile brings
 const TILE_TRAFFIC := 6     # vehicles a tile's streets bring
 const ROBOT_CLEAR_M := 60.0 # no robot is born nearer a player than this
+const EVEN_S := 1.5         # traffic is evened out between the map and the tiles this often,
+const EVEN_GAP := 2.5       # when one has this many vehicles over its share and another under,
+const EVEN_CLEAR_M := 100.0 # by moving one no player is this near to a street no player is this near
 const FRAME_MS := 4.0       # street furniture: this much building a frame
 
 var main: Node
@@ -31,6 +34,9 @@ var threaded := true        # false: build on the main thread (to compare the hi
 var tiles := {}             # id -> {rect, state, node, task, t0, ...}
 var events: Array = []      # [{id, what, ms}, ...] in order
 var _since := 0.0
+var _even := 0.0
+var _map_edges := -1        # how many of the road graph's edges are the round's map's
+var _map_vehicles := -1     # the vehicles of the round's map, parked ones too, before any tile's
 var _walls: StaticBody3D
 
 
@@ -79,18 +85,24 @@ func report() -> Dictionary:
 	return {"tiles": states, "events": events, "threaded": threaded}
 
 
-## People and robots standing in each tile now.
+## People, robots and vehicles in each tile now, and in the round's map
+## ("map"); "driving": the vehicles with their own driver aboard.
 func census() -> Dictionary:
 	var out := {}
+	var rects := {"map": main.bounds}
 	for id in tiles:
-		var r: Rect2 = tiles[id]["rect"]
-		var n := [0, 0, 0]
+		rects[id] = tiles[id]["rect"]
+	for id in rects:
+		var r: Rect2 = rects[id]
+		var n := [0, 0, 0, 0]
 		for k in 3:
 			for c in ([main.civilians_root, main.enemies_root, main.traffic_root][k] as Node).get_children():
 				var p: Vector3 = (c as Node3D).global_position
 				if r.has_point(Vector2(p.x, p.z)):
 					n[k] += 1
-		out[id] = {"people": n[0], "robots": n[1], "vehicles": n[2]}
+					if k == 2 and c.get("occupied") and c.get("driver_peer") == 0:
+						n[3] += 1
+		out[id] = {"people": n[0], "robots": n[1], "vehicles": n[2], "driving": n[3]}
 	return out
 
 
@@ -120,6 +132,10 @@ func _process(dt: float) -> void:
 	if _since < CHECK_S:
 		return
 	_since = 0.0
+	_even += CHECK_S
+	if _even >= EVEN_S:
+		_even = 0.0
+		_even_traffic()
 	var p := Vector2(cam.global_position.x, cam.global_position.z)
 	for id in tiles:
 		var t: Dictionary = tiles[id]
@@ -469,6 +485,8 @@ func _streets_in(id: String, t: Dictionary) -> void:
 			return
 		var t0 := Time.get_ticks_usec()
 		var tg: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
+		if _map_edges < 0:
+			_map_edges = g["edges"].size()
 		var nodes: Array = g["nodes"]
 		var index := []                          # the tile's node -> the graph's
 		var known: int = nodes.size()
@@ -575,6 +593,67 @@ func _traffic_wanted() -> int:
 	return n
 
 
+## Server: traffic left to itself gathers where the one-way streets lead and
+## thins out elsewhere (most of all in the round's map, which the tiles'
+## streets drain). Each area - the map, each tile with its streets open - has
+## its share of the moving traffic (16 to 6); when one is EVEN_GAP over it and
+## another as much under, a vehicle of the first that no player is near starts
+## again on a street of the second that no player is near.
+func _even_traffic() -> void:
+	if not multiplayer.is_server() or _map_edges < 0 or not main._round_live:
+		return
+	var areas := [{"rect": main.bounds, "want": roundf(main.TRAFFIC * main.density()), "ways": [], "have": []}]
+	for id in tiles:
+		if tiles[id].get("streets", false) and not (tiles[id]["ways"] as Array).is_empty():
+			areas.append({"rect": tiles[id]["rect"], "want": float(TILE_TRAFFIC), "ways": tiles[id]["ways"], "have": []})
+	if areas.size() < 2:
+		return
+	var moving := _moving()
+	var wanted := 0.0
+	for a in areas:
+		wanted += a["want"]
+	for v in moving:
+		var at := Vector2((v as Node3D).global_position.x, (v as Node3D).global_position.z)
+		for a in areas:
+			if (a["rect"] as Rect2).has_point(at):
+				a["have"].append(v)
+				break
+	var most: Dictionary = areas[0]
+	var least: Dictionary = areas[0]
+	for a in areas:
+		a["gap"] = a["have"].size() - a["want"] * moving.size() / wanted
+		if a["gap"] > most["gap"]:
+			most = a
+		if a["gap"] < least["gap"]:
+			least = a
+	if most["gap"] < EVEN_GAP or least["gap"] > -EVEN_GAP:
+		return
+	var players: Array = main.players_root.get_children()
+	var clear := func(x: float, z: float) -> bool:
+		for pl in players:
+			var p: Vector3 = (pl as Node3D).global_position
+			if Vector2(p.x - x, p.z - z).length() < EVEN_CLEAR_M:
+				return false
+		return true
+	var g: Dictionary = main.road_graph
+	for v in most["have"]:
+		if v.get("kind") == "bus" or not clear.call((v as Node3D).global_position.x, (v as Node3D).global_position.z):
+			continue
+		for attempt in 8:
+			var way: Array
+			if least == areas[0]:
+				var i: int = randi() % _map_edges
+				way = [i, g["edges"][i]["oneway"] or randf() < 0.5]
+			else:
+				way = (least["ways"] as Array).pick_random()[1]
+			var pts: Array = g["edges"][way[0]]["pts"]
+			var mid: Array = pts[pts.size() / 2]
+			if clear.call(mid[0], mid[1]):
+				v.call("start", way[0], way[1])
+				return
+		return
+
+
 ## Server: vehicles start on the tile's streets, up to what the world should hold.
 func _traffic_in(t: Dictionary) -> void:
 	var ways: Array = t["ways"]
@@ -582,7 +661,12 @@ func _traffic_in(t: Dictionary) -> void:
 		return
 	t["cars"] = true
 	var g: Dictionary = main.road_graph
-	for k in mini(TILE_TRAFFIC, _traffic_wanted() - _moving().size()):
+	if _map_vehicles < 0:
+		_map_vehicles = main.traffic_root.get_child_count()
+	# vehicles their drivers ran from stay in the map: they count, or every
+	# tile coming in after a fight would add to them without end
+	var room: int = _map_vehicles + _traffic_wanted() - int(round(main.TRAFFIC * main.density())) - main.traffic_root.get_child_count()
+	for k in mini(mini(TILE_TRAFFIC, room), _traffic_wanted() - _moving().size()):
 		var way: Array = ways.pick_random()[1]
 		var model: int = main.Car.pick()
 		while main.Car.kind_of(main.Car.MODELS[model]) == "bus" \

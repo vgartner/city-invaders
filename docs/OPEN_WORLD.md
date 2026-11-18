@@ -79,12 +79,20 @@ leaves. Single maps can be registered too: `main.open_world("<id>")`
   open or close: the dead ends at the edge of what is loaded, not the
   map's edge where a tile carries the street on. A vehicle whose driver ran
   from the robots goes with its tile; one a player drives or has driven
-  (meta `taken`) keeps the tile.
+  (meta `taken`) keeps the tile. Abandoned vehicles count against what
+  the tiles may bring, so fights do not add vehicles without end.
+- **Traffic evened out**: left to itself the traffic gathers where the
+  one-way streets lead and the round's map empties. Every 1.5 s the map and
+  each open tile are compared with their share of the vehicles driving (16
+  to 6); when one is 2.5 over and another as much under, one vehicle of the
+  first starts again on a street of the second - both at least 100 m from
+  every player (`_even_traffic`).
 - The map's invisible border walls move out to enclose the tiles, and its
   horizon (far ground and towers, which would stand where the tiles are) is
   hidden.
 - `main.open_world_node.report()` lists every step with its time,
-  `census()` the people and robots in each tile;
+  `census()` the people, robots and vehicles (all, and those driving) in
+  each tile and in the round's map;
   `open_world_node.threaded = false` builds on the main thread instead, to
   compare.
 
@@ -157,9 +165,17 @@ two neighbours in started with 20 robots (8 of them the tiles', 4 each) and
 tiles came and went three times and the numbers stayed level (23-24
 robots, 34 vehicles driving with three tiles in), `errors` empty. Before
 abandoned vehicles left with their tile, one robot attack was enough to
-keep a tile for good. One tile (the western one) held about half the
-traffic at any time: most of the streets that end at the world's edge are
-there, so most vehicles drive in there - the entries want weighting.
+keep a tile for good.
+
+**Traffic evened out**: over three minutes standing still, the western
+tile held 15 of 34 vehicles and the round's map 6 (it should hold 16).
+Where vehicles drive in was not the cause - choosing the emptiest entry
+moved the crowd to another tile: the one-way streets lead there, and the
+tiles' streets drain the map. With the traffic evened out (five tiles in,
+36 driving) the map held 9 on average and the tiles 3 to 7. The map stays
+under its share while the player stands in the middle of it: few of its
+streets are 100 m away. One run each, with different tiles in, on a
+machine that was swapping - the counts are fair, timings were not taken.
 
 **Textures were the weight.** The first tile cost about 0.8 GB of video
 memory: Godot imports the images it extracts from a glb lossless, four
@@ -182,8 +198,7 @@ models and people are still imported lossless and hold 4-6 GB
 3. **Navigation, the rest.** The round's map still bakes its mesh at load,
    on the main thread (most of the loading time): every tile, the first
    one too, should bake on a thread or come with its mesh baked.
-4. **Bus lines across tiles**, dropships landing in a tile, traffic
-   driving in spread evenly over the world's edge; a tile's props
+4. **Bus lines across tiles**, dropships landing in a tile; a tile's props
    breakable like the map's; a big landmark built over several frames.
 5. **A far view**: low buildings of the tiles that are not loaded.
 6. **Multiplayer**: the server keeps the tiles round every player.
