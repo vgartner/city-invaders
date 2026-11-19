@@ -29,7 +29,9 @@ keeps what else the list says: label, start, far view, goal). The menu
 lists every world found in `godot/city/` as a free-play city of its own
 (`main.world_entry`): the list may name the menu label (`"label"`, "City ·
 Area" like the maps) and the tile to start on (`"start"`, `tiles.py
---label --start`), by default the tile in the middle of the grid. A round
+--label --start`), by default the tile in the middle of the grid. A world is free play
+unless the list sets `"goal"` (robots to destroy): then it has antennas and
+people containers like a phase. A round
 started on one of the tiles finds the world it belongs to and registers the
 others: they come and go round the player, and so does the round's own
 tile (below). Single maps can be registered too: `main.open_world("<id>")`
@@ -187,6 +189,19 @@ from the map set 6 robots down in the tile, a container was delivered in a
 tile, slept when its tile went and woke when it came back; the same calls
 on the Gasômetro as before.
 
+The antenna and the first people containers of a round wait until the
+tiles round the start are in with their navigation meshes
+(`main.wait_for_world()`, `OpenWorld.settled()`, 30 s at most) and are
+then placed anywhere in what is loaded. On a tile a roof is high when it is
+10 m over the street next to it (in the round's map, 10 m over the start
+as before): the tiles by the river lie 15-20 m lower than the Centro's
+ridge. Tested with a goal set on the test world: both containers came
+down in tiles; the three antennas happened to fall on roofs of the round's
+map (the spots are drawn from the map and the tiles alike). Five minutes
+of autoplay in that round (27 robots down, up to 30 alive, 140-150 people
+round the bot): 47 fps on average, p99 55 ms, 8 frames over 100 ms (the
+worst 276 ms, in a fight), `errors` empty.
+
 **Islands in the navigation mesh.** A baked mesh has patches nobody can
 walk to - the top of a newsstand, of a wall, of a parked lorry. With robots
 alive in a world, Godot's path search reported "It's not expect to not find
@@ -200,8 +215,9 @@ a tile's and the round's map's, drops its islands after the bake
 neighbouring tile may carry it on. Up to November 2026 only groups under
 150 m2 went, and the message came once more from a larger one - an
 enclosed yard - when a container was delivered in a tile; now size does not
-matter. The centre tile as the round's map loses 19 islands (39 of 1,491
-polygons) with the new rule, a tile 11 to 34 (50-107 polygons).
+matter. With the new rule the Gasômetro loses 81 islands (368 of 13,623
+polygons; 73 and 214 before), the centre tile as the round's map 19 (39 of
+1,491), a tile 11 to 34 (50-107 polygons).
 
 ## The test world
 
@@ -312,10 +328,12 @@ models and people are still imported lossless and hold 4-6 GB
    of loading. What is left is a mesh that comes baked with the tile
    instead of being baked when it enters.
 4. **Bus lines across tiles**; a tile's props breakable like the map's; a
-   big landmark built over several frames; the first people containers of
-   a round and the antenna are still placed in the round's map only.
-5. **A far view**: low buildings of the tiles that are not loaded.
-6. **Multiplayer**: the server keeps the tiles round every player.
+   big landmark built over several frames.
+5. **The far view, the rest**: its buildings are boxes of one colour; roofs
+   and a few windows would carry further. The round's map has no far model
+   when it is not a world's tile.
+6. **Multiplayer, the rest**: the antennas stay in the round's map with
+   other players (the server could place them and tell the clients).
 7. **The round's own tile, the rest**: it leaves and comes back now (one
    player), but as itself: its landmarks, street furniture and navigation
    mesh sleep in memory. Every tile equal means the round's map built

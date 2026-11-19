@@ -401,6 +401,16 @@ func wait_for_navmesh() -> void:
 			return
 
 
+## The open world's tiles round the start are loaded with their navigation
+## mesh (30 s at most): the antenna and the first containers are placed in
+## all of them, not only in the round's map.
+func wait_for_world() -> void:
+	var t0 := Time.get_ticks_msec()
+	while is_instance_valid(open_world_node) and not open_world_node.call("settled") \
+			and Time.get_ticks_msec() - t0 < 30000:
+		await get_tree().create_timer(0.25).timeout
+
+
 ## The built-in phases plus maps imported with tools/map/new_city.py (listed in
 ## godot/city/maps.json as [id, label, next, goal, exit side]).
 static func all_maps() -> Array:
@@ -427,8 +437,9 @@ static var _worlds: Array = []
 static var _worlds_read := false
 
 
-## An open world's menu entry: [start tile, label, "", 0] (free play), or []
-## when its list is unreadable. godot/city/<world>.world.json may name the
+## An open world's menu entry: [start tile, label, "", goal], or [] when its
+## list is unreadable. Free play unless the list sets a "goal" (robots to
+## destroy: then it has antennas and people containers like a phase). godot/city/<world>.world.json may name the
 ## tile to start on ("start") and the label ("label"); by default the tile
 ## in the middle of the grid.
 static func world_entry(world: String) -> Array:
@@ -450,7 +461,7 @@ static func world_entry(world: String) -> Array:
 				best = d
 				start = String(t["id"])
 	var label := String(data.get("label", "%s (open world, prototype)" % world.capitalize()))
-	return [start, label, "", 0]
+	return [start, label, "", int(data.get("goal", 0))]
 
 
 ## A map's spec; a next phase that isn't installed (a released game installs
@@ -3821,21 +3832,38 @@ func _place_antenna() -> void:
 		return                          # free play: no objective
 	await get_tree().physics_frame
 	await get_tree().physics_frame
+	await wait_for_world()
 	var space := get_world_3d().direct_space_state
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(map_id) + 5
-	# several high roofs, well apart, away from the start
+	# several high roofs, well apart, away from the start. Every peer places
+	# them itself, so with others in the game only in the round's map (the
+	# same everywhere); alone, anywhere in the loaded world, the open world's
+	# tiles too. High is 10 m over the start in the round's map, 10 m over
+	# the street next to the building in a tile (the world's tiles by the
+	# river lie 15-20 m lower than the Centro's ridge)
+	var alone := multiplayer.multiplayer_peer is OfflineMultiplayerPeer
+	var areas: Array = world_areas() if alone else [bounds]
+	if alone and areas.size() > 1:
+		await wait_for_navmesh()
+	var nav_map := get_world_3d().navigation_map
 	var spots := []
 	for attempt in 1500:
 		if spots.size() >= int(Difficulty.get_value("antennas")):
 			break
-		var p := Vector3(rng.randf_range(bounds.position.x, bounds.end.x), 0, rng.randf_range(bounds.position.y, bounds.end.y))
-		if not in_bounds(p, 25.0) or Vector2(p.x, p.z).distance_to(Vector2(spawn_point.x, spawn_point.z)) < 70.0:
+		var r: Rect2 = areas[rng.randi() % areas.size()]
+		var p := Vector3(rng.randf_range(r.position.x, r.end.x), 0, rng.randf_range(r.position.y, r.end.y))
+		if not in_world(p, 25.0) or Vector2(p.x, p.z).distance_to(Vector2(spawn_point.x, spawn_point.z)) < 70.0:
 			continue
 		if spots.any(func(q): return Vector2(q.x, q.z).distance_to(Vector2(p.x, p.z)) < 120.0):
 			continue
 		var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(p + Vector3(0, 400, 0), p - Vector3(0, 100, 0), 64))
-		if hit and hit.normal.y > 0.9 and hit.position.y - spawn_point.y > 10.0 and rng.randf() < 0.35:
+		if not hit or hit.normal.y <= 0.9:
+			continue
+		var base := spawn_point.y
+		if alone and not bounds.has_point(Vector2(p.x, p.z)):
+			base = NavigationServer3D.map_get_closest_point(nav_map, hit.position).y
+		if hit.position.y - base > 10.0 and rng.randf() < 0.35:
 			spots.append(hit.position)
 	for at in spots:
 		var a: StaticBody3D = Antenna.new()
@@ -5533,6 +5561,7 @@ func _place_containers() -> void:
 		return                          # free play: no objective
 	await wait_for_navmesh()
 	await get_tree().create_timer(2.0).timeout
+	await wait_for_world()
 	for k in int(Difficulty.get_value("containers")):
 		var spot := _container_spot()
 		if spot != Vector3.INF:

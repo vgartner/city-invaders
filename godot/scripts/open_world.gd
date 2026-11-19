@@ -403,6 +403,17 @@ func _furnish(id: String, t: Dictionary, root: Node3D) -> void:
 		await get_tree().physics_frame
 
 
+## No tile on its way in: everything near the player is loaded (or failed)
+## with its navigation mesh. The round waits for it before placing the
+## antenna and the first containers in the whole loaded world.
+func settled() -> bool:
+	for id in tiles:
+		var t: Dictionary = tiles[id]
+		if t["state"] in ["loading", "building", "entering"] or (t["state"] == "in" and not t["nav"]):
+			return false
+	return home.is_empty() or home["state"] in ["in", "out", "failed"]
+
+
 ## The tiles people can walk in now, as rectangles.
 func areas() -> Array:
 	var out := []
