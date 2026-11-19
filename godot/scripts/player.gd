@@ -163,6 +163,13 @@ func _enter_tree() -> void:
 	add_to_group("players")
 
 
+## The calls the server makes on a player ("Server -> this player") are
+## any_peer: the node belongs to its own peer, so an "authority" call from
+## the server would be refused. Only the server (or a plain local call) may.
+func _from_server() -> bool:
+	return multiplayer.get_remote_sender_id() <= 1
+
+
 func _ready() -> void:
 	collision_layer = 4
 	collision_mask = 1 | 2 | 8 | 16 | 32     # world, robots, map border, cars, people
@@ -214,10 +221,15 @@ func _ready() -> void:
 	camera.add_child(_view_model)
 
 	var sync := MultiplayerSynchronizer.new()
+	sync.name = "Sync"                    # the same path on every peer, or its packets go nowhere
 	var cfg := SceneReplicationConfig.new()
 	for prop in [".:position", ".:rotation", ".:health", ".:dead"]:
 		cfg.add_property(NodePath(prop))
 	sync.replication_config = cfg
+	# a node made after _enter_tree is the server's unless told otherwise: the
+	# player's own peer sends where it is (else the server's copy, standing at
+	# the spawn, overwrites a client's every move)
+	sync.set_multiplayer_authority(get_multiplayer_authority())
 	add_child(sync)
 
 	var mine := is_multiplayer_authority()
@@ -803,8 +815,10 @@ func request_exit() -> void:
 
 
 ## Server -> this player: burnt to death in an exploding vehicle.
-@rpc("authority", "call_local", "reliable")
+@rpc("any_peer", "call_local", "reliable")
 func burned() -> void:
+	if not _from_server():
+		return
 	if vehicle:
 		var at: Vector3 = vehicle.global_position + vehicle.global_transform.basis.x * -3.0
 		left_vehicle(at)
@@ -818,15 +832,19 @@ func burned() -> void:
 
 
 ## Server -> this player: the score changed (shown in the HUD with a flash).
-@rpc("authority", "call_local", "reliable")
+@rpc("any_peer", "call_local", "reliable")
 func set_score(total: int, delta: int, reason: String) -> void:
+	if not _from_server():
+		return
 	score = total
 	_score_flash = ("%+d  %s" % [delta, reason])
 	_score_flash_t = 2.5
 
 
-@rpc("authority", "call_local", "reliable")
+@rpc("any_peer", "call_local", "reliable")
 func entered_vehicle(car_name: String) -> void:
+	if not _from_server():
+		return
 	vehicle = get_tree().current_scene.traffic_root.get_node_or_null(car_name)
 	if vehicle == null:
 		return
@@ -855,8 +873,10 @@ func entered_vehicle(car_name: String) -> void:
 
 
 var _gps: Control
-@rpc("authority", "call_local", "reliable")
+@rpc("any_peer", "call_local", "reliable")
 func left_vehicle(at: Vector3) -> void:
+	if not _from_server():
+		return
 	if is_instance_valid(_gps):
 		_gps.vehicle = self
 		_gps.set_driving(false)
@@ -1426,8 +1446,10 @@ var drones := 0
 var _cross: Label
 var _lasso_cd := 0.0
 var _lasso_aim: Node3D
-@rpc("authority", "call_local", "reliable")
+@rpc("any_peer", "call_local", "reliable")
 func got_drone() -> void:
+	if not _from_server():
+		return
 	drones += 1
 	Sfx.play("pickup", -4.0)
 

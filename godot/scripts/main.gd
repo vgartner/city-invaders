@@ -1343,7 +1343,7 @@ func _host() -> void:
 	director.populate()
 	_spawn_drones()
 	_start_world()
-	spawner.spawn({"id": 1, "name": name_edit.text})
+	spawner.spawn({"id": 1, "name": name_edit.text, "at": _v3(spawn_point)})
 	await _finish_loading()
 
 
@@ -1389,7 +1389,7 @@ func _on_peer_connected(id: int) -> void:
 	if multiplayer.is_server():
 		set_difficulty.rpc_id(id, Difficulty.level)
 		host_map.rpc_id(id, map_id)
-		spawner.spawn({"id": id, "name": "Player %d" % id})
+		spawner.spawn({"id": id, "name": "Player %d" % id, "at": _v3(spawn_point)})
 
 
 func _on_peer_disconnected(id: int) -> void:
@@ -1402,9 +1402,19 @@ func _spawn_player(data: Variant) -> Node:
 	var p: CharacterBody3D = Player.new()
 	p.name = str(data["id"])
 	p.display_name = data.get("name", p.name)
-	p.spawn_point = spawn_point
-	p.position = spawn_point + Vector3(randf_range(-2, 2), 0, randf_range(-2, 2))
+	# the server's start: a client never works one out, and its own
+	# spawn_point (0, 1, 0) is under the ground of most maps - where a client
+	# that fell out of the world was put back
+	var at := spawn_point
+	if data.has("at"):
+		at = Vector3(float(data["at"][0]), float(data["at"][1]), float(data["at"][2]))
+	p.spawn_point = at
+	p.position = at + Vector3(randf_range(-2, 2), 0, randf_range(-2, 2))
 	return p
+
+
+static func _v3(v: Vector3) -> Array:
+	return [v.x, v.y, v.z]
 
 
 ## Server: scatter medkits, ammo boxes and machine guns over reachable
@@ -1994,7 +2004,7 @@ func repair_shops() -> Array:
 		if is_instance_valid(lm) and not lm.has_meta("pocket") \
 				and String(lm.get_meta("landmark", {}).get("place", "")) == "repair_shop":
 			out.append((lm as Node3D).global_position)
-	for at in props.shops:
+	for at in (props.shops if props != null else []):     # a client asks before its props are built
 		if (at as Vector3).y > -50.0:
 			out.append(at)
 	return out

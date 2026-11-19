@@ -59,6 +59,16 @@ the authority of their own body: they move locally and send shots
 (`server_shoot`) and vehicle controls (`drive_input`) to the server. Visual
 effects (shots, explosions, robot wrecks, leaves) run on every peer.
 
+Two rules for nodes owned by a player's peer (`player.gd`): a node made in
+code after the authority is set belongs to the server unless it is given
+the player's authority too, and it needs a fixed name (the synchroniser is
+`Sync`) - an automatic name differs between peers and its packets go
+nowhere. The server's calls on a player (`set_score`, `entered_vehicle`,
+`left_vehicle`, `burned`, `got_drone`) are `any_peer` and check that they
+come from the server (`_from_server()`): an `authority` RPC on a node the
+client owns refuses the server. The player spawn carries the server's start
+(`"at"`), which a client never works out itself.
+
 ## Collision layers
 
 | Layer | Bit | Used by |
