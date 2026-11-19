@@ -11,8 +11,9 @@ a map of its own, `<name>_<column>_<row>` (column from the west, row from the
 south), with the source map's data, photos and hand edits and `"tile": true`:
 `maps/<id>/build.json` is written and the map built like any other
 (building_photo.py rebuild). `godot/city/<name>.world.json` lists the tiles;
-a round started on one of them (`start_solo map=<name>_1_1`) streams the
-others in round the player.
+a round started on one of them (`start_solo map=<name>_1_1`, or the menu's
+entry for the world, which starts on the middle tile) streams the others in
+round the player.
 
 A tile that does not build (all water, no street to start on) is left out.
 """
@@ -35,6 +36,8 @@ def main():
     ap.add_argument("--bounds", type=float, nargs=4, required=True, metavar=("MIN_X", "MIN_Y", "MAX_X", "MAX_Y"))
     ap.add_argument("--size", type=float, default=250.0, help="a tile's side in metres (default 250)")
     ap.add_argument("--jobs", type=int, default=2, help="tiles built at the same time (each takes a few GB)")
+    ap.add_argument("--label", help="the menu entry (default: '<Name> (open world, prototype)')")
+    ap.add_argument("--start", help="the tile a round starts on (default: the one in the middle)")
     ap.add_argument("--no-build", action="store_true", help="write the settings and the list only")
     a = ap.parse_args()
 
@@ -71,7 +74,12 @@ def main():
             if ok:
                 built.append(t)
     world = ROOT / "godot" / "city" / f"{a.name}.world.json"
-    world.write_text(json.dumps({"size": a.size, "source": a.source, "tiles": built}, indent=1) + "\n")
+    entry = {"size": a.size, "source": a.source, "tiles": built}
+    if a.label:
+        entry["label"] = a.label
+    if a.start:
+        entry["start"] = a.start
+    world.write_text(json.dumps(entry, indent=1) + "\n")
     print(f"{len(built)} of {len(tiles)} tiles ({cols} x {rows}) in {world.relative_to(ROOT)}")
     print("next: godot --headless --path godot --import")
 

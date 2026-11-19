@@ -23,7 +23,11 @@ DEVAGENT_PORT=24691 tools/devagent/devagent.py start_solo map=centro_world_1_1
 `tiles.py` cuts the area (metres from the source map's centre, y north)
 into tiles of 250 m (`--size`), writes `maps/<name>_<column>_<row>/build.json`
 for each (the source map's data, photos and hand edits, `"tile": true`),
-builds them and lists them in `godot/city/<name>.world.json`. A round
+builds them and lists them in `godot/city/<name>.world.json`. The menu
+lists every world found in `godot/city/` as a free-play city of its own
+(`main.world_entry`): the list may name the menu label (`"label"`, "City ·
+Area" like the maps) and the tile to start on (`"start"`, `tiles.py
+--label --start`), by default the tile in the middle of the grid. A round
 started on one of the tiles finds the world it belongs to and registers the
 others: they come and go round the player, and so does the round's own
 tile (below). Single maps can be registered too: `main.open_world("<id>")`
@@ -274,8 +278,8 @@ models and people are still imported lossless and hold 4-6 GB
    mesh sleep in memory. Every tile equal means the round's map built
    through the tile path from the start, with its breakable props and
    fixed pickups as a tile's.
-8. **A tile's files smaller**: 40-90 MB of glb each; the menu, the release
-   packages and the map editor know nothing of worlds yet.
+8. **A tile's files smaller**: 40-90 MB of glb each; the release packages
+   and the map editor know nothing of worlds yet (the menu does).
 
 ## Bus distance cache
 

@@ -411,7 +411,46 @@ static func all_maps() -> Array:
 			for m in extra:
 				if not out.any(func(o): return o[0] == m[0]):
 					out.append(m)
+	# open worlds (tools/map/tiles.py): free play, started on the middle tile
+	if not _worlds_read:
+		_worlds_read = true
+		for f in DirAccess.get_files_at("res://city"):
+			if f.ends_with(".world.json"):
+				var w := world_entry(f.trim_suffix(".world.json"))
+				if not w.is_empty():
+					_worlds.append(w)
+	for w in _worlds:
+		if not out.any(func(o): return o[0] == w[0]):
+			out.append(w)
 	return out
+static var _worlds: Array = []
+static var _worlds_read := false
+
+
+## An open world's menu entry: [start tile, label, "", 0] (free play), or []
+## when its list is unreadable. godot/city/<world>.world.json may name the
+## tile to start on ("start") and the label ("label"); by default the tile
+## in the middle of the grid.
+static func world_entry(world: String) -> Array:
+	var data = JSON.parse_string(FileAccess.get_file_as_string("res://city/%s.world.json" % world))
+	if not data is Dictionary or data.get("tiles", []).is_empty():
+		return []
+	var tiles: Array = data["tiles"]
+	var start := String(data.get("start", ""))
+	if start == "":
+		var cols := 0
+		var rows := 0
+		for t in tiles:
+			cols = maxi(cols, int(t["col"]) + 1)
+			rows = maxi(rows, int(t["row"]) + 1)
+		var best := INF
+		for t in tiles:
+			var d := Vector2(float(t["col"]) - (cols - 1) / 2.0, float(t["row"]) - (rows - 1) / 2.0).length()
+			if d < best:
+				best = d
+				start = String(t["id"])
+	var label := String(data.get("label", "%s (open world, prototype)" % world.capitalize()))
+	return [start, label, "", 0]
 
 
 ## A map's spec; a next phase that isn't installed (a released game installs
