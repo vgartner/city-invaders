@@ -83,7 +83,8 @@ Measured at one street of the Centro (DevAgent `perf`, `show_only`, `lights`):
 - Robots scan for people every 0.3 s (their own phase each), the line of
   sight only for the four nearest candidates; their hit flash overlay is on
   the meshes only while it shows.
-- Traffic probes the street under its wheels once it has moved 1.5 m and
+- Traffic probes the street under its wheels once it has moved 1.5 m (or
+  turned round where it stands, so its slope is not kept the other way) and
   checks the way ahead ten times a second (one shared shape); the driven
   vehicle keeps probing every tick.
 - **Jolt physics** (`physics/3d/physics_engine`): with 115 people, 43

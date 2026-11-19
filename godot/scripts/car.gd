@@ -842,10 +842,14 @@ func _physics_process(delta: float) -> void:
 	var half: float = max(_length * 0.35, 0.5)
 	# the street under the axles is probed again once the car has moved a
 	# little (a crawl in a queue or a stop costs no rays); in between it
-	# follows the last slope found
+	# follows the last slope found. Turned round where it stands (a dead end
+	# at the edge of what is loaded) it probes again: the old slope, the
+	# other way round, put its nose into the street and its tail in the air
 	var flat_at := Vector2(global_position.x, global_position.z)
-	if _probe_at.distance_to(flat_at) > PROBE_EVERY_M or _probe_at == Vector2.INF:
+	if _probe_at.distance_to(flat_at) > PROBE_EVERY_M or _probe_at == Vector2.INF \
+			or absf(angle_difference(_probe_yaw, rotation.y)) > 0.25:
 		_probe_at = flat_at
+		_probe_yaw = rotation.y
 		var yf := _ground_at(global_position + ahead * half, guess)
 		var yr := _ground_at(global_position - ahead * half, guess)
 		_probe_y = (yf + yr) / 2.0
@@ -1119,6 +1123,7 @@ const PROBE_EVERY_M := 1.5
 var _block_cd := randf() * BLOCK_CHECK_S
 var _was_blocked := false
 var _probe_at := Vector2.INF
+var _probe_yaw := 0.0
 var _probe_y := 0.0
 var _probe_pitch := 0.0
 var _probe_guess := 0.0
