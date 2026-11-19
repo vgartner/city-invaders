@@ -764,12 +764,21 @@ func in_bounds(p: Vector3, margin := 0.0) -> bool:
 			and p.z > bounds.position.y + margin and p.z < bounds.end.y - margin
 
 
-## Where people and robots may walk to: the map, and with the open-world
-## prototype the tiles that are in with their navigation mesh.
+## Where people, robots and vehicles may go: the map, and with the open-world
+## prototype the tiles that are in with their navigation mesh. The margin is
+## kept from the edge of all of them together, not of each one: a street on
+## the edge between two tiles is in the world on both sides.
 var home_out := false        # open world: the round's own map is unloaded (open_world.gd _home_out)
 func in_world(p: Vector3, margin := 0.0) -> bool:
-	return (in_bounds(p, margin) and not home_out) \
-			or (is_instance_valid(open_world_node) and open_world_node.call("walkable", p, margin))
+	if not is_instance_valid(open_world_node):
+		return in_bounds(p, margin)
+	for d in [Vector3.ZERO, Vector3(margin, 0, 0), Vector3(-margin, 0, 0), Vector3(0, 0, margin), Vector3(0, 0, -margin)]:
+		var q: Vector3 = p + d
+		if not ((in_bounds(q) and not home_out) or open_world_node.call("walkable", q, 0.0)):
+			return false
+		if margin == 0.0:
+			break
+	return true
 
 
 ## The rectangles people and robots may walk in now: the map (unless it is

@@ -180,7 +180,10 @@ sends picks its place in the loaded world, not in the map's bounds
 a people container is set down on, where a collector is born and the edge
 it flees to (the edge of what is loaded), where a swarm appears. "Can it
 be walked to?" is asked from a player while the map is out
-(`main.reach_from()`). Ships cruise over the tallest roof loaded (a tile
+(`main.reach_from()`). `in_world`'s margin is kept from the edge of the
+loaded world as a whole, not from each tile's own edge: a street that runs
+along the edge between two tiles is open to people (their goals) and to
+vehicles, which stop only where the loaded world ends (`car.gd`). Ships cruise over the tallest roof loaded (a tile
 raises `main.city_top`). A container or an antenna standing in a tile that
 goes out sleeps there and wakes when the tile is back; the dropship's
 robots are the round's, so they keep their tile in like any robot of the

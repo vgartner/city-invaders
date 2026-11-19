@@ -994,8 +994,8 @@ func _drive(delta: float) -> void:
 	var fwd := Vector3(-sin(rotation.y), 0, -cos(rotation.y))
 	var main := get_tree().current_scene
 	var step := fwd * _speed * delta
-	if not main.in_bounds(global_position + step * 4.0, 2.0):
-		_speed *= -0.25                      # the map ends here (edge walls as well)
+	if not main.in_world(global_position + step * 4.0, 2.0):
+		_speed *= -0.25                      # the map (the open world's loaded tiles) ends here
 		step = Vector3.ZERO
 	var col := move_and_collide(step)
 	if col:
