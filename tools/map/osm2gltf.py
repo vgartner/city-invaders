@@ -1528,6 +1528,14 @@ def main():
     # and the ground round it must be there - the model stands on it
     footprint0 = unary_union([b[0] for b in buildings if models.get(b[2].get("@id")) != "@gone"
                               and not str(models.get(b[2].get("@id"), "")).endswith(("site.json", "layout.json"))])
+    # ... but no street furniture on it: a tree or a stall in that margin
+    # stands against the model's walls or reaches through them. A tile also
+    # keeps its props off the part of a neighbour's landmark lot it holds
+    in_parts = [k for k, v in models.items() if str(v).endswith(("site.json", "layout.json"))]
+    if args.tile:
+        landmark_lots = unary_union(_osm_footprints(args.osm, args.lat, args.lon, in_parts))
+    else:
+        landmark_lots = unary_union([b[0] for b in buildings if b[2].get("@id") in in_parts])
     open_space = area.difference(footprint0)
     opened = open_space.buffer(-MIN_PASSAGE_M / 2, join_style=2).buffer(MIN_PASSAGE_M / 2, join_style=2)
     streets_open = max(parts_of(opened), key=lambda g: g.area).intersection(open_space)
@@ -1945,7 +1953,8 @@ def main():
     # ---- street furniture ---------------------------------------------------
     props = _street_props(osm, proj, area, footprint, sidewalks, parks, asphalt_area, pedestrian,
                           vehicle, junctions, lamps, curb_lines, named,
-                          [ln for k, _, ln in roads if k in PEDESTRIAN_ROADS], places, kiosks)
+                          [ln for k, _, ln in roads if k in PEDESTRIAN_ROADS], places, kiosks,
+                          keep_off=landmark_lots)
     # buildings_user.json "_remove": [[x, z], ...] game points; the generated
     # prop (tree, lamp, bench...) within 1 m of each is left out
     gone = json.loads(args.user.read_text()).get("_remove", []) if args.user and args.user.exists() else []
@@ -2395,8 +2404,10 @@ def _paint_poly(batch, key, geom):
 
 
 def _street_props(osm, proj, area, footprint, sidewalks, parks, asphalt_area, pedestrian,
-                  vehicle, junctions, lamps, curb_lines, named=(), ped_lines=(), places=(), kiosks=()):
-    """Positions (Godot coords) and facing of street furniture."""
+                  vehicle, junctions, lamps, curb_lines, named=(), ped_lines=(), places=(), kiosks=(),
+                  keep_off=None):
+    """Positions (Godot coords) and facing of street furniture. Nothing stands
+    within its own size of `keep_off` (the lots of landmarks in parts)."""
     rng = np.random.default_rng(7)
     props = []
     taken = []
@@ -2404,8 +2415,10 @@ def _street_props(osm, proj, area, footprint, sidewalks, parks, asphalt_area, pe
     def free(x, y, r):
         return all((x - a) ** 2 + (y - b) ** 2 > (r + c) ** 2 for a, b, c in taken)
 
+    off = prep(keep_off) if keep_off is not None and not keep_off.is_empty else None
+
     def add(kind, x, y, up=CURB_M, yaw=None, r=0.6):
-        if not free(x, y, r):
+        if not free(x, y, r) or (off and off.intersects(Point(x, y).buffer(r))):
             return False
         taken.append((x, y, r))
         p = {"type": str(kind), "pos": [float(v) for v in to_godot(x, y, up)]}

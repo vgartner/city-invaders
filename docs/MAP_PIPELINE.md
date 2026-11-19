@@ -194,7 +194,9 @@ it to know which OSM building is where (map editor, DevAgent `selection`).
   sides, and the two tiles must agree there. The lot of a landmark in parts
   (`site.json`) or laid out from pieces (`layout.json`) is open ground:
   its model is often smaller than the OSM outline (the Mercado Público at
-  0.8) and stands on the ground round it
+  0.8) and stands on the ground round it. No street furniture is put on
+  such a lot (`_street_props` `keep_off`, a tile's neighbours' lots too):
+  a tree in that margin reached through the model's walls
 - **streets are level from kerb to kerb and smooth along their length**
   (`Terrain.add_roads`): every street gets a height profile from the ground
   along its centre line (gaussian, sigma 12 m, ends padded so a street
