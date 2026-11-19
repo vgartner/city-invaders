@@ -464,10 +464,9 @@ static func obstacles(parent: Node, foreign: Array) -> void:
 ## wall, of a parked lorry. People were born on them (and stood on a kiosk
 ## roof), goals were picked on them, and a path asked for across a link to
 ## one makes Godot's search report an error. This drops every group of
-## joined polygons under ISLAND_M2 that does not reach the edge of `rect`
-## (where a neighbouring tile may carry it on). Returns how many groups and
-## polygons went.
-const ISLAND_M2 := 150.0
+## joined polygons, but the largest (the streets), that does not reach the
+## edge of `rect` (where a neighbouring tile may carry it on). Returns how
+## many groups and polygons went.
 const ISLAND_EDGE_M := 2.0
 static func drop_islands(nm: NavigationMesh, rect: Rect2) -> Vector2i:
 	var verts := nm.get_vertices()
@@ -520,9 +519,16 @@ static func drop_islands(nm: NavigationMesh, rect: Rect2) -> Vector2i:
 				if not inner.has_point(Vector2(verts[v].x, verts[v].z)):
 					edge[x] = true
 					break
+	# the street network is the largest group; any other that does not reach
+	# the edge cannot be walked to, however big (a closed courtyard, a
+	# fenced yard: the search error came back from one of those)
+	var main_group := -1
+	for x in area:
+		if main_group < 0 or area[x] > area[main_group]:
+			main_group = x
 	var gone := {}
 	for x in area:
-		if area[x] < ISLAND_M2 and not edge.has(x):
+		if x != main_group and not edge.has(x):
 			gone[x] = true
 	if gone.is_empty():
 		return Vector2i.ZERO
@@ -551,14 +557,18 @@ func _bake(id: String, t: Dictionary) -> void:
 	NavigationServer3D.parse_source_geometry_data(nm, source, root)
 	_note(id, "read colliders for the navmesh (main thread)", t0)
 	var t1 := Time.get_ticks_usec()
+	# the tile by its instance id, not the node: a tile that leaves while its
+	# mesh bakes is freed, and a lambda that captured it reports an error
+	var root_id := root.get_instance_id()
 	NavigationServer3D.bake_from_source_geometry_data_async(nm, source, func() -> void:
 		WorkerThreadPool.add_task(func() -> void:
 			var went := drop_islands(nm, r)
-			_baked.call_deferred(id, root, nm, t1, went)))
+			_baked.call_deferred(id, root_id, nm, t1, went)))
 
 
-func _baked(id: String, root: Node3D, nm: NavigationMesh, t1: int, went: Vector2i) -> void:
-	if not is_instance_valid(root) or not tiles.has(id) or tiles[id]["node"] != root:
+func _baked(id: String, root_id: int, nm: NavigationMesh, t1: int, went: Vector2i) -> void:
+	var root := instance_from_id(root_id) as Node3D
+	if root == null or not tiles.has(id) or tiles[id]["node"] != root:
 		return                                  # the tile left while its mesh was baking
 	_note(id, "bake the navmesh (thread), %d polygons, %d islands of %d polygons dropped" % [nm.get_polygon_count(), went.x, went.y], t1)
 	var t0 := Time.get_ticks_usec()
