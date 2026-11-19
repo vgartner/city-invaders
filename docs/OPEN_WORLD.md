@@ -48,7 +48,10 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   the map's, 4 ms of it a frame; its landmarks and shops
   (`<id>.landmarks.json`, `<id>.shells.json`) by the map's own
   `_landmark`, one a frame, their models read beforehand on the loader
-  thread. They leave with the tile. A tile's props are scenery with
+  thread. They leave with the tile. A shop walked into (E) has its pocket
+  under the city built in the shop's tile too (`main.enter_shop`): in the
+  round's map it had no floor while the map was out. A player who still
+  falls out of a pocket is put back (`player.gd`). A tile's props are scenery with
   collision: a lamp there cannot be shot out or knocked over, and its
   pickups and the map editor's edits are not applied.
 - **Navigation**: after that the tile gets a navigation mesh of its own. Its

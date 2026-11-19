@@ -723,7 +723,10 @@ func _physics_process(delta: float) -> void:
 		if _step_cd <= 0:
 			_step_cd = 0.3 if speed > WALK_SPEED else 0.45
 			Sfx.play("step", -14.0)
-	if position.y < -20 and not in_shop:
+	# fell out of the world - or out of a shop's pocket, far below the street
+	var main := get_tree().current_scene
+	if (position.y < -20 and not in_shop) or position.y < main.elev.x - main.POCKET_DEPTH - 40.0:
+		in_shop = false
 		position = spawn_point
 
 

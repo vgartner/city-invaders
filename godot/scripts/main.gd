@@ -1919,7 +1919,11 @@ func enter_shop(lm: Node3D, who: Node3D) -> void:
 		l["open"] = true
 		var p: Array = l.get("pos", [lm.global_position.x, lm.global_position.y, lm.global_position.z])
 		l["pos"] = [p[0], p[1] - POCKET_DEPTH, p[2]]
+		# built where the shop is: an open world's tile, not the round's map
+		# (out of the physics while a player is far from it)
+		landmark_into = lm.get_parent()
 		_landmark(l)
+		landmark_into = null
 		pocket = _landmark_nodes[-1]
 		pocket.set_meta("pocket", lm)
 		_pockets[lm] = pocket
