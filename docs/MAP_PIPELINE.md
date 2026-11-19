@@ -63,7 +63,9 @@ the tile its inner point is in (the same answer in the neighbouring tile,
 which places its buildings among the same neighbours up to 80 m out), its
 road graph runs to the very edge (a map's stops 4 m short), and no horizon
 is made. `tools/map/tiles.py <map> --name <world> --bounds ...`
-cuts an area of a map's data into a grid of such tiles and builds them.
+cuts an area of a map's data into a grid of such tiles and builds them;
+`tools/map/far_view.py <world>` then makes the world's far view (each
+tile's buildings as plain boxes, and a ring round the world).
 
 ## 2. Data
 

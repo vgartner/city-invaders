@@ -4800,6 +4800,8 @@ func open_world(ids: String) -> Dictionary:
 		for tid in (tiles if not tiles.is_empty() else [id]):
 			if tid != map_id and open_world_node.call("add_tile", tid):
 				added.append(tid)
+		if not tiles.is_empty():
+			open_world_node.call("add_far", id)       # the far view (tools/map/far_view.py), if built
 	return {"added": added}
 
 

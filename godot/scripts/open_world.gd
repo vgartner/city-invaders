@@ -42,6 +42,7 @@ var _map_edges := -1        # how many of the road graph's edges are the round's
 var _map_vehicles := -1     # the vehicles of the round's map, parked ones too, before any tile's
 var _walls: StaticBody3D
 var home := {}              # the round's own map, which leaves and comes back like a tile (_home_check)
+var far := {}               # tile id (HOME for the round's map) -> its far model (tools/map/far_view.py)
 
 
 ## The tiles of a world (res://city/<name>.world.json, made by
@@ -63,6 +64,48 @@ static func world_of(map_id: String) -> String:
 		if f.ends_with(".world.json") and world_tiles(f.trim_suffix(".world.json")).has(map_id):
 			return f.trim_suffix(".world.json")
 	return ""
+
+
+## The far view of a world (tools/map/far_view.py): every tile's light model
+## (<tile>_far.glb: its buildings as plain boxes on a coarse ground), shown
+## while the tile is not in, and the ring round the world (the list's "far"),
+## shown all the time. No collision, no shadows; a few MB in all.
+func add_far(world: String) -> int:
+	var data = JSON.parse_string(FileAccess.get_file_as_string("res://city/%s.world.json" % world))
+	if not data is Dictionary:
+		return 0
+	var n := 0
+	var ids: Array = []
+	for t in data.get("tiles", []):
+		ids.append(String(t["id"]))
+	if data.has("far"):
+		ids.append(String(data["far"]))
+	for id in ids:
+		var key: String = HOME if id == main.map_id else id
+		var path := "res://city/%s.glb" % (id if id == data.get("far", "") else id + "_far")
+		if far.has(key) or not ResourceLoader.exists(path):
+			continue
+		var node: Node3D = (load(path) as PackedScene).instantiate()
+		node.name = "Far_" + id
+		for mi in node.find_children("*", "GeometryInstance3D", true, false):
+			(mi as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(node)
+		far[key] = node
+		n += 1
+	_far_update()
+	return n
+
+
+## A tile's far model shows while the tile itself is not in the tree.
+func _far_update() -> void:
+	for key in far:
+		var node: Node3D = far[key]
+		if key == HOME:
+			node.visible = not home.is_empty() and home["state"] != "in"
+		elif tiles.has(key):
+			node.visible = tiles[key]["state"] != "in"
+		else:
+			node.visible = true                  # the ring round the world
 
 
 func add_tile(id: String) -> bool:
@@ -145,9 +188,13 @@ func _process(dt: float) -> void:
 		_even_traffic()
 	var p := Vector2(cam.global_position.x, cam.global_position.z)
 	_home_check(cam.global_position)
+	_far_update()
+	var others := _others()
 	for id in tiles:
 		var t: Dictionary = tiles[id]
 		var d := _distance(t["rect"], p)
+		for q in others:
+			d = minf(d, _distance(t["rect"], q))
 		if t["state"] == "in" and not t.get("streets", false):
 			_streets_in(id, t)
 		if t["state"] == "in" and t.get("streets", false) and not t.get("cars", false):
@@ -171,6 +218,20 @@ func _process(dt: float) -> void:
 			t["node"] = null
 			t["state"] = "out"
 			_note(id, "unload", t0)
+
+
+## Multiplayer: the server keeps the tiles in round every player, not only
+## round its own camera - the robots, the people and the traffic it runs
+## need the ground, the collision and the navigation mesh where a client
+## walks. A client loads round its own camera only.
+func _others() -> Array:
+	var out := []
+	if multiplayer.multiplayer_peer == null or not multiplayer.is_server():
+		return out
+	for pl in main.players_root.get_children():
+		if pl is Node3D and pl.name != str(multiplayer.get_unique_id()):
+			out.append(Vector2((pl as Node3D).global_position.x, (pl as Node3D).global_position.z))
+	return out
 
 
 ## What a tile reads on the loader thread: its city, its collision, and the

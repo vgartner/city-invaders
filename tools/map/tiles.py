@@ -3,6 +3,7 @@
 (docs/OPEN_WORLD.md).
 
     tools/.venv/bin/python tools/map/tiles.py poa --name centro_world --bounds -350 -330 400 420
+    tools/.venv/bin/python tools/map/far_view.py centro_world
     godot --headless --path godot --import
 
 The area (metres from the source map's centre, y north - the same frame as
@@ -74,14 +75,16 @@ def main():
             if ok:
                 built.append(t)
     world = ROOT / "godot" / "city" / f"{a.name}.world.json"
-    entry = {"size": a.size, "source": a.source, "tiles": built}
+    # a rebuild keeps what else the list says (the menu label, the far view, a goal)
+    entry = json.loads(world.read_text()) if world.exists() else {}
+    entry.update(size=a.size, source=a.source, tiles=built)
     if a.label:
         entry["label"] = a.label
     if a.start:
         entry["start"] = a.start
     world.write_text(json.dumps(entry, indent=1) + "\n")
     print(f"{len(built)} of {len(tiles)} tiles ({cols} x {rows}) in {world.relative_to(ROOT)}")
-    print("next: godot --headless --path godot --import")
+    print(f"next: tools/map/far_view.py {a.name} (the far view), then godot --headless --path godot --import")
 
 
 if __name__ == "__main__":

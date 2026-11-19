@@ -15,6 +15,7 @@ city's data, each a map of its own:
 
 ```bash
 tools/.venv/bin/python tools/map/tiles.py poa --name centro_world --bounds -350 -330 400 420
+tools/.venv/bin/python tools/map/far_view.py centro_world
 godot --headless --path godot --import
 DEVAGENT_PORT=24691 tools/devagent/devagent.py launch
 DEVAGENT_PORT=24691 tools/devagent/devagent.py start_solo map=centro_world_1_1
@@ -23,7 +24,8 @@ DEVAGENT_PORT=24691 tools/devagent/devagent.py start_solo map=centro_world_1_1
 `tiles.py` cuts the area (metres from the source map's centre, y north)
 into tiles of 250 m (`--size`), writes `maps/<name>_<column>_<row>/build.json`
 for each (the source map's data, photos and hand edits, `"tile": true`),
-builds them and lists them in `godot/city/<name>.world.json`. The menu
+builds them and lists them in `godot/city/<name>.world.json` (a rebuild
+keeps what else the list says: label, start, far view, goal). The menu
 lists every world found in `godot/city/` as a free-play city of its own
 (`main.world_entry`): the list may name the menu label (`"label"`, "City ·
 Area" like the maps) and the tile to start on (`"start"`, `tiles.py
@@ -101,7 +103,40 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   compare.
 
 **Not yet**: occluders, pickups, bus lines
-and stops (they stay the map's), and anything about multiplayer.
+and stops (they stay the map's).
+
+**The far view** (`tools/map/far_view.py <world>`): every tile gets a light
+model, `<tile>_far.glb` - its buildings as plain boxes (footprint, ground,
+height: the same OSM data and hand-set heights the tile is built from), one
+colour each from five city tones, on a ground of 25 m squares that follows
+the terrain, and the water - 14-91 kB a tile, no textures, no collision.
+A ring of two tiles round the world goes into `<world>_far_ring.glb`
+(763 buildings, 0.6 MB) with bare ground beyond it, 3 km out to the
+horizon, so a roof never looks over the edge of the city into the sky. The
+list's `"far"` names the ring. `main.open_world()` loads them all
+(`OpenWorld.add_far`, shadows off) and every frame shows a tile's far
+model while the tile is not in, the round's map's while the map is out, the
+ring all the time. From a roof of the centre tile the city goes on in the
+haze past the loaded tiles.
+
+**Multiplayer.** The server runs the robots, the people and the traffic, so
+it keeps the tiles in round every player, not only round its own camera
+(`_others()`: the players' positions, the nearest counts); a client loads
+round its own camera, for what it sees and walks on. The round's map stays
+while there are other players. Tested with a host and a client on one
+machine: the client went to the south-east tiles 200 m from the host, and
+the host loaded them for it (its own camera 200 m away) and let them go
+when the client came back; `errors` empty on both. Three faults of the game
+itself, not of the world, came out on the way and are fixed: a player's
+position synchroniser was the server's (it is made after the player's
+authority is set, and had an automatic name that differs between peers), so
+the host never saw a client move and the client was pulled back; the
+server's calls on a player (score, getting into and out of a vehicle, the
+drone, burning) were "authority" calls the client refused; and a client put
+back after a fall went to (0, 1, 0), under the ground, because only the
+server works out the start (the player's spawn now carries it). The
+antennas are placed by every peer itself, so with other players they stay
+in the round's map, the same on every peer.
 
 **The round's own map leaves too** (`_home_check`, one player). Everything
 the round's map built hangs under its navigation region: the city and its
