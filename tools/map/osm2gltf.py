@@ -22,7 +22,7 @@ import trimesh
 import logging
 logging.getLogger("trimesh").setLevel(logging.ERROR)  # scipy-less normal fallback is fine
 from PIL import Image
-from shapely.geometry import LineString, Point, box
+from shapely.geometry import LineString, Point, Polygon, box
 from shapely.geometry.polygon import orient
 from shapely.ops import unary_union
 from shapely.prepared import prep
@@ -659,6 +659,14 @@ def _squares(osm, proj):
     return unary_union(out) if out else Point(9e9, 9e9).buffer(0.1)
 
 
+LOT_APRON_M = 12.0     # level ground round a landmark in parts (site.json, layout.json)
+
+
+def _whole_lot(poly):
+    """A footprint without its holes (inner courtyards)."""
+    return Polygon(poly.exterior)
+
+
 def _osm_footprints(osm_path, lat, lon, ids):
     """The OSM footprints of these buildings ("way/1", "relation/2"), wherever
     they are, as OSM draws them."""
@@ -1070,14 +1078,34 @@ def main():
         # never by the asphalt
         car = _road_lines(args.osm, args.lat, args.lon, cars_only=True)
         lots = [m for m, v in models.items() if v not in ("@gone", "@shell")]
-        if args.tile:
-            # every tile of a world levels the same lots, its neighbours' too: a lot
-            # near the edge levels ground on both sides, and a street's height
-            # profile runs past lots in other tiles (a step at the seam otherwise)
-            flat = [(poly, TERRAIN.street_level(poly, car)) for poly in _osm_footprints(args.osm, args.lat, args.lon, lots)]
-        else:
-            flat = [(poly, TERRAIN.street_level(poly, car)) for poly, _h, t in buildings if t.get("@id") in lots]
-        flat += _flat_areas(args.osm, args.lat, args.lon)
+        flat, aprons = [], []
+        for parts in (False, True):
+            ids = [m for m in lots if str(models[m]).endswith(("site.json", "layout.json")) == parts]
+            if args.tile:
+                # every tile of a world levels the same lots, its neighbours' too: a lot
+                # near the edge levels ground on both sides, and a street's height
+                # profile runs past lots in other tiles (a step at the seam otherwise)
+                polys = _osm_footprints(args.osm, args.lat, args.lon, ids)
+            else:
+                polys = [poly for poly, _h, t in buildings if t.get("@id") in ids]
+            for poly in polys:
+                # the whole lot, its inner courtyards too (the Mercado Publico's): a
+                # lot with a hole levelled only a band round the walls, and the
+                # model, set at its door's ground, stood over the street there
+                lot = _whole_lot(poly)
+                level = TERRAIN.street_level(lot, car)
+                # a landmark in parts (doors on every side, at its floor) gets
+                # an apron at its level: the pavements and the streets round it
+                # meet its doors, the slope is taken further out
+                flat.append((lot.buffer(LOT_APRON_M, join_style=2) if parts else lot, level))
+                if parts and level is not None:
+                    aprons.append(flat[-1])
+        # a square or a pedestrian area that touches such an apron is at its
+        # level too (the Largo Glenio Peres at the Mercado's doors): each flat
+        # at its own level, side by side, left a cliff where they met
+        for area_poly in _flat_areas(args.osm, args.lat, args.lon):
+            level = next((lv for ap, lv in aprons if ap.intersects(area_poly)), None)
+            flat.append((area_poly, level) if level is not None else area_poly)
         TERRAIN.add_platforms(flat)
         TERRAIN.add_roads(_road_lines(args.osm, args.lat, args.lon, ranked=True),
                           box(*(args.bounds or (-args.half, -args.half, args.half, args.half))))
@@ -1146,12 +1174,31 @@ def main():
     # as wide as its street side allows; the rest of its footprint stays a building
     street_union = unary_union([ln for _, ln in streets]) if streets else None
     storefronts = []
+    # the lots of the landmarks in parts (site.json, layout.json), whole: the
+    # model has its own shops and stalls, and OSM's buildings inside such a lot
+    # (the Mercado Publico's courtyard, its shops mapped on it) get no
+    # storefront - one stood in the Mercado's east door, a box nobody passed
+    in_parts = [k for k, v in models.items() if str(v).endswith(("site.json", "layout.json"))]
+    if args.tile:
+        landmark_lots = unary_union([_whole_lot(p) for p in _osm_footprints(args.osm, args.lat, args.lon, in_parts)])
+    else:
+        landmark_lots = unary_union([_whole_lot(b[0]) for b in buildings if b[2].get("@id") in in_parts])
+    in_lot = prep(landmark_lots.buffer(1.0)) if not landmark_lots.is_empty else None
+    if in_lot:
+        # nor are they built: the Mercado's courtyard, a building of its own in
+        # OSM, put a blind wall across the model's doors
+        inside = {id(b) for b in buildings if b[2].get("@id") not in models and in_lot.contains(b[0].representative_point())}
+        buildings = [b for b in buildings if id(b) not in inside]
+        if inside:
+            print("buildings inside a landmark's lot, left to its model:", len(inside))
     for pl in places:
         sf = rules[pl["kind"]].get("storefront")
         bid = pl["building"]
         if not sf or not bid or bid in models or bid not in by_id or street_union is None:
             continue
         poly, h, t = by_id[bid]
+        if in_lot and in_lot.contains(poly.representative_point()):
+            continue
         if not (30.0 <= poly.area <= 450.0 and h <= 9.0):
             # a shop on the ground floor of a bigger building: a street-level
             # module in front of its facade (the building stays as it is)
@@ -1531,11 +1578,6 @@ def main():
     # ... but no street furniture on it: a tree or a stall in that margin
     # stands against the model's walls or reaches through them. A tile also
     # keeps its props off the part of a neighbour's landmark lot it holds
-    in_parts = [k for k, v in models.items() if str(v).endswith(("site.json", "layout.json"))]
-    if args.tile:
-        landmark_lots = unary_union(_osm_footprints(args.osm, args.lat, args.lon, in_parts))
-    else:
-        landmark_lots = unary_union([b[0] for b in buildings if b[2].get("@id") in in_parts])
     open_space = area.difference(footprint0)
     opened = open_space.buffer(-MIN_PASSAGE_M / 2, join_style=2).buffer(MIN_PASSAGE_M / 2, join_style=2)
     streets_open = max(parts_of(opened), key=lambda g: g.area).intersection(open_space)

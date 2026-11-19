@@ -196,7 +196,18 @@ it to know which OSM building is where (map editor, DevAgent `selection`).
   its model is often smaller than the OSM outline (the Mercado Público at
   0.8) and stands on the ground round it. No street furniture is put on
   such a lot (`_street_props` `keep_off`, a tile's neighbours' lots too):
-  a tree in that margin reached through the model's walls
+  a tree in that margin reached through the model's walls. A lot is
+  levelled whole, its inner courtyards too (`_whole_lot`: the Mercado's
+  relation has its courtyard as a hole, and only a band round the walls
+  was flat). A landmark in parts has doors on every side at its floor: its
+  platform reaches `LOT_APRON_M` (12 m) past the lot, so the pavements and
+  streets round it meet the doors, and a square or pedestrian area that
+  touches that apron is at the same level (the Largo Glênio Peres) - two
+  flats side by side at their own levels left a 3.8 m cliff where they met.
+  OSM's buildings inside such a lot are left to the model - not built, and
+  no storefront module for the shops OSM maps on them: the Mercado's
+  courtyard (a building of its own in OSM) put a blind wall and a shop box
+  across the model's doors
 - **streets are level from kerb to kerb and smooth along their length**
   (`Terrain.add_roads`): every street gets a height profile from the ground
   along its centre line (gaussian, sigma 12 m, ends padded so a street
