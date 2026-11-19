@@ -186,7 +186,13 @@ it to know which OSM building is where (map editor, DevAgent `selection`).
   at the median of the ground under them - a landmark's lot at the level of
   the car streets passing it (`Terrain.street_level`), so the asphalt stays
   flat and the lawn beyond takes the slope - meeting the natural slope over
-  30 m (`Terrain.add_platforms`; parks and parking lots keep the slope)
+  30 m (`Terrain.add_platforms`; parks and parking lots keep the slope).
+  A tile levels the landmark lots of the whole OSM file, not only its own:
+  a lot near the edge changes the ground (and the streets' heights) on both
+  sides, and the two tiles must agree there. The lot of a landmark in parts
+  (`site.json`) or laid out from pieces (`layout.json`) is open ground:
+  its model is often smaller than the OSM outline (the Mercado Público at
+  0.8) and stands on the ground round it
 - **streets are level from kerb to kerb and smooth along their length**
   (`Terrain.add_roads`): every street gets a height profile from the ground
   along its centre line (gaussian, sigma 12 m, ends padded so a street

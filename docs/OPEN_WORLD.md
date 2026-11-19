@@ -262,7 +262,14 @@ models and people are still imported lossless and hold 4-6 GB
    and the landmarks. And the game's own textures compressed for the GPU.
 2. **Edges, the rest.** A tile does not know the neighbouring tile's
    buildings that reach over the edge: its trees and props may stand inside
-   one, and a wall facing one gets windows instead of a blind wall.
+   one, and a wall facing one gets windows instead of a blind wall. The
+   ground meets: every tile levels the landmark lots of the whole OSM file
+   (a lot near an edge is levelled on both sides), where before a lot of
+   one tile left a 1.3-1.5 m step at the edge of the next; walked along
+   every inner edge (2,984 points), the ground of the two tiles differs by
+   at most 0.4 m (91 points over 0.1 m, on lawns), and the only hole - the
+   Mercado Público's lot, its model smaller than the OSM outline - has
+   ground now (`layout.json` lots are open ground like `site.json` ones).
 3. **Navigation, the rest.** Measured (PERFORMANCE.md, loading time step
    by step): the round's map reads its colliders in 40-55 ms on the main
    thread and bakes for 0.7-0.8 s on a thread - it was not the slow step

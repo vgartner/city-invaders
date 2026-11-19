@@ -659,6 +659,22 @@ def _squares(osm, proj):
     return unary_union(out) if out else Point(9e9, 9e9).buffer(0.1)
 
 
+def _osm_footprints(osm_path, lat, lon, ids):
+    """The OSM footprints of these buildings ("way/1", "relation/2"), wherever
+    they are, as OSM draws them."""
+    ids = set(ids)
+    proj = osmcity.project(lat, lon)
+    els = json.loads(Path(osm_path).read_text())["elements"]
+    ways = {el["id"]: el for el in els if el["type"] == "way"}
+    out = []
+    for el in els:
+        if f"{el['type']}/{el['id']}" not in ids:
+            continue
+        poly = osmcity.way_polygon(el, proj) if el["type"] == "way" else osmcity.relation_polygon(el, ways, proj)
+        out += [p for p in osmcity.parts(poly)] if poly is not None else []
+    return out
+
+
 def _flat_areas(osm_path, lat, lon):
     """OSM areas that are level in reality: pitches, playgrounds, squares, plazas."""
     proj = osmcity.project(lat, lon)
@@ -1053,8 +1069,14 @@ def main():
         # its avenue): the slope down to the lower ground is taken by the lawn beyond,
         # never by the asphalt
         car = _road_lines(args.osm, args.lat, args.lon, cars_only=True)
-        flat = [(poly, TERRAIN.street_level(poly, car)) for poly, _h, t in buildings
-                if t.get("@id") in models and models[t["@id"]] not in ("@gone", "@shell")]
+        lots = [m for m, v in models.items() if v not in ("@gone", "@shell")]
+        if args.tile:
+            # every tile of a world levels the same lots, its neighbours' too: a lot
+            # near the edge levels ground on both sides, and a street's height
+            # profile runs past lots in other tiles (a step at the seam otherwise)
+            flat = [(poly, TERRAIN.street_level(poly, car)) for poly in _osm_footprints(args.osm, args.lat, args.lon, lots)]
+        else:
+            flat = [(poly, TERRAIN.street_level(poly, car)) for poly, _h, t in buildings if t.get("@id") in lots]
         flat += _flat_areas(args.osm, args.lat, args.lon)
         TERRAIN.add_platforms(flat)
         TERRAIN.add_roads(_road_lines(args.osm, args.lat, args.lon, ranked=True),
@@ -1500,11 +1522,12 @@ def main():
     # through cracks. Infill overlaps the buildings slightly: an exact or
     # gapped seam shows as a see-through crack.
     # a building removed by hand (@gone) is open ground, not built-up; so is the
-    # lot of a landmark in parts (site.json): its model is often smaller than the
-    # OSM outline (the Piratini's annexes, the Catedral's steps), and the ground
-    # round it must be there - the model stands on it
+    # lot of a landmark in parts (site.json) or laid out from pieces
+    # (layout.json): its model is often smaller than the OSM outline (the
+    # Piratini's annexes, the Catedral's steps, the Mercado Público at 0.8),
+    # and the ground round it must be there - the model stands on it
     footprint0 = unary_union([b[0] for b in buildings if models.get(b[2].get("@id")) != "@gone"
-                              and not str(models.get(b[2].get("@id"), "")).endswith("site.json")])
+                              and not str(models.get(b[2].get("@id"), "")).endswith(("site.json", "layout.json"))])
     open_space = area.difference(footprint0)
     opened = open_space.buffer(-MIN_PASSAGE_M / 2, join_style=2).buffer(MIN_PASSAGE_M / 2, join_style=2)
     streets_open = max(parts_of(opened), key=lambda g: g.area).intersection(open_space)
