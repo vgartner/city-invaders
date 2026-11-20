@@ -1421,7 +1421,9 @@ def main():
     # a wall with another building right in front of it (a side wall on a
     # narrow gap, a party wall standing above its neighbour) has no windows
     from shapely.strtree import STRtree
-    building_tree = STRtree([b[0] for b in buildings])
+    # a tile's neighbours' buildings reaching into it count too: a wall
+    # facing one is blind like a wall facing a building of its own
+    building_tree = STRtree([b[0] for b in buildings] + [p for p, _h, _t in foreign])
     n_blind = 0
 
     def blind_wall(p0, p1, poly, own):
@@ -1996,7 +1998,8 @@ def main():
     props = _street_props(osm, proj, area, footprint, sidewalks, parks, asphalt_area, pedestrian,
                           vehicle, junctions, lamps, curb_lines, named,
                           [ln for k, _, ln in roads if k in PEDESTRIAN_ROADS], places, kiosks,
-                          keep_off=landmark_lots)
+                          # nor in a neighbouring tile's building that reaches over the edge
+                          keep_off=unary_union([landmark_lots] + [p for p, _h, _t in foreign]))
     # buildings_user.json "_remove": [[x, z], ...] game points; the generated
     # prop (tree, lamp, bench...) within 1 m of each is left out
     gone = json.loads(args.user.read_text()).get("_remove", []) if args.user and args.user.exists() else []
@@ -2449,7 +2452,8 @@ def _street_props(osm, proj, area, footprint, sidewalks, parks, asphalt_area, pe
                   vehicle, junctions, lamps, curb_lines, named=(), ped_lines=(), places=(), kiosks=(),
                   keep_off=None):
     """Positions (Godot coords) and facing of street furniture. Nothing stands
-    within its own size of `keep_off` (the lots of landmarks in parts)."""
+    within its own size of `keep_off` (the lots of landmarks in parts, a
+    tile's neighbours' buildings over its edge)."""
     rng = np.random.default_rng(7)
     props = []
     taken = []

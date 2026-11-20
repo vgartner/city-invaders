@@ -318,10 +318,10 @@ models and people are still imported lossless and hold 4-6 GB
    facades ([MAP_PIPELINE.md](MAP_PIPELINE.md)) cost a building only its
    footprint, height, style and colour: photos kept for the main streets
    and the landmarks. And the game's own textures compressed for the GPU.
-2. **Edges, the rest.** A tile does not know the neighbouring tile's
-   buildings that reach over the edge: its trees and props may stand inside
-   one, and a wall facing one gets windows instead of a blind wall. The
-   ground meets: every tile levels the landmark lots of the whole OSM file
+2. **Edges.** A tile knows the neighbouring tile's buildings that reach
+   over the edge (`foreign`): no tree or street furniture stands in one
+   (18 did in five of the nine tiles, none now), and a wall facing one is
+   a blind wall, as one facing a building of its own. The ground meets: every tile levels the landmark lots of the whole OSM file
    (a lot near an edge is levelled on both sides), where before a lot of
    one tile left a 1.3-1.5 m step at the edge of the next; walked along
    every inner edge (2,984 points), the ground of the two tiles differs by

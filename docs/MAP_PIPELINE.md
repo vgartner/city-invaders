@@ -62,7 +62,9 @@ no free margin at its edge, a building is not cut there but belongs whole to
 the tile its inner point is in (the same answer in the neighbouring tile,
 which places its buildings among the same neighbours up to 80 m out), its
 road graph runs to the very edge (a map's stops 4 m short), and no horizon
-is made. `tools/map/tiles.py <map> --name <world> --bounds ...`
+is made. The neighbours' buildings that reach into the tile (`foreign`) are
+not built but count: a wall facing one is blind, and no street furniture
+or tree stands in one. `tools/map/tiles.py <map> --name <world> --bounds ...`
 cuts an area of a map's data into a grid of such tiles and builds them;
 `tools/map/far_view.py <world>` then makes the world's far view (each
 tile's buildings as plain boxes, and a ring round the world).
@@ -372,7 +374,7 @@ tower: a light band at every storey and a ribbon of windows between),
 and `beiral` (a small red eave over every window) - the storeys of the last
 three are built in the bake script from boxes, the kit has no such panels. A wall of at least 4 m with another building within
 3 m in front of it (a side wall on a narrow gap, a party wall standing above
-its neighbour) is a blind one: the `cega_wall` tile, stained plaster in the
+its neighbour; in a tile, a neighbouring tile's building too) is a blind one: the `cega_wall` tile, stained plaster in the
 building's colour, no openings. Each has a street storey
 with a door or a shop, storeys of windows, a cornice band at the roof line.
 A map turns them on in its `build.json`: `"kit_facades": "all"` (the four
