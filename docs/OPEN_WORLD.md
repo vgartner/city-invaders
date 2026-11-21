@@ -63,7 +63,10 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   stamp of the tile's files and the bake settings; the next time the tile
   comes in, the mesh is read back on a loader thread (same polygons, same
   links) and neither the colliders are read nor the mesh baked. A rebuilt
-  tile, or other bake settings, bake again. Two meshes baked apart
+  tile, or other bake settings, bake again. The bake's callbacks are bound
+  methods, not lambdas, and the world waits for every bake and worker task
+  when it leaves the tree (`_exit_tree`): quitting while a tile baked
+  aborted the game (`recursive_mutex lock failed`), every time. Two meshes baked apart
   stop an agent's radius short of the shared edge, so along the tile's edge,
   every 2.5 m where both sides can be walked, a `NavigationLink3D` joins
   them (26 on the test edge). The neighbours' buildings that reach into a

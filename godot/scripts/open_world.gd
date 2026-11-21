@@ -43,6 +43,8 @@ var _map_vehicles := -1     # the vehicles of the round's map, parked ones too, 
 var _walls: StaticBody3D
 var home := {}              # the round's own map, which leaves and comes back like a tile (_home_check)
 var far := {}               # tile id (HOME for the round's map) -> its far model (tools/map/far_view.py)
+var _jobs: Array[int] = []  # worker tasks after a bake, waited for when done (_reap) or when the world goes
+var _baking: Array[NavigationMesh] = []    # meshes the navigation server is baking
 
 
 ## The tiles of a world (res://city/<name>.world.json, made by
@@ -178,6 +180,7 @@ func _process(dt: float) -> void:
 					_note(id, "build (worker thread)", t["t0"])
 					_enter(id, t)
 	_home_poll()
+	_reap()
 	_since += dt
 	if _since < CHECK_S:
 		return
@@ -581,16 +584,55 @@ func _bake(id: String, t: Dictionary) -> void:
 	_note(id, "read colliders for the navmesh (main thread)", t0)
 	var t1 := Time.get_ticks_usec()
 	# the tile by its instance id, not the node: a tile that leaves while its
-	# mesh bakes is freed, and a lambda that captured it reports an error
+	# mesh bakes is freed. The callbacks are bound methods, not lambdas: a
+	# lambda the navigation server still held when the game quit mid-bake was
+	# freed after GDScript and aborted the game (recursive_mutex lock failed)
 	var root_id := root.get_instance_id()
-	NavigationServer3D.bake_from_source_geometry_data_async(nm, source, func() -> void:
-		WorkerThreadPool.add_task(func() -> void:
-			var went := drop_islands(nm, r)
-			nm.set_meta("stamp", stamp)
-			var err := ResourceSaver.save(nm, _nav_path(id), ResourceSaver.FLAG_COMPRESS)
-			if err != OK:
-				push_warning("open world: could not keep %s's navigation mesh (%d)" % [id, err])
-			_baked.call_deferred(id, root_id, nm, t1, went, true)))
+	_baking.append(nm)
+	NavigationServer3D.bake_from_source_geometry_data_async(nm, source,
+			_bake_done.bind(id, root_id, nm, t1, r, stamp))
+
+
+## The navigation server's callback (main thread): the rest off the main thread.
+func _bake_done(id: String, root_id: int, nm: NavigationMesh, t1: int, r: Rect2, stamp: String) -> void:
+	_baking.erase(nm)
+	_jobs.append(WorkerThreadPool.add_task(_finish_bake.bind(id, root_id, nm, t1, r, stamp)))
+
+
+## Worker thread: drop the mesh's islands and keep it (_nav_path).
+func _finish_bake(id: String, root_id: int, nm: NavigationMesh, t1: int, r: Rect2, stamp: String) -> void:
+	var went := drop_islands(nm, r)
+	nm.set_meta("stamp", stamp)
+	var err := ResourceSaver.save(nm, _nav_path(id), ResourceSaver.FLAG_COMPRESS)
+	if err != OK:
+		push_warning("open world: could not keep %s's navigation mesh (%d)" % [id, err])
+	_baked.call_deferred(id, root_id, nm, t1, went, true)
+
+
+## Every worker task is waited for once it is done.
+func _reap() -> void:
+	for i in range(_jobs.size() - 1, -1, -1):
+		if WorkerThreadPool.is_task_completed(_jobs[i]):
+			WorkerThreadPool.wait_for_task_completion(_jobs[i])
+			_jobs.remove_at(i)
+
+
+## The game quits or the round ends: nothing of the world may still run on
+## another thread when the engine shuts down - a tile being built, a mesh
+## being baked or finished.
+func _exit_tree() -> void:
+	var t0 := Time.get_ticks_msec()
+	for nm in _baking:
+		while NavigationServer3D.is_baking_navigation_mesh(nm) and Time.get_ticks_msec() - t0 < 10000:
+			OS.delay_msec(5)
+	_baking.clear()
+	for t in tiles.values() + [home]:
+		if t.get("state", "") == "building" and t.has("task"):
+			WorkerThreadPool.wait_for_task_completion(t["task"])
+			t["state"] = "out"
+	for job in _jobs:
+		WorkerThreadPool.wait_for_task_completion(job)
+	_jobs.clear()
 
 
 ## Where a tile's baked navigation mesh is kept: next to the tile while the
