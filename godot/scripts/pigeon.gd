@@ -107,6 +107,27 @@ func _take_off(from: Vector3, heading := Vector3.ZERO) -> void:
 			best_score = score
 			best = s
 	_goal = best + Vector3(randf_range(-3, 3), 0, randf_range(-3, 3))
+	# the ground where it comes down: with no square that way the bird lands
+	# 30 m on at the height it left from, and up a slope that is under the
+	# street (a flock vanished into the paving)
+	var g := _ground_at(_goal)
+	if g != INF:
+		_goal.y = g
+
+
+## The fixed ground (or roof) under a point, looked for from well above it;
+## INF if there is none.
+func _ground_at(p: Vector3) -> float:
+	var space := get_world_3d().direct_space_state
+	var q := PhysicsRayQueryParameters3D.create(p + Vector3(0, 30.0, 0), p - Vector3(0, 60.0, 0), 1)
+	for k in 4:
+		var hit := space.intersect_ray(q)
+		if not hit:
+			return INF
+		if hit.collider is StaticBody3D:
+			return hit.position.y
+		q.exclude = q.exclude + [hit.rid]
+	return INF
 
 
 func _play(clip: String) -> void:
@@ -221,6 +242,9 @@ func _stick_to_ground(delta: float) -> void:
 			hit = space.intersect_ray(q)
 		if hit and hit.collider is StaticBody3D:
 			_ground_y = hit.position.y
+		elif not hit:
+			# under the ground (nothing below it): back up onto it
+			_ground_y = _ground_at(global_position)
 	if _ground_y != INF:
 		global_position.y = move_toward(global_position.y, _ground_y, 3.0 * delta) if abs(global_position.y - _ground_y) < 1.0 else _ground_y
 
