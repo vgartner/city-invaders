@@ -57,7 +57,13 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
 - **Navigation**: after that the tile gets a navigation mesh of its own. Its
   colliders are read (1 ms), the mesh is baked on a thread
   (`NavigationServer3D.bake_from_source_geometry_data_async`, 0.1 s for a
-  250 m tile) and added as a region of the same map. Two meshes baked apart
+  250 m tile) and added as a region of the same map. The baked mesh is
+  kept (`res://city/<id>.nav.res` when the game runs from the project,
+  git-ignored with the tiles; `user://tile_nav/` in a released game) with a
+  stamp of the tile's files and the bake settings; the next time the tile
+  comes in, the mesh is read back on a loader thread (same polygons, same
+  links) and neither the colliders are read nor the mesh baked. A rebuilt
+  tile, or other bake settings, bake again. Two meshes baked apart
   stop an agent's radius short of the shared edge, so along the tile's edge,
   every 2.5 m where both sides can be walked, a `NavigationLink3D` joins
   them (26 on the test edge). The neighbours' buildings that reach into a
@@ -328,11 +334,12 @@ models and people are still imported lossless and hold 4-6 GB
    at most 0.4 m (91 points over 0.1 m, on lawns), and the only hole - the
    Mercado Público's lot, its model smaller than the OSM outline - has
    ground now (`layout.json` lots are open ground like `site.json` ones).
-3. **Navigation, the rest.** Measured (PERFORMANCE.md, loading time step
-   by step): the round's map reads its colliders in 40-55 ms on the main
-   thread and bakes for 0.7-0.8 s on a thread - it was not the slow step
-   of loading. What is left is a mesh that comes baked with the tile
-   instead of being baked when it enters.
+3. **Navigation, the rest.** A tile keeps its baked mesh and reads it
+   back the next time (see Navigation above), saving 7-10 ms of the main
+   thread and 60-100 ms of baking; the first entry after a rebuild still
+   bakes. Measured before (PERFORMANCE.md, loading time step by step): the
+   round's map reads its colliders in 40-55 ms on the main thread and bakes
+   for 0.7-0.8 s on a thread; the round's map does not keep its mesh yet.
 4. **Bus lines across tiles**; a tile's props breakable like the map's; a
    big landmark built over several frames.
 5. **The far view, the rest**: its buildings are boxes of one colour; roofs

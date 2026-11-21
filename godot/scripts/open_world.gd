@@ -555,12 +555,24 @@ static func drop_islands(nm: NavigationMesh, rect: Rect2) -> Vector2i:
 
 ## The tile's own navigation mesh: its colliders are read here, the mesh is
 ## baked on a thread, and when it is in, links join it to what is round it.
+## A mesh once baked is kept (_nav_path) and read back the next time the
+## tile comes in, while the tile's files and the bake settings are the same
+## (_nav_stamp): no colliders read, no bake.
 func _bake(id: String, t: Dictionary) -> void:
 	var t0 := Time.get_ticks_usec()
 	var root: Node3D = t["node"]
-	obstacles(root, t["foreign"])
 	var nm: NavigationMesh = (main.nav_region as NavigationRegion3D).navigation_mesh.duplicate()
 	nm.clear()
+	var stamp := _nav_stamp(id, nm)
+	var kept := await _kept_nav(id, stamp)
+	if not is_instance_valid(root) or not tiles.has(id) or tiles[id]["node"] != root:
+		return                                  # the tile left while its mesh was read
+	if kept:
+		_note(id, "navmesh read back (thread), %d polygons" % kept.get_polygon_count(), t0)
+		_baked(id, root.get_instance_id(), kept, Time.get_ticks_usec(), Vector2i.ZERO, false)
+		return
+	t0 = Time.get_ticks_usec()
+	obstacles(root, t["foreign"])
 	var r: Rect2 = t["rect"]
 	var elev: Vector2 = t["elev"]
 	nm.filter_baking_aabb = AABB(Vector3(r.position.x, elev.x - 2, r.position.y), Vector3(r.size.x, elev.y - elev.x + 6, r.size.y))
@@ -574,14 +586,57 @@ func _bake(id: String, t: Dictionary) -> void:
 	NavigationServer3D.bake_from_source_geometry_data_async(nm, source, func() -> void:
 		WorkerThreadPool.add_task(func() -> void:
 			var went := drop_islands(nm, r)
-			_baked.call_deferred(id, root_id, nm, t1, went)))
+			nm.set_meta("stamp", stamp)
+			var err := ResourceSaver.save(nm, _nav_path(id), ResourceSaver.FLAG_COMPRESS)
+			if err != OK:
+				push_warning("open world: could not keep %s's navigation mesh (%d)" % [id, err])
+			_baked.call_deferred(id, root_id, nm, t1, went, true)))
 
 
-func _baked(id: String, root_id: int, nm: NavigationMesh, t1: int, went: Vector2i) -> void:
+## Where a tile's baked navigation mesh is kept: next to the tile while the
+## game runs from the project (a developer's tiles, git-ignored with them),
+## in the user's folder in a released game, whose files are read-only.
+func _nav_path(id: String) -> String:
+	if OS.has_feature("editor"):
+		return "res://city/%s.nav.res" % id
+	DirAccess.make_dir_recursive_absolute("user://tile_nav")
+	return "user://tile_nav/%s.nav.res" % id
+
+
+## What a tile's mesh is baked from: the tile's files (a rebuilt tile bakes
+## again) and the bake's settings.
+func _nav_stamp(id: String, nm: NavigationMesh) -> String:
+	var parts := []
+	for f in [_glb(id), _col(id), "res://city/%s.props.json" % id, "res://city/%s.landmarks.json" % id,
+			"res://city/%s.spawn.json" % id]:
+		parts.append("%s:%d" % [f.get_file(), FileAccess.get_modified_time(f)])
+	parts.append("%s %s %s %s %s %s" % [nm.cell_size, nm.cell_height, nm.agent_radius, nm.agent_height,
+			nm.agent_max_climb, nm.agent_max_slope])
+	return ";".join(parts)
+
+
+## The tile's kept mesh, read on a loader thread, or null if there is none
+## or it was baked from other files.
+func _kept_nav(id: String, stamp: String) -> NavigationMesh:
+	var path := _nav_path(id)
+	if not ResourceLoader.exists(path):
+		return null
+	if ResourceLoader.load_threaded_request(path, "NavigationMesh", false, ResourceLoader.CACHE_MODE_IGNORE) != OK:
+		return null
+	while ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+		await get_tree().process_frame
+	var nm := ResourceLoader.load_threaded_get(path) as NavigationMesh
+	if nm == null or str(nm.get_meta("stamp", "")) != stamp:
+		return null
+	return nm
+
+
+func _baked(id: String, root_id: int, nm: NavigationMesh, t1: int, went: Vector2i, fresh: bool) -> void:
 	var root := instance_from_id(root_id) as Node3D
 	if root == null or not tiles.has(id) or tiles[id]["node"] != root:
 		return                                  # the tile left while its mesh was baking
-	_note(id, "bake the navmesh (thread), %d polygons, %d islands of %d polygons dropped" % [nm.get_polygon_count(), went.x, went.y], t1)
+	if fresh:
+		_note(id, "bake the navmesh (thread), %d polygons, %d islands of %d polygons dropped" % [nm.get_polygon_count(), went.x, went.y], t1)
 	var t0 := Time.get_ticks_usec()
 	var region := NavigationRegion3D.new()
 	region.name = "Navigation"
