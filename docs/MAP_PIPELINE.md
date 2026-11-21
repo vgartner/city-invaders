@@ -246,7 +246,9 @@ it to know which OSM building is where (map editor, DevAgent `selection`).
   - an avenue (primary, secondary: two one-way streets side by side in
     OSM) is its bare lanes, so the strip between the two stays;
   - the pavement fills the gap from kerb to wall where it is up to 9 m
-    (`WALK_FILL_M`); wider gaps keep their grass;
+    (`WALK_FILL_M`); wider gaps keep their grass. A paved pedestrian
+    street counts as a street here: the strip between its paving and the
+    facades along it was a lawn up to the doors;
   - a street stands in the middle of its corridor (`_centred_osm`): OSM
     draws the line 1-3 m off it, which made one pavement wide and the other
     narrow. Each street measured between facades is moved sideways by the

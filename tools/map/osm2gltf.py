@@ -1665,10 +1665,13 @@ def main():
         # between kerb and facade the ground is pavement, not a 3 m strip at the
         # kerb, another at the wall and a lawn in between: every gap up to
         # 2 x WALK_FILL_M wide between the asphalt and a building is closed
-        # (wider ones - front gardens, squares - keep their grass)
-        solid = unary_union([carriageway, footprint])
+        # (wider ones - front gardens, squares - keep their grass). A paved
+        # pedestrian street counts as a street: a lawn strip between its
+        # paving and the facades along it was grass up to the doors
+        ways = unary_union([carriageway, pedestrian])
+        solid = unary_union([ways, footprint])
         fill = solid.buffer(WALK_FILL_M, join_style=2).buffer(-WALK_FILL_M, join_style=2).difference(solid) \
-            .intersection(carriageway.buffer(2 * WALK_FILL_M + 1.0)).intersection(street_surface).difference(pedestrian)
+            .intersection(ways.buffer(2 * WALK_FILL_M + 1.0)).intersection(street_surface).difference(pedestrian)
         blocks = unary_union([blocks, fill])
     sidewalks0 = blocks.difference(footprint.buffer(0.05))
     lawn = street_surface.difference(asphalt_area).difference(pedestrian).difference(sidewalks0)
