@@ -103,7 +103,32 @@ sidewalk along it.
 - The red bands, the tactile strips and the manhole covers as details
   after that (the map already places manholes).
 - Reference photos: Mapillary or Wikimedia Commons only, as for every
-  other image (LICENSING.md).
+  other image (LICENSING.md). Mapillary's photos of these streets are from
+  January 2021, before the Quadrilátero Central works (finished in March
+  2026): they show the old small pavers with red borders, not today's slabs.
+
+## Sidewalks and asphalt of the Centro's streets
+
+Asked for by the owner (November 2026), to do later, with the paving above.
+
+- **Sidewalks.** On the Rua Riachuelo, as on most of the Centro, the
+  sidewalk is of dark grey stone slabs (the basalt slabs usual in Porto
+  Alegre): rectangles of uneven sizes, roughly 0.4-0.6 m by 0.6-1 m, laid
+  in rows with staggered joints, worn and patched, behind a kerb of long
+  stone blocks. The game lays every sidewalk in the same small setts as the
+  streets (`sidewalk` and `paving` both use `PavingStones138`). The
+  sidewalks need a slab material of their own; whether it is the one for
+  the Rua dos Andradas is open: both are rectangular slabs far larger than
+  the setts, but the Andradas' are lighter, larger and regular (new
+  concrete) and the sidewalks' darker and uneven (old stone). Two materials,
+  or one with two tints, to be decided when trying them.
+- **Asphalt.** The streets' asphalt is a light, worn grey with the stones
+  of the mix showing, patches and manhole covers - lighter and less even
+  than `Asphalt031` as the game shows it. To try: a lighter tint, or
+  another CC0 asphalt (worn, patched).
+- Mapillary has only 2019 photos of the Riachuelo (through a wet
+  windscreen): no use for the texture, and none of these can be a texture
+  source anyway - the materials come from CC0 libraries.
 
 ## Other ideas
 
