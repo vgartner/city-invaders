@@ -16,6 +16,7 @@ extends Node
 ## that puts it into the tree - the one the player can feel.
 
 const BusRoutes := preload("res://scripts/bus_routes.gd")
+const Edits := preload("res://scripts/edits.gd")
 const LOAD_M := 120.0       # a tile comes in when the player is this near its bounds
 const UNLOAD_M := 220.0     # and goes out beyond this
 const CHECK_S := 0.25
@@ -245,9 +246,10 @@ func _process(dt: float) -> void:
 				continue                       # a robot of the round is in it: the tile stays
 			var t0 := Time.get_ticks_usec()
 			t["nav"] = false
-			for lm in t.get("landmarks", []):
-				main._landmark_nodes.erase(lm)
-			t.erase("landmarks")
+			for lm in main._landmark_nodes.duplicate():      # its landmarks, the shops walked into, the wrecked ones
+				if not is_instance_valid(lm) or (t["node"] as Node).is_ancestor_of(lm):
+					main._landmark_nodes.erase(lm)
+			t.erase("furnished")
 			t.erase("held")
 			(t["node"] as Node).queue_free()
 			t["node"] = null
@@ -417,7 +419,6 @@ func _furnish(id: String, t: Dictionary, root: Node3D) -> void:
 	var worst := 0.0
 	var total := 0.0
 	var slow := []
-	var n0: int = main._landmark_nodes.size()
 	var pickups: int = main.landmark_pickups.size()
 	var todo := []
 	var shaping := []
@@ -433,11 +434,13 @@ func _furnish(id: String, t: Dictionary, root: Node3D) -> void:
 			return
 		var t1 := Time.get_ticks_usec()
 		main.landmark_into = root
+		main.trimesh_defer = true
 		if item[0] == "landmarks":
 			main._landmark(item[1])
 		else:
 			main._shell(item[1])
 		main.landmark_into = null
+		main.trimesh_defer = false
 		if not main.trimesh_later.is_empty():
 			shaping.append(_shape_later(main.trimesh_later.duplicate()))
 			main.trimesh_later.clear()
@@ -446,8 +449,10 @@ func _furnish(id: String, t: Dictionary, root: Node3D) -> void:
 			slow.append("%s %.0f ms" % [String(item[1].get("model", item[1].get("kind", "?"))).get_file(), ms])
 		worst = maxf(worst, ms)
 		total += ms
-	t["landmarks"] = main._landmark_nodes.slice(n0)
 	main.landmark_pickups.resize(pickups)        # the round's pickups are already out
+	t["furnished"] = true
+	for b in (t.get("bursts", {}) as Dictionary).values():      # shops wrecked before the tile left
+		main.wreck_shops(b[0], b[1])
 	events.append({"id": id, "what": "%d landmarks and shops, one a frame (main thread): worst %.1f ms %s" % [todo.size(), worst, ", ".join(slow)],
 			"ms": snappedf(total, 0.1)})
 	# their triangle collision, built on a worker thread: put in one mesh a frame
@@ -496,6 +501,30 @@ func _prop_fall(props: Node, index: int, crushable: bool, dir: Vector3) -> void:
 		props.call("knock_over", index, dir)
 	else:
 		props.call("break_prop", index)
+
+
+## The street furniture of the tiles that are in (main.all_props).
+func props_nodes() -> Array:
+	var out := []
+	for t in tiles.values():
+		if t["state"] == "in" and is_instance_valid(t.get("props")):
+			out.append(t["props"])
+	return out
+
+
+## Every peer: a blast at `at` (main.wreck_shops) wrecked shops of the tiles
+## `into` (their nodes). The tile keeps the blast and wrecks them again when
+## it comes back; a tile that is not in on this peer keeps every blast in it,
+## for whatever shop it reaches.
+func shop_burst(at: Vector3, r: float, into: Array) -> void:
+	var key := Vector3i((at / 2.0).round())
+	for t in tiles.values():
+		if not (t["rect"] as Rect2).grow(r).has_point(Vector2(at.x, at.z)):
+			continue
+		if into.has(t["node"]) or not t.get("furnished", false):
+			if not t.has("bursts"):
+				t["bursts"] = {}
+			t["bursts"][key] = [at, r]
 
 
 ## A new round: the tiles' street furniture stands again.
@@ -956,8 +985,17 @@ func _streets_in(id: String, t: Dictionary) -> void:
 			t["ways"].append([int(edge["a"]), [i, true]])
 			if not edge["oneway"]:
 				t["ways"].append([int(edge["b"]), [i, false]])
-		t["stops"] = _tile_stops(id, e0, g["edges"].size())
-		_note(id, "streets: %d edges joined to the road graph at %d nodes, %d bus stops" % [tg["edges"].size(), joined, t["stops"].size()], t0)
+		# its bus stops (the map's rule), its zebra crossings and street names
+		t["stops"] = main.area_stops(Edits.read(id), "res://city/%s.props.json" % id, e0, g["edges"].size(), t["rect"])
+		var stops := 0
+		for n in t["stops"]["lines"]:
+			stops += t["stops"]["lines"][n].size()
+		for key in ["crossings", "streets"]:
+			if not g.has(key):
+				g[key] = []
+			(g[key] as Array).append_array(tg.get(key, []))
+		g["rev"] = int(g.get("rev", 0)) + 1          # the GPS draws the streets again
+		_note(id, "streets: %d edges joined to the road graph at %d nodes, %d bus stops, %d crossings" % [tg["edges"].size(), joined, stops, tg.get("crossings", []).size()], t0)
 	for w in t["ways"]:
 		(g["out"] as Dictionary).get_or_add(w[0], []).append(w[1])
 	_entries()
@@ -965,57 +1003,17 @@ func _streets_in(id: String, t: Dictionary) -> void:
 	_bus_round()
 
 
-## The tile's bus shelters (<id>.props.json) as stops, [edge, x, z]: the
-## point of the tile's own streets (edges e0..e1) nearest each, as the map
-## takes its own (main._bus_stops).
-func _tile_stops(id: String, e0: int, e1: int) -> Array:
-	var path := "res://city/%s.props.json" % id
-	var props = JSON.parse_string(FileAccess.get_file_as_string(path)) if FileAccess.file_exists(path) else []
-	var g: Dictionary = main.road_graph
-	var out := []
-	for p in (props if props is Array else []):
-		if p.get("type", "") != "bus_stop":
-			continue
-		var at := Vector2(p["pos"][0], p["pos"][2])
-		var best := [-1, 0.0, 0.0]
-		var bd := 25.0                    # a shelter further than this from any street serves none
-		for i in range(e0, e1):
-			for pt in g["edges"][i]["pts"]:
-				var d := at.distance_to(Vector2(pt[0], pt[1]))
-				if d < bd:
-					bd = d
-					best = [i, pt[0], pt[1]]
-		if best[0] >= 0:
-			out.append(best)
-	return out
-
-
-## The buses' round: the map's stops (while the map is in) and those of the
-## tiles whose streets are open, nearest-next like the map's own. A bus keeps
-## the stop it was making for if that stop is still served. Bus lines
-## designed in the map editor stay the map's.
-var _map_stops = null
+## The buses' round (main.set_bus_round): the map's stops while the map is
+## in, and those of the tiles whose streets are open.
 func _bus_round() -> void:
 	var g: Dictionary = main.road_graph
-	if not g.has("edges") or not g.get("lines", []).is_empty():
+	if not g.has("edges"):
 		return
-	if _map_stops == null:
-		_map_stops = g.get("stops", []).duplicate()
-	var found: Array = _map_stops.duplicate() if home.get("streets", true) else []
+	var sets := [main.map_stops] if home.get("streets", true) and not (main.map_stops as Dictionary).is_empty() else []
 	for t in tiles.values():
-		if t.get("streets", false):
-			found.append_array(t.get("stops", []))
-	var tour := []
-	while not found.is_empty():
-		var from: Vector2 = Vector2(tour[-1][1], tour[-1][2]) if not tour.is_empty() else Vector2(found[0][1], found[0][2])
-		found.sort_custom(func(a, b): return from.distance_to(Vector2(a[1], a[2])) < from.distance_to(Vector2(b[1], b[2])))
-		tour.append(found.pop_front())
-	var old: Array = g.get("stops", [])
-	for v in main.traffic_root.get_children():
-		if v.get("kind") == "bus":
-			var i: int = v.get("_stop_i")
-			v.set("_stop_i", tour.find(old[i]) if i >= 0 and i < old.size() else -1)
-	g["stops"] = tour
+		if t.get("streets", false) and t.has("stops"):
+			sets.append(t["stops"])
+	main.set_bus_round(sets)
 
 
 ## The tile leaves: the ways into its streets close (the edges stay in the

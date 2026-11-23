@@ -125,15 +125,27 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   `open_world_node.threaded = false` builds on the main thread instead, to
   compare.
 
-- **Bus lines**: the tile's bus shelters (`<id>.props.json`) become stops
-  on the tile's own streets when they first join the graph (`_tile_stops`,
-  the map's rule: the nearest street point within 25 m). Whenever streets
-  open or close, the buses' round is made again over the map's stops (while
-  the map is in) and the open tiles' ones, nearest-next like the map's
-  (`_bus_round`); a bus keeps the stop it was making for while it is still
-  served. Lines designed in the map editor stay the map's. On the centre
-  tile with three neighbours in, the round had 22 stops (13 the map's); a
-  bus sent to a stop in a neighbouring tile drove there and stopped.
+- **Bus lines**: the map and every tile are an area with stops of its own
+  (`main.area_stops`, one rule for both): the street point nearest each
+  shelter, within 25 m, on the area's own streets; shelters placed in the
+  map editor inside the area replace its OSM shelters and belong to a bus
+  line. Whenever streets open or close the buses' round is made again over
+  the areas whose streets are open (`_bus_round`, `main.set_bus_round`): with
+  no shelter placed by hand, one round of every stop, nearest-next; with
+  some, the lines - a line's hand-placed stops in the order placed, area
+  after area, and the other areas' OSM stops on line 1. A bus keeps the stop
+  it was making for while it is still served. On the centre tile with three
+  neighbours in, the round had 18 stops (9 the map's); a bus sent to a stop
+  in a neighbouring tile drove there and stopped.
+- A tile's zebra crossings and street names join the road graph with its
+  streets (`crossings`, `streets`; `rev` counts the changes): traffic stops
+  for people on a tile's crossing, people cross there, and the GPS draws
+  and names the tile's streets.
+- A shop wrecked by a blast (`main.wreck_shops`) is rebuilt where it stood,
+  in its tile; the tile keeps the blast (`shop_burst`) and wrecks the shop
+  again when it comes back. A landmark's forecourt clears the lamps and bins
+  of its own tile (`_props_here`), and the counters players trade at are
+  asked of every Props node standing (`main.trade_counters`).
 
 **Not yet**: occluders, pickups.
 

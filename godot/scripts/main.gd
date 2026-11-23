@@ -2029,7 +2029,7 @@ func repair_shops() -> Array:
 		if is_instance_valid(lm) and not lm.has_meta("pocket") \
 				and String(lm.get_meta("landmark", {}).get("place", "")) == "repair_shop":
 			out.append((lm as Node3D).global_position)
-	for at in (props.shops if props != null else []):     # a client asks before its props are built
+	for at in trade_counters():
 		if (at as Vector3).y > -50.0:
 			out.append(at)
 	return out
@@ -2102,6 +2102,7 @@ func area_name_at(at: Vector3) -> String:
 ## A shell or a mech's cannon bursting by a storefront: it becomes its
 ## damaged variant (storefronts/damaged/*_danificada), on every peer.
 func wreck_shops(at: Vector3, r := 5.0) -> void:
+	var hit_in: Array = []
 	for lm in _landmark_nodes.duplicate():
 		if not is_instance_valid(lm):
 			continue
@@ -2124,9 +2125,17 @@ func wreck_shops(at: Vector3, r := 5.0) -> void:
 		nl.erase("full")
 		nl.erase("solid")
 		nl["model"] = wrecked
+		# built where the shop stood: an open world's tile, not the round's map
+		var into: Node = lm.get_parent()
 		_landmark_nodes.erase(lm)
 		lm.queue_free()
+		landmark_into = into if into != nav_region else null
 		_landmark(nl)
+		landmark_into = null
+		if into != nav_region:
+			hit_in.append(into)
+	if is_instance_valid(open_world_node):
+		open_world_node.call("shop_burst", at, r, hit_in)     # the tile keeps it while it is out
 
 
 ## The green cross at a model's sign_cross marker (facing its -Z, the street).
@@ -4126,7 +4135,9 @@ func _load_roads() -> void:
 			out.get_or_add(int(e["b"]), []).append([i, false])
 	road_graph["out"] = out
 	road_graph["len"] = road_graph["edges"].map(func(e): return _edge_length(e))
-	road_graph["stops"] = _bus_stops()
+	map_stops = {}
+	_map_bus_stops()
+	set_bus_round([map_stops])
 	_populate_stops.call_deferred()
 	# border entry points: a street end with a single edge, near the map edge
 	var degree := {}
@@ -4170,60 +4181,114 @@ func _start_world() -> void:
 	_phase_civ_start = civilians_wanted()
 
 
-## The map's bus stops as [edge, x, z] - the street point nearest each
-## shelter. A route designed in the map editor (bus shelters placed by hand,
-## kept in the map's user edits) is followed in the order they were placed;
-## without one, the OSM shelters (<city>.props.json) in a nearest-next round.
-func _bus_stops() -> Array:
-	var designed := []
+## The bus stops of one area - the round's map or an open world's tile - on
+## its own streets (the road graph's edges e0..e1), each as [edge, x, z]: the
+## street point nearest a shelter. Shelters placed in the map editor inside
+## the area (its user edits; each belongs to a bus line, 1 if unset) replace
+## the area's OSM shelters (`props_file`, <city>.props.json).
+## Returns {"designed": bool, "lines": {line: [stops in the order placed]}};
+## OSM shelters are all on line 1.
+func area_stops(edits: Dictionary, props_file: String, e0: int, e1: int, area: Rect2) -> Dictionary:
 	var lines := {}
-	for p in user_edits().get("_props", []):
+	for p in edits.get("_props", []):
 		if String(p.get("model", "")).contains("bus_shelter") or Entities.of_model(p.get("model", "")).get("tags", []).has("bus_stop"):
-			var st: Array = _nearest_street(Vector2(p["x"], p["z"]))
+			var at := Vector2(p["x"], p["z"])
+			var st: Array = _nearest_street(at, e0, e1) if area.has_point(at) else [-1]
 			if st[0] < 0:
 				continue
-			designed.append(st)
 			# a stop belongs to a bus line (the map editor's "Bus line"); 1 if unset
-			var n := int(p.get("line", 1))
-			if not lines.has(n):
-				lines[n] = []
-			lines[n].append(st)
-	if not designed.is_empty():
+			lines.get_or_add(int(p.get("line", 1)), []).append(st)
+	if not lines.is_empty():
+		return {"designed": true, "lines": lines}
+	var found := []
+	var props_data = JSON.parse_string(FileAccess.get_file_as_string(props_file)) if FileAccess.file_exists(props_file) else []
+	for p in (props_data if props_data is Array else []):
+		if p.get("type", "") != "bus_stop":
+			continue
+		var st: Array = _nearest_street(Vector2(p["pos"][0], p["pos"][2]), e0, e1)
+		if st[0] >= 0:                    # a shelter further than 25 m from any street serves none
+			found.append(st)
+	return {"designed": false, "lines": {1: found} if not found.is_empty() else {}}
+
+
+## The buses' round over the areas whose streets are open (area_stops of
+## the round's map and of each open tile, in that order).
+## No area with stops placed in the map editor: every stop in one round,
+## nearest-next (road_graph "stops", no "lines"). Otherwise the bus lines
+## ("lines"): a line's stops placed by hand in the order placed, area after
+## area, then the other areas' OSM stops on line 1, nearest-next from where
+## the line ends. A bus keeps the stop it was making for while it is served.
+func set_bus_round(sets: Array) -> void:
+	var making_for := {}
+	var buses := traffic_root.get_children().filter(func(v): return v.get("kind") == "bus") if is_instance_valid(traffic_root) else []
+	for v in buses:
+		var st: Array = v.call("_line_stops")
+		var i: int = v.get("_stop_i")
+		if i >= 0 and i < st.size():
+			making_for[v] = st[i]
+	var lines := {}
+	var loose := []
+	for set_ in sets:
+		for n in set_["lines"]:
+			if set_["designed"]:
+				lines.get_or_add(n, []).append_array(set_["lines"][n])
+			else:
+				loose.append_array(set_["lines"][n])
+	if lines.is_empty():
+		road_graph.erase("lines")
+		road_graph["stops"] = _nearest_next(loose, Vector2.INF)
+	else:
+		var first: Array = lines.get_or_add(1, [])
+		first.append_array(_nearest_next(loose, Vector2(first[-1][1], first[-1][2]) if not first.is_empty() else Vector2.INF))
 		var keys := lines.keys()
 		keys.sort()
 		road_graph["lines"] = keys.map(func(k): return lines[k])
-		return designed
-	road_graph.erase("lines")
-	if not FileAccess.file_exists(_city(".props.json")):
-		return []
-	var found := []
-	for p in JSON.parse_string(FileAccess.get_file_as_string(_city(".props.json"))):
-		if p["type"] != "bus_stop":
+		var all := []
+		for k in keys:
+			all.append_array(lines[k])
+		road_graph["stops"] = all
+	for v in buses:
+		v.set("line", -1)
+		v.set("_stop_i", -1)
+		if not making_for.has(v):
 			continue
-		var at := Vector2(p["pos"][0], p["pos"][2])
-		var best := [-1, 0.0, 0.0]
-		var bd := 25.0                    # a shelter further than this from any street serves none
-		for i in road_graph["edges"].size():
-			for pt in road_graph["edges"][i]["pts"]:
-				var d := at.distance_to(Vector2(pt[0], pt[1]))
-				if d < bd:
-					bd = d
-					best = [i, pt[0], pt[1]]
-		if best[0] >= 0:
-			found.append(best)
+		var ls: Array = road_graph.get("lines", [])
+		if ls.is_empty():
+			v.set("_stop_i", (road_graph["stops"] as Array).find(making_for[v]))
+		else:
+			for k in ls.size():
+				var i: int = (ls[k] as Array).find(making_for[v])
+				if i >= 0:
+					v.set("line", k)
+					v.set("_stop_i", i)
+					break
+
+
+## `stops` in a round: each time the nearest to the last (the first as it is, or the nearest to `from`).
+func _nearest_next(stops: Array, from: Vector2) -> Array:
+	var found := stops.duplicate()
 	var tour := []
 	while not found.is_empty():
-		var from: Vector2 = Vector2(tour[-1][1], tour[-1][2]) if not tour.is_empty() else Vector2(found[0][1], found[0][2])
-		found.sort_custom(func(a, b): return from.distance_to(Vector2(a[1], a[2])) < from.distance_to(Vector2(b[1], b[2])))
+		var at: Vector2 = Vector2(tour[-1][1], tour[-1][2]) if not tour.is_empty() else (from if from != Vector2.INF else Vector2(found[0][1], found[0][2]))
+		found.sort_custom(func(a, b): return at.distance_to(Vector2(a[1], a[2])) < at.distance_to(Vector2(b[1], b[2])))
 		tour.append(found.pop_front())
 	return tour
 
 
-## [edge, x, z] of the road point nearest `at` (edge -1 beyond 25 m).
-func _nearest_street(at: Vector2) -> Array:
+## The round's map's own stops (area_stops), kept for the open world's rounds.
+var map_stops := {}
+func _map_bus_stops() -> void:
+	var n: int = road_graph["edges"].size() if map_stops.is_empty() or not map_stops.has("e1") else int(map_stops["e1"])
+	map_stops = area_stops(user_edits(), _city(".props.json"), 0, n, bounds.grow(25.0))
+	map_stops["e1"] = n                  # the map's edges come first; the tiles' are added after them
+
+
+## [edge, x, z] of the road point nearest `at` among the edges e0..e1 (all
+## by default); edge -1 beyond 25 m.
+func _nearest_street(at: Vector2, e0 := 0, e1 := -1) -> Array:
 	var best := [-1, 0.0, 0.0]
 	var bd := 25.0
-	for i in road_graph["edges"].size():
+	for i in range(e0, road_graph["edges"].size() if e1 < 0 else e1):
 		for pt in road_graph["edges"][i]["pts"]:
 			var d := at.distance_to(Vector2(pt[0], pt[1]))
 			if d < bd:
@@ -4296,11 +4361,11 @@ func bus_at_stop(bus: Node3D, s: Array) -> void:
 ## Map editor: the bus route changed (a shelter placed): buses follow it at once.
 func refresh_bus_stops() -> void:
 	if road_graph.has("edges"):
-		road_graph["stops"] = _bus_stops()
-		for v in traffic_root.get_children():
-			if v.get("kind") == "bus":
-				v.set("_stop_i", -1)
-				v.set("line", -1)
+		_map_bus_stops()
+		if is_instance_valid(open_world_node):
+			open_world_node.call("_bus_round")       # with the open tiles' stops
+		else:
+			set_bus_round([map_stops])
 
 
 ## Grass is matte: the texture's roughness map left a sun sheen on the lawns
@@ -4950,8 +5015,35 @@ var landmark_into: Node
 ## builds the shapes on a worker thread (the Mercado's 86 000 triangles cost
 ## a frame of 145 ms on the main one) and takes the list as it goes.
 var trimesh_later: Array[MeshInstance3D] = []
+var trimesh_defer := false           # set by the tile while it adds its landmarks
 func _landmark_parent() -> Node:
 	return landmark_into if is_instance_valid(landmark_into) else nav_region
+
+
+## The street furniture where a landmark is being built: the tile's own
+## (its "Props"), else the map's.
+func _props_here() -> Node:
+	var p: Node = landmark_into.get_node_or_null("Props") if is_instance_valid(landmark_into) else null
+	return p if p != null else props
+
+
+## Every street-furniture node standing: the map's and the loaded tiles'.
+func all_props() -> Array:
+	var out := []
+	if is_instance_valid(props):
+		out.append(props)
+	if is_instance_valid(open_world_node):
+		out.append_array(open_world_node.call("props_nodes"))
+	return out
+
+
+## Every counter a player trades robot parts at (the repair shops): the
+## map's, the loaded tiles' and those inside the shops walked into.
+func trade_counters() -> Array:
+	var out := []
+	for pr in all_props():
+		out.append_array(pr.get("shops"))
+	return out
 
 
 ## One hand-made model of the map (<city>.landmarks.json, or a user edit).
@@ -5058,7 +5150,7 @@ func _landmark(l: Dictionary) -> void:
 			mi.material_override = _storefront_floor(String(mi.name).contains("ceramic"))
 		if String(mi.name).ends_with("_ground_pad"):
 			_landmark_surface(mi as MeshInstance3D)
-			props.clear_under(mi as MeshInstance3D)
+			_props_here().call("clear_under", mi as MeshInstance3D)
 			_conform_pad.call_deferred(mi, m)
 			continue                     # visual only: the street is the floor
 		if String(mi.name) == "door" or String(mi.name).begins_with("door."):
@@ -5077,7 +5169,7 @@ func _landmark(l: Dictionary) -> void:
 				shop_faces.append(mi)          # the walls and floor: one shape, below
 			continue
 		if not String(mi.name).ends_with("glass") and not String(mi.name).ends_with("skylight"):
-			if is_instance_valid(landmark_into):
+			if trimesh_defer:
 				trimesh_later.append(mi as MeshInstance3D)
 				continue
 			(mi as MeshInstance3D).create_trimesh_collision()

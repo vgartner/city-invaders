@@ -175,9 +175,9 @@ func _think() -> void:
 			else:
 				_goal = (_goal_node as Node3D).global_position     # traffic drives on
 		return                          # keep at it
-	if player._can_trade() and main.props and not main.props.shops.is_empty():
+	if player._can_trade() and not main.trade_counters().is_empty():
 		var best := Vector3.INF
-		for at in main.props.shops:
+		for at in main.trade_counters():
 			if _bad_shops.has(at):
 				continue
 			if best == Vector3.INF or (at as Vector3).distance_to(player.global_position) < best.distance_to(player.global_position):

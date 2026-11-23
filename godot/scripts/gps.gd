@@ -32,7 +32,17 @@ func _ready() -> void:
 	set_driving(false)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_font = ThemeDB.fallback_font
+	_read_streets()
+
+
+## The streets and their names from the road graph; again when an open
+## world's tile has added its own ("rev").
+var _rev := -1
+func _read_streets() -> void:
 	var main := get_tree().current_scene
+	_rev = int(main.road_graph.get("rev", 0))
+	_roads = []
+	_streets = []
 	for e in main.road_graph.get("edges", []):
 		var line := PackedVector2Array()
 		for p in e.get("pts", []):
@@ -51,6 +61,8 @@ func _process(delta: float) -> void:
 	_name_cd -= delta
 	if _name_cd <= 0:
 		_name_cd = 0.4
+		if int(get_tree().current_scene.road_graph.get("rev", 0)) != _rev:
+			_read_streets()
 		_name = _street_at(Vector2(vehicle.global_position.x, vehicle.global_position.z))
 	queue_redraw()
 

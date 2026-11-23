@@ -1019,10 +1019,9 @@ func _shop_tick(delta: float) -> void:
 	if _shop_cd > 0:
 		return
 	_shop_cd = 0.3
-	var props = get_tree().current_scene.get("props")
 	_near_shop = false
-	if props and not dead:
-		for at in props.shops:
+	if not dead:
+		for at in get_tree().current_scene.trade_counters():     # the map's and the tiles'
 			if (at as Vector3).distance_to(global_position) < 3.2:
 				_near_shop = true
 	if _shop_panel and not _near_shop:
