@@ -458,10 +458,28 @@ models and people are still imported lossless and hold 4-6 GB
 7. **The round's own tile, the rest**: it leaves and comes back now (one
    player), but as itself: its landmarks, street furniture and navigation
    mesh sleep in memory. Every tile equal means the round's map built
-   through the tile path from the start, with its breakable props and
-   fixed pickups as a tile's.
+   through the tile path from the start. In stages:
+   1. *Done* - a tile has what the map has (see above): crossings and
+      street names, bus stops by one rule, police, vendors, leisure and
+      waiting people, parked cars, pigeons, quero-queros, birdsong,
+      occluders, pickups, places, the map editor's edits.
+   2. What still belongs to the map alone and every area needs: one place
+      for the shops' counters, the parking spots and the props' network
+      calls (they go through the map's `Props` node today), "can it be
+      walked to?" asked from the start point (`spawn_point`), the traffic's
+      and the buses' counts that assume the map's edges come first
+      (`_map_edges`, `_map_vehicles`).
+   3. The round's map of a world built through the tile path, `main.gd`
+      keeping the round's state only (goals, score, exit, start); its
+      navigation mesh kept on disk like a tile's. The numbers a tile brings
+      (`TILE_*`: 14 people, 4 robots, half the pickups) and the map's own
+      then become one rule.
+   4. The map's own leave-and-return code (`_home_*`) goes; with several
+      players the server keeps and frees it like any tile.
+   5. A map that is no world's tile (the Gasômetro) as a world of one tile:
+      one way to build everything.
 8. **A tile's files smaller**: 40-90 MB of glb each; the release packages
-   and the map editor know nothing of worlds yet (the menu does).
+   know nothing of worlds yet (the menu and the map editor do).
 
 ## Bus distance cache
 
