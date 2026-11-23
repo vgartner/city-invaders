@@ -556,7 +556,7 @@ func _m_nav_probe(p: Dictionary):
 	for e in pts:
 		var at: Vector3 = e["at"]
 		var near := NavigationServer3D.map_get_closest_point(map, at)
-		var path := NavigationServer3D.map_get_path(map, main.spawn_point, at, true)
+		var path := NavigationServer3D.map_get_path(map, main.reach_from(), at, true)
 		var end_off := INF if path.is_empty() else path[path.size() - 1].distance_to(at)
 		out.append({"what": e["what"], "at": [snappedf(at.x, 0.1), snappedf(at.y, 0.1), snappedf(at.z, 0.1)],
 				"navmesh_m": snappedf(near.distance_to(at), 0.01), "path_end_m": snappedf(end_off, 0.01) if end_off != INF else -1})

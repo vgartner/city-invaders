@@ -711,6 +711,7 @@ func _aabb(node: Node3D) -> AABB:
 
 ## The street furniture of an open-world tile is a Props node of its own,
 ## named by the tile's id here; the round's map has "".
+## None of its calls go over the network: the scene's do (main.prop_down).
 var tile := ""
 
 
@@ -722,34 +723,23 @@ static func of(body: Node) -> Node:
 	return n
 
 
-## Server: a prop falls on every peer. A tile's props may not be loaded on
-## another peer: it goes through the map's props (on every peer) and the open
-## world, which keeps it for the tile until the round ends.
+## Server: a prop falls on every peer. The call goes through the scene
+## (main.prop_down), which every peer has: a tile's street furniture may not
+## be loaded on another peer. The scene also keeps what went down, for a tile
+## that is out and for a player who joins.
 func _fall(index: int, crushable: bool, dir := Vector3.ZERO) -> void:
-	if tile == "":
-		if crushable:
-			knock_over.rpc(index, dir)
-		else:
-			break_prop.rpc(index)
+	get_tree().current_scene.prop_down.rpc(tile, index, crushable, dir)
+
+
+## One of its props goes down (main.prop_down). `quiet`: as it lies, with no
+## fall, sparks or sound - what went down before this peer had it.
+func fall(index: int, crushable: bool, dir: Vector3, quiet := false) -> void:
+	if index < 0 or index >= (crushables if crushable else destructibles).size():
 		return
-	var main := get_tree().current_scene
-	main.props.tile_prop_down.rpc(tile, index, crushable, dir)
-
-
-## Every peer: a tile's prop went down (see _fall).
-@rpc("authority", "call_local", "reliable")
-func tile_prop_down(id: String, index: int, crushable: bool, dir: Vector3) -> void:
-	var ow = get_tree().current_scene.get("open_world_node")
-	if is_instance_valid(ow):
-		ow.call("prop_down", id, index, crushable, dir)
-
-
-## Every peer, a new round: the open world's tiles stand their props again.
-@rpc("authority", "call_local", "reliable")
-func tile_props_up() -> void:
-	var ow = get_tree().current_scene.get("open_world_node")
-	if is_instance_valid(ow):
-		ow.call("restore_props")
+	if crushable:
+		knock_over(index, dir, quiet)
+	else:
+		break_prop(index, quiet)
 
 
 ## Server: apply damage to a prop hit by a shot (player or robot).
@@ -791,8 +781,7 @@ func prop_position(index: int) -> Vector3:
 	return (destructibles[index]["root"] as Node3D).global_position
 
 
-@rpc("authority", "call_local", "reliable")
-func break_prop(index: int) -> void:
+func break_prop(index: int, quiet := false) -> void:
 	var d: Dictionary = destructibles[index]
 	if d["broken"]:
 		return
@@ -804,6 +793,11 @@ func break_prop(index: int) -> void:
 	for m in d["lights"]:
 		(m as StandardMaterial3D).emission_enabled = false
 		(m as StandardMaterial3D).albedo_color = Color(0.15, 0.15, 0.15)
+	if quiet:
+		root.rotation.x = deg_to_rad(84 if d["kind"] != "waste_basket" else 90)
+		if d["kind"] == "waste_basket":
+			root.position.y += 0.28
+		return
 	var tw := create_tween()
 	tw.tween_property(root, "rotation:x", deg_to_rad(84 if d["kind"] != "waste_basket" else 90), 0.9) \
 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
@@ -817,7 +811,6 @@ func break_prop(index: int) -> void:
 		Sfx.play_at("glass", root.global_position + Vector3(0, 4.0, 0), -4.0)
 
 
-@rpc("authority", "call_local", "reliable")
 func restore_all() -> void:
 	for c in crushables:
 		c["down"] = false
@@ -915,8 +908,7 @@ func crush(body: Node, mass: float, speed: float, dir: Vector3) -> bool:
 
 
 ## Every peer: a bench, bin or planter run over falls away from the vehicle.
-@rpc("authority", "call_local", "reliable")
-func knock_over(index: int, dir: Vector3) -> void:
+func knock_over(index: int, dir: Vector3, quiet := false) -> void:
 	var c: Dictionary = crushables[index]
 	if c["down"]:
 		return
@@ -928,6 +920,9 @@ func knock_over(index: int, dir: Vector3) -> void:
 	dir = dir.normalized() if dir.length() > 0.01 else Vector3.FORWARD
 	var axis := Vector3.UP.cross(dir).normalized()       # the top falls along dir
 	var lift: float = c.get("lift", 0.2)                 # lying down it rests on its side, not in the street
+	if quiet:
+		root.transform = Transform3D(Basis(axis, 1.45) * start.basis, start.origin + dir * 0.9 + Vector3.UP * lift)
+		return
 	create_tween().tween_method(func(t: float):
 		root.transform = Transform3D(Basis(axis, t * 1.45) * start.basis,
 				start.origin + dir * t * 0.9 + Vector3.UP * lift * t),

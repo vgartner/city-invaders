@@ -469,8 +469,7 @@ func _furnish(id: String, t: Dictionary, root: Node3D) -> void:
 	if not is_instance_valid(root) or t["node"] != root:
 		return
 	t["props"] = props
-	for d in t.get("down", []):                 # shot out or run over before the tile left
-		_prop_fall(props, d[0], d[1], d[2])
+	main.lay_down(id, props)                    # what was shot out or run over before the tile left
 	_note(id, "street furniture, %d pieces, %d ms a frame (main thread)" % [props.get_child_count(), FRAME_MS], t0)
 	var worst := 0.0
 	var total := 0.0
@@ -541,30 +540,6 @@ func _furnish(id: String, t: Dictionary, root: Node3D) -> void:
 		await get_tree().physics_frame
 
 
-## Every peer: a tile's lamp shot out or bin run over (props.gd, _fall). The
-## tile keeps it until the round ends, also while it is out.
-func prop_down(id: String, index: int, crushable: bool, dir: Vector3) -> void:
-	if not tiles.has(id):
-		return
-	var t: Dictionary = tiles[id]
-	if not t.has("down"):
-		t["down"] = []
-	t["down"].append([index, crushable, dir])
-	var props = t.get("props")
-	if t["state"] == "in" and is_instance_valid(props):
-		_prop_fall(props, index, crushable, dir)
-
-
-func _prop_fall(props: Node, index: int, crushable: bool, dir: Vector3) -> void:
-	var n: int = (props.get("crushables") if crushable else props.get("destructibles")).size()
-	if index < 0 or index >= n:
-		return
-	if crushable:
-		props.call("knock_over", index, dir)
-	else:
-		props.call("break_prop", index)
-
-
 ## The tile `at` (x, z) lies in, "" if none: also one that is not loaded.
 func tile_at(at: Vector2) -> String:
 	for id in tiles:
@@ -601,14 +576,6 @@ func shop_burst(at: Vector3, r: float, into: Array) -> void:
 			if not t.has("bursts"):
 				t["bursts"] = {}
 			t["bursts"][key] = [at, r]
-
-
-## A new round: the tiles' street furniture stands again.
-func restore_props() -> void:
-	for t in tiles.values():
-		t.erase("down")
-		if t["state"] == "in" and is_instance_valid(t.get("props")):
-			t["props"].call("restore_all")
 
 
 ## The triangle collision of a landmark's meshes, made on a worker thread:

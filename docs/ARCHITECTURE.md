@@ -77,7 +77,15 @@ by RPC (which falls back to the full path) to the peers that have the map
 (`main.container_peers`). A player who joins asks for what is already there
 (`want_containers`, `want_antennas`): the containers with who is inside, and
 the relay antennas the server placed, those brought down or spotted as they
-are.
+are, and the street furniture brought down this round (`want_props_down`).
+The server sends a container's moves to a player only after that player
+has confirmed its containers (`have_containers`): an unreliable move can
+overtake the reliable list.
+
+Street furniture (`props.gd`) makes no network calls of its own: a lamp
+shot out or a bin run over is the scene's call (`main.prop_down`, by area:
+the round's map or an open world's tile), so it reaches a peer whether or
+not that peer has the area loaded.
 
 ## Collision layers
 

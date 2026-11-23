@@ -58,9 +58,11 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   and bins are shot out, and its bins, benches and planters run over, like
   the map's: its `Props` node carries the tile's id (`tile`), a shot or a
   vehicle finds the Props its body belongs to (`Props.of`), and the fall
-  goes to every peer through the map's Props (on every peer, whatever tiles
-  each has loaded) to `open_world.prop_down`. The tile keeps what went down
-  while it is out, and a new round stands it up again (`restore_props`).
+  goes to every peer through the scene (`main.prop_down`: on every peer,
+  whatever tiles each has loaded). The scene keeps what went down this
+  round (`props_down`): a tile coming back lies its own down again without
+  fall or sound, a player who joins gets all of it, and a new round stands
+  everything up (`props_up`).
   The tile's pickups and the map editor's edits are not applied; robots
   only shoot at the map's props.
 - **Navigation**: after that the tile gets a navigation mesh of its own. Its
@@ -463,12 +465,15 @@ models and people are still imported lossless and hold 4-6 GB
       street names, bus stops by one rule, police, vendors, leisure and
       waiting people, parked cars, pigeons, quero-queros, birdsong,
       occluders, pickups, places, the map editor's edits.
-   2. What still belongs to the map alone and every area needs: one place
-      for the shops' counters, the parking spots and the props' network
-      calls (they go through the map's `Props` node today), "can it be
-      walked to?" asked from the start point (`spawn_point`), the traffic's
-      and the buses' counts that assume the map's edges come first
-      (`_map_edges`, `_map_vehicles`).
+   2. *Done* - what went through the map's `Props` node or its start
+      point: the props' network calls are the scene's (`main.prop_down`,
+      `props_up`; no `Props` node sends or receives any), which also keeps
+      what went down this round for a tile that is out and for a player who
+      joins (`props_down`, `want_props_down`); the counters inside shops are
+      the scene's list; "can it be walked to?" is asked from
+      `main.reach_from()`. Left for stage 3, with the map's streets going
+      through the tile path: the traffic's counts that assume the map's
+      edges come first (`_map_edges`, `_map_vehicles`).
    3. The round's map of a world built through the tile path, `main.gd`
       keeping the round's state only (goals, score, exit, start); its
       navigation mesh kept on disk like a tile's. The numbers a tile brings

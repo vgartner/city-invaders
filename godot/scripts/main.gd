@@ -1305,6 +1305,9 @@ func _load_city() -> void:
 	nav_region.add_child(props)      # poles and trunks must be navmesh obstacles
 	_load_mark("city: horizon, bounds, world")
 	props.build(_city(".props.json"))
+	props_down = {}                  # a new map: everything stands
+	if not multiplayer.is_server():
+		want_props_down.rpc_id(1)    # what was brought down before this player joined
 	_load_mark("street furniture")
 	_landmarks()
 	_load_mark("landmarks")
@@ -2005,8 +2008,8 @@ func _furnish_pocket(pocket: Node3D, l: Dictionary) -> void:
 		# an assistência técnica: its counter inside is where you trade parts
 		var counter := pocket.find_child("pickup_counter", true, false) as Node3D
 		var at: Vector3 = counter.global_position if counter else pocket.global_transform * Vector3(0, 0, 1.5)
-		props.shops.append(at)
-		pocket.tree_exiting.connect(func(): props.shops.erase(at))
+		_pocket_counters.append(at)
+		pocket.tree_exiting.connect(func(): _pocket_counters.erase(at))
 	# its ground pads are visual only (in town the street is the floor): a floor
 	var floor_body := StaticBody3D.new()
 	floor_body.collision_layer = 1
@@ -3206,8 +3209,7 @@ func _restart_round() -> void:
 		pl.set_score.rpc_id(pl.get_multiplayer_authority(), 0, 0, "new round")
 	director.set_process(true)
 	director.reset()
-	props.restore_all.rpc()
-	props.tile_props_up.rpc()
+	props_up.rpc()
 	for pk in pickups_root.get_children():
 		if pk.respawns:
 			pk.active = true
@@ -4582,7 +4584,7 @@ func _spawn_police() -> void:
 	for k in int(round(4.0 * sqrt(density()))):
 		for attempt in 30:
 			var p := NavigationServer3D.map_get_random_point(map, 1, true)
-			var path := NavigationServer3D.map_get_path(map, spawn_point, p, true)
+			var path := NavigationServer3D.map_get_path(map, reach_from(), p, true)
 			if in_bounds(p, 15.0) and path.size() > 1 and path[path.size() - 1].distance_to(p) < 1.0:
 				_civ_seq += 1
 				civ_spawner.spawn({"id": _civ_seq, "pos": p + Vector3(0, 0.1, 0), "model": models[k % models.size()]})
@@ -4615,6 +4617,7 @@ func reload_objects() -> Dictionary:
 	props.name = "Props"
 	nav_region.add_child(props)
 	props.build(_city(".props.json"))
+	lay_down("", props)
 	_landmarks()
 	var vendors := 0
 	if multiplayer.is_server():
@@ -5195,6 +5198,61 @@ func props_at(p: Vector3) -> Node:
 	return pr if pr != null else props
 
 
+## The street furniture brought down this round, by area ("" the round's
+## map, else an open world's tile): [[index, knocked over (else broken),
+## direction]]. Every peer keeps it: a tile coming in lays its own down
+## again, and the server sends it to a player who joins.
+var props_down := {}
+
+
+## Every peer: a lamp shot out, a bin run over (props.gd, _fall).
+@rpc("authority", "call_local", "reliable")
+func prop_down(area: String, index: int, crushable: bool, dir: Vector3) -> void:
+	props_down.get_or_add(area, []).append([index, crushable, dir])
+	var pr := props_of(area)
+	if pr:
+		pr.call("fall", index, crushable, dir)
+
+
+## Every peer, a new round: all of it stands again.
+@rpc("authority", "call_local", "reliable")
+func props_up() -> void:
+	props_down.clear()
+	for pr in all_props():
+		pr.call("restore_all")
+
+
+## Server: a player who joined asks what is down.
+@rpc("any_peer", "call_remote", "reliable")
+func want_props_down() -> void:
+	if multiplayer.is_server():
+		props_now.rpc_id(multiplayer.get_remote_sender_id(), props_down)
+
+
+@rpc("authority", "call_remote", "reliable")
+func props_now(down: Dictionary) -> void:
+	props_down = down
+	for area in down:
+		lay_down(area, props_of(area))
+
+
+## What went down in `area` before, on its street furniture `pr` just built
+## (or just heard of): lying as it fell, no fall and no sound.
+func lay_down(area: String, pr: Node) -> void:
+	if pr:
+		for d in props_down.get(area, []):
+			pr.call("fall", d[0], d[1], d[2], true)
+
+
+## The street furniture of an area while it stands: "" the map's, else the
+## tile's that is in. Null otherwise.
+func props_of(area: String) -> Node:
+	if area == "":
+		return props if is_instance_valid(props) else null
+	var n: Node = open_world_node.call("tile_node", area) if is_instance_valid(open_world_node) else null
+	return n.get_node_or_null("Props") if n else null
+
+
 ## Every street-furniture node standing: the map's and the loaded tiles'.
 func all_props() -> Array:
 	var out := []
@@ -5207,8 +5265,9 @@ func all_props() -> Array:
 
 ## Every counter a player trades robot parts at (the repair shops): the
 ## map's, the loaded tiles' and those inside the shops walked into.
+var _pocket_counters: Array = []     # the counters inside the shops walked into (this peer)
 func trade_counters() -> Array:
-	var out := []
+	var out := _pocket_counters.duplicate()
 	for pr in all_props():
 		out.append_array(pr.get("shops"))
 	return out
@@ -5998,10 +6057,7 @@ func want_containers() -> void:
 	for c in _containers:
 		if is_instance_valid(c):
 			list.append([String(c.name), c.position, c.ground_spot, c.lifting, c.people, c.capacity])
-	var id := multiplayer.get_remote_sender_id()
-	containers_now.rpc_id(id, list, containers_lost, _container_seq)
-	if not container_peers.has(id):
-		container_peers.append(id)
+	containers_now.rpc_id(multiplayer.get_remote_sender_id(), list, containers_lost, _container_seq)
 
 
 @rpc("authority", "call_remote", "reliable")
@@ -6016,6 +6072,16 @@ func containers_now(list: Array, lost: int, seq: int) -> void:
 		c.call("_refresh")
 	containers_lost = lost
 	_container_seq = maxi(_container_seq, seq)
+	have_containers.rpc_id(1)
+
+
+## Server: that player has the containers now - their moves go to it too (a
+## move sent before could overtake the list and find no container there).
+@rpc("any_peer", "call_remote", "reliable")
+func have_containers() -> void:
+	var id := multiplayer.get_remote_sender_id()
+	if multiplayer.is_server() and not container_peers.has(id):
+		container_peers.append(id)
 
 
 @rpc("authority", "call_local", "reliable")
@@ -6248,7 +6314,7 @@ func _spawn_civilians(n: int) -> void:
 				visible = visible or get_world_3d().direct_space_state.intersect_ray(q).is_empty()
 		if visible:
 			continue
-		var path := NavigationServer3D.map_get_path(map, spawn_point, pos, true)
+		var path := NavigationServer3D.map_get_path(map, reach_from(), pos, true)
 		if path.is_empty() or path[path.size() - 1].distance_to(pos) > 1.0:
 			continue
 		_civ_seq += 1
@@ -6312,7 +6378,7 @@ func _spawn_car_node(data: Variant) -> Node:
 ## counter's can inside the walls comes out onto the pavement in front) - if
 ## that is within `max_m`; Vector3.INF when there is none.
 func _reachable_spot(map: RID, at: Vector3, max_m: float) -> Vector3:
-	var path := NavigationServer3D.map_get_path(map, spawn_point, at, true)
+	var path := NavigationServer3D.map_get_path(map, reach_from(), at, true)
 	if path.is_empty():
 		return Vector3.INF
 	var end: Vector3 = path[path.size() - 1]
@@ -6339,7 +6405,7 @@ func random_pickup_point(avoid: Vector3, taken: Node = null) -> Vector3:
 				break
 		if crowded:
 			continue
-		var path := NavigationServer3D.map_get_path(map, spawn_point, pos, true)
+		var path := NavigationServer3D.map_get_path(map, reach_from(), pos, true)
 		if not path.is_empty() and path[path.size() - 1].distance_to(pos) < 1.0:
 			return pos
 	return avoid
