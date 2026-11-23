@@ -130,6 +130,24 @@ Asked for by the owner (November 2026), to do later, with the paving above.
   windscreen): no use for the texture, and none of these can be a texture
   source anyway - the materials come from CC0 libraries.
 
+## One-way streets
+
+Asked for by the owner (November 2026), to look at with the paving.
+
+- **Markings.** A one-way street gets a white dashed line down its middle
+  today (`osm2gltf.py`, the road markings: "one-way: white dashed lane line
+  on the centre"), a two-way one a double yellow line. A one-way street of
+  one lane has no line to draw: the dashed line should stay only where OSM
+  gives two or more lanes (`lanes`), and go elsewhere. In the Centro's data
+  252 of 549 `highway` ways are `oneway=yes` and 123 of the 231 streets for
+  cars carry `lanes`.
+- **Direction.** The road graph keeps `oneway` per street and traffic only
+  enters a one-way street at its start (`main._load_roads`: the way back is
+  opened only when `oneway` is false), in the order OSM draws the way. To
+  check in the game, street by street against OSM's arrows, that the cars do
+  drive the mapped way - and `oneway=-1` (against the way's drawing order)
+  is not read (the Centro has none).
+
 ## Other ideas
 
 - the Farmácias São João shop front from a real photo; more enterable buildings
