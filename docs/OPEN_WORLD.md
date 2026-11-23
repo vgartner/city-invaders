@@ -85,7 +85,15 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   (`TILE_PEOPLE`); people and robots choose goals in a tile that has its
   mesh (`main.in_world`), and robots chasing a player follow across the
   edge. When a tile is due to leave, its passers-by leave the streets with
-  it.
+  it. Like the round's map it also brings an officer on patrol
+  (`TILE_POLICE`), the vendors at its stalls, the people at its pitches and
+  playgrounds, someone waiting at each of its bus stops and up to 5 cars
+  parked at its kerbs that a player can drive (`TILE_PARKED`, the map's
+  rule: 40 % of the parking spots; a car a player drove off is not made
+  again). All of it a step a frame once the tile's mesh is in (`_populate`:
+  worst frame 12-21 ms, a parked car's 8-17 ms; all the cars in one frame
+  were 30-54 ms), and again after a new round (`repopulate`: three restarts
+  in a row left the same numbers of people, vehicles and robots).
 - **Robots**: the tile brings 4 robots on patrol (`TILE_ROBOTS`), born on
   its mesh at least 60 m from every player. They carry the tile's id (meta
   `tile`) and are apart from the round's: the Director does not count them

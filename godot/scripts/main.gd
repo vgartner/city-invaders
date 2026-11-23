@@ -3167,6 +3167,8 @@ func _restart_round() -> void:
 	_spawn_vendors()
 	_spawn_police()
 	_spawn_leisure_people()
+	if is_instance_valid(open_world_node):
+		open_world_node.call("repopulate")       # the tiles' own people and robots
 
 
 func _leave_to_title() -> void:
@@ -4401,26 +4403,52 @@ func _edge_length(e: Dictionary) -> float:
 const PARKED_SHARE := 0.4
 const PARKED_MAX := 12
 func _park_cars() -> void:
+	park_cars(props, map_id, PARKED_MAX, 0)
+
+
+## Cars at the parking spots of `pr` (the map's Props or a tile's), at most
+## `most`; `key` seeds which. The spots' way-out edges count from `edge0`
+## in the road graph (-1: the area's streets are not in it). Each car carries
+## its spot (meta "spot"); the spots in `skip` stay empty.
+func park_cars(pr: Node, key: String, most: int, edge0: int, skip: Array = []) -> Array:
+	var made := []
+	for data in parked_cars(pr, key, most, edge0):
+		if not skip.has(data["spot"]):
+			made.append(park_car(data))
+	return made
+
+
+func park_car(data: Dictionary) -> Node:
+	_car_seq += 1
+	data["id"] = _car_seq
+	var car: Node = car_spawner.spawn(data)
+	car.set_meta("spot", data["spot"])
+	return car
+
+
+## What park_cars would park: the spawn data of each car, with its "spot".
+func parked_cars(pr: Node, key: String, most: int, edge0: int) -> Array:
+	var out := []
 	var cars := []
 	for i in Car.MODELS.size():
 		if Car.kind_of(Car.MODELS[i]) == "car":
 			cars.append(i)
-	if cars.is_empty() or props == null:
-		return
-	var spots: Array = props.parked_spots.duplicate()
+	if cars.is_empty() or not is_instance_valid(pr):
+		return out
+	var spots: Array = pr.get("parked_spots").duplicate()
 	var rng := RandomNumberGenerator.new()
-	rng.seed = hash(map_id) + 3
+	rng.seed = hash(key) + 3
 	for i in range(spots.size() - 1, 0, -1):          # the same shuffle on every run
 		var j := rng.randi_range(0, i)
 		var t = spots[i]
 		spots[i] = spots[j]
 		spots[j] = t
-	var n := mini(PARKED_MAX, int(round(spots.size() * PARKED_SHARE)))
-	for k in n:
-		_car_seq += 1
-		car_spawner.spawn({"id": _car_seq, "model": cars[rng.randi() % cars.size()],
+	for k in mini(most, int(round(spots.size() * PARKED_SHARE))):
+		var edge: int = spots[k][3]
+		out.append({"spot": k, "model": cars[rng.randi() % cars.size()],
 				"parked": spots[k][0] + Vector3(0, 0.3, 0), "yaw": spots[k][1],
-				"out": spots[k][2], "out_edge": spots[k][3]})
+				"out": spots[k][2], "out_edge": edge0 + edge if edge >= 0 and edge0 >= 0 else -1})
+	return out
 
 
 ## Server: the armoured combine harvester waits, empty, on a street near the
@@ -4519,10 +4547,12 @@ func reload_objects() -> Dictionary:
 ## Server: football players on the pitches, children at the playgrounds - a
 ## definition's `spawn` names the landmark's `leisure` kind ("pitch",
 ## "playground"), `per_place` how many; they keep to it (`roam`).
-func _spawn_leisure_people() -> void:
+func _spawn_leisure_people(under: Node = null) -> void:
+	if under == null:
+		under = nav_region                   # the map's landmarks; an open world's tile gives its node
 	var map := get_world_3d().navigation_map
 	for lm in _landmark_nodes:
-		if not is_instance_valid(lm):
+		if not is_instance_valid(lm) or not under.is_ancestor_of(lm):
 			continue
 		var kind: String = lm.get_meta("landmark", {}).get("leisure", "")
 		var models := Civilian.models_where("spawn", kind) if kind != "" else []
@@ -4542,15 +4572,17 @@ func _spawn_leisure_people() -> void:
 					"home": (lm as Node3D).global_position, "home_yaw": randf() * TAU})
 
 
-func _spawn_vendors() -> void:
-	if not FileAccess.file_exists(_city(".props.json")):
+func _spawn_vendors(props_file := "") -> void:
+	if props_file == "":
+		props_file = _city(".props.json")        # the map's; an open world's tile gives its own
+	if not FileAccess.file_exists(props_file):
 		return
 	var models := Civilian.models_where("spawn", "stall")
 	if models.is_empty():
 		return
 	var map := get_world_3d().navigation_map
 	var k := 0
-	for pr in JSON.parse_string(FileAccess.get_file_as_string(_city(".props.json"))):
+	for pr in JSON.parse_string(FileAccess.get_file_as_string(props_file)):
 		if pr["type"] != "stall":
 			continue
 		var yaw: float = pr["yaw"]

@@ -25,6 +25,8 @@ const LINK_REACH_M := 1.2   # from this far outside the edge to this far inside
 const TILE_PEOPLE := 14     # passers-by a tile brings
 const TILE_ROBOTS := 4      # robots on patrol a tile brings
 const TILE_TRAFFIC := 6     # vehicles a tile's streets bring
+const TILE_POLICE := 1      # officers on patrol a tile brings
+const TILE_PARKED := 5      # cars parked at its kerbs a player can drive, at most
 const ROBOT_CLEAR_M := 60.0 # no robot is born nearer a player than this
 const EVEN_S := 1.5         # traffic is evened out between the map and the tiles this often,
 const EVEN_GAP := 2.5       # when one has this many vehicles over its share and another under,
@@ -866,14 +868,72 @@ func _baked(id: String, root_id: int, nm: NavigationMesh, t1: int, went: Vector2
 	var n := _link(root, tiles[id]["rect"])
 	tiles[id]["nav"] = true
 	_note(id, "%d links across the edge (main thread)" % n, t0)
-	# passers-by of its own (the server's): they leave with the tile
 	if multiplayer.is_server():
-		for k in TILE_PEOPLE:
-			var at := NavigationServer3D.region_get_random_point(region.get_rid(), 1, true)
-			if at != Vector3.ZERO:
-				main._civ_seq += 1
-				main.civ_spawner.spawn({"id": main._civ_seq, "pos": at + Vector3(0, 0.1, 0), "model": main.Civilian.pick()})
-		_robots_in(id, region)
+		_populate(id, root, region)
+
+
+## Server: who and what a tile brings, as the round's map has its own -
+## passers-by, an officer on patrol, the vendors at its stalls, the people
+## at its pitches and playgrounds, someone waiting at each bus stop, cars
+## parked at its kerbs that can be driven, and its robots on patrol. A step a
+## frame. They leave with the tile (_vacate).
+func _populate(id: String, root: Node3D, region: NavigationRegion3D) -> void:
+	var t: Dictionary = tiles[id]
+	var t0 := Time.get_ticks_usec()
+	var worst := 0.0
+	var times := []
+	var steps := [
+		func():
+			for k in TILE_PEOPLE:
+				var at := NavigationServer3D.region_get_random_point(region.get_rid(), 1, true)
+				if at != Vector3.ZERO:
+					main._civ_seq += 1
+					main.civ_spawner.spawn({"id": main._civ_seq, "pos": at + Vector3(0, 0.1, 0), "model": main.Civilian.pick()}),
+		func():
+			var officers: Array = main.Civilian.models_where("spawn", "patrol")
+			for k in (TILE_POLICE if not officers.is_empty() else 0):
+				var at := NavigationServer3D.region_get_random_point(region.get_rid(), 1, true)
+				if at != Vector3.ZERO:
+					main._civ_seq += 1
+					main.civ_spawner.spawn({"id": main._civ_seq, "pos": at + Vector3(0, 0.1, 0), "model": officers.pick_random()})
+			main._spawn_vendors("res://city/%s.props.json" % id)
+			main._spawn_leisure_people(root),
+		func():
+			var map: RID = main.get_world_3d().navigation_map
+			for n in (t.get("stops", {}).get("lines", {}) as Dictionary):
+				for s in t["stops"]["lines"][n]:
+					main._spawn_waiting(Vector3(s[1], 0, s[2]), map),
+		func(): _robots_in(id, region),
+	]
+	var away := []                              # a car a player drove off is not made again
+	for v in main.traffic_root.get_children():
+		if v.get_meta("tile_parked", "") == id and not v.is_queued_for_deletion():
+			away.append(v.get_meta("spot"))
+	for data in main.parked_cars(t.get("props"), id, TILE_PARKED, t.get("e0", -1)):
+		if not away.has(data["spot"]):
+			steps.append(func(): main.park_car(data).set_meta("tile_parked", id))     # a car a frame: 8-10 ms each
+	for step in steps:
+		var t1 := Time.get_ticks_usec()
+		step.call()
+		worst = maxf(worst, (Time.get_ticks_usec() - t1) / 1000.0)
+		times.append(snappedf((Time.get_ticks_usec() - t1) / 1000.0, 0.1))
+		await get_tree().process_frame
+		if not is_instance_valid(root) or not tiles.has(id) or tiles[id]["node"] != root:
+			return
+	_note(id, "people, parked cars and robots, a step a frame (main thread): worst %.1f ms %s" % [worst, str(times)], t0)
+
+
+## Server, a new round (every passer-by and robot was removed): the tiles
+## that are in bring theirs again.
+func repopulate() -> void:
+	for id in tiles:
+		var t: Dictionary = tiles[id]
+		var region := (t["node"] as Node).get_node_or_null("Navigation") as NavigationRegion3D if t["state"] == "in" and is_instance_valid(t["node"]) else null
+		if t.get("nav", false) and region != null:
+			for v in main.traffic_root.get_children():
+				if v.get_meta("tile_parked", "") == id and not v.has_meta("taken"):
+					v.queue_free()
+			_populate(id, t["node"], region)
 
 
 ## Server: the tile's own robots on patrol, away from the players. They carry
@@ -958,6 +1018,7 @@ func _streets_in(id: String, t: Dictionary) -> void:
 		if _map_edges < 0:
 			_map_edges = g["edges"].size()
 		var e0: int = g["edges"].size()
+		t["e0"] = e0
 		var nodes: Array = g["nodes"]
 		var index := []                          # the tile's node -> the graph's
 		var known: int = nodes.size()
@@ -1170,7 +1231,8 @@ func _traffic_in(t: Dictionary) -> void:
 		_map_vehicles = main.traffic_root.get_child_count()
 	# vehicles their drivers ran from stay in the map: they count, or every
 	# tile coming in after a fight would add to them without end
-	var room: int = _map_vehicles + _traffic_wanted() - _map_share() - main.traffic_root.get_child_count()
+	var room: int = _map_vehicles + _traffic_wanted() - _map_share() - main.traffic_root.get_child_count() \
+			+ main.traffic_root.get_children().filter(func(v): return v.has_meta("tile_parked")).size()   # the tiles' parked cars are not traffic
 	for k in mini(mini(TILE_TRAFFIC, room), _traffic_wanted() - _moving().size()):
 		var way: Array = ways.pick_random()[1]
 		var model: int = main.Car.pick()
