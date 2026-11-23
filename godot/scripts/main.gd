@@ -79,7 +79,8 @@ var ship_spawner: MultiplayerSpawner
 var _ship_seq := 0
 var map_half := 150.0        # half size of a square city (older <city>.spawn.json)
 var bounds := Rect2(-150, -150, 300, 300)   # playable area in x/z (from <city>.spawn.json)
-var crowd: Array = []        # promenade points (Vector3): more pedestrians there
+var crowd: Array = []        # the map's promenade points (Vector3): more pedestrians there
+var promenades: Array = []   # those of everything loaded: the map's and the open world's tiles' (open_world.gd keeps it)
 var elev := Vector2(0, 0)    # ground height range of the city (terrain)
 var _map_nodes: Array = []   # everything _load_city built (freed on a phase change)
 var _exit: Node3D            # server: the beacon to the next phase, once open
@@ -1283,6 +1284,7 @@ func _load_city() -> void:
 		crowd = []
 		for c in data.get("crowd", []):
 			crowd.append(Vector3(c[0], c[2] if c.size() > 2 else 0.0, c[1]))
+		promenades = crowd
 		var ev: Array = data.get("elev", [0.0, 0.0])
 		elev = Vector2(ev[0], ev[1])
 		if data.has("bounds"):
@@ -4628,9 +4630,16 @@ func reload_objects() -> Dictionary:
 ## Server: football players on the pitches, children at the playgrounds - a
 ## definition's `spawn` names the landmark's `leisure` kind ("pitch",
 ## "playground"), `per_place` how many; they keep to it (`roam`).
-func _spawn_leisure_people(under: Node = null) -> void:
-	if under == null:
-		under = nav_region                   # the map's landmarks; an open world's tile gives its node
+func _spawn_leisure_people() -> void:
+	for data in leisure_spawns(nav_region):
+		spawn_civilian(data)
+
+
+## The people at the pitches and playgrounds among the landmarks under
+## `under` (the map's navigation region, or an open world's tile), as spawn
+## data for spawn_civilian.
+func leisure_spawns(under: Node) -> Array:
+	var out := []
 	var map := get_world_3d().navigation_map
 	for lm in _landmark_nodes:
 		if not is_instance_valid(lm) or not under.is_ancestor_of(lm):
@@ -4648,19 +4657,32 @@ func _spawn_leisure_people(under: Node = null) -> void:
 		for k in n:
 			var off := Vector3(randf_range(-roam, roam), 0, randf_range(-roam, roam)) * 0.7
 			var at := NavigationServer3D.map_get_closest_point(map, (lm as Node3D).global_position + off)
-			_civ_seq += 1
-			civ_spawner.spawn({"id": _civ_seq, "pos": at + Vector3(0, 0.1, 0), "model": models[k % models.size()],
+			out.append({"pos": at + Vector3(0, 0.1, 0), "model": models[k % models.size()],
 					"home": (lm as Node3D).global_position, "home_yaw": randf() * TAU})
+	return out
 
 
-func _spawn_vendors(props_file := "") -> void:
-	if props_file == "":
-		props_file = _city(".props.json")        # the map's; an open world's tile gives its own
+func _spawn_vendors() -> void:
+	for data in vendor_spawns(_city(".props.json")):
+		spawn_civilian(data)
+
+
+## Server: a passer-by, vendor, officer... from its spawn data (no "id" yet).
+func spawn_civilian(data: Dictionary) -> Node:
+	_civ_seq += 1
+	data["id"] = _civ_seq
+	return civ_spawner.spawn(data)
+
+
+## The vendors at the stalls of `props_file` (the map's <city>.props.json or
+## an open world's tile's), as spawn data for spawn_civilian.
+func vendor_spawns(props_file: String) -> Array:
+	var out := []
 	if not FileAccess.file_exists(props_file):
-		return
+		return out
 	var models := Civilian.models_where("spawn", "stall")
 	if models.is_empty():
-		return
+		return out
 	var map := get_world_3d().navigation_map
 	var k := 0
 	for pr in JSON.parse_string(FileAccess.get_file_as_string(props_file)):
@@ -4684,10 +4706,9 @@ func _spawn_vendors(props_file := "") -> void:
 				var who: String = Civilian.MODELS[i].get_file()
 				if stall != "" and who.contains(stall.get_slice("_", 0)):
 					model = i                 # the popcorn man at the popcorn cart, etc.
-		_civ_seq += 1
-		civ_spawner.spawn({"id": _civ_seq, "pos": spot + Vector3(0, 0.1, 0), "model": model,
-				"home": spot, "home_yaw": yaw})
+		out.append({"pos": spot + Vector3(0, 0.1, 0), "model": model, "home": spot, "home_yaw": yaw})
 		k += 1
+	return out
 
 
 ## Hand-modelled landmarks standing on their OSM footprints (the exporter

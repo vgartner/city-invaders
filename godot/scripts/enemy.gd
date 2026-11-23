@@ -853,8 +853,8 @@ func _patrol(delta: float) -> void:
 	# vandalism: now and then shoot an intact lamp/signal/bin nearby, one it can see
 	_vandal_cd -= delta
 	if _vandal_cd <= 0:
-		var props = get_tree().current_scene.get("props")
-		var idx: int = props.find_target(global_position, 18.0, global_position + Vector3(0, 1.5, 0)) if props else -1
+		var props: Node = get_tree().current_scene.props_at(global_position)     # of the area it stands in: the map's or a tile's
+		var idx: int = props.find_target(global_position, 18.0, global_position + Vector3(0, 1.5, 0)) if is_instance_valid(props) else -1
 		if idx >= 0:
 			var at: Vector3 = props.prop_position(idx) + Vector3(0, 1.5, 0)
 			_face_point = at

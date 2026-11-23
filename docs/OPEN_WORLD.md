@@ -90,10 +90,19 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   playgrounds, someone waiting at each of its bus stops and up to 5 cars
   parked at its kerbs that a player can drive (`TILE_PARKED`, the map's
   rule: 40 % of the parking spots; a car a player drove off is not made
-  again). All of it a step a frame once the tile's mesh is in (`_populate`:
-  worst frame 12-21 ms, a parked car's 8-17 ms; all the cars in one frame
-  were 30-54 ms), and again after a new round (`repopulate`: three restarts
-  in a row left the same numbers of people, vehicles and robots).
+  again). Everything a tile brings - each passer-by, robot, vehicle,
+  parked car and pickup - is one thing to make in its turn (`_later`,
+  `_bring`: two a frame at most, one when it took 2 ms): a character or a
+  car costs 10-40 ms the frame its model is first drawn, so 14 people, 4
+  robots or 6 vehicles in one frame were hitches of 100-190 ms. After a new
+  round the tiles bring theirs again (`repopulate`: three restarts in a row
+  left the same numbers of people, vehicles and robots).
+  `open_world_node.extras = false` makes a tile bring only passers-by and
+  robots, to compare: over a fixed route through all the tiles the frames
+  over 60 ms were 38 with everything and 43-86 without (the runs differ more
+  than the two do), and five minutes of autoplay gave 49.7 fps, p99 33 ms,
+  4 frames over 100 ms (before the queue, with everything: 41.6 fps, 15
+  frames over 100 ms).
 - **Robots**: the tile brings 4 robots on patrol (`TILE_ROBOTS`), born on
   its mesh at least 60 m from every player. They carry the tile's id (meta
   `tile`) and are apart from the round's: the Director does not count them
@@ -145,6 +154,10 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   it was making for while it is still served. On the centre tile with three
   neighbours in, the round had 18 stops (9 the map's); a bus sent to a stop
   in a neighbouring tile drove there and stopped.
+- The promenade points people stroll to and are born at are those of
+  everything loaded (`main.promenades`: the map's `crowd` and the tiles'),
+  and a robot shoots out the lamps and bins of the area it stands in
+  (`main.props_at`).
 - A tile's zebra crossings and street names join the road graph with its
   streets (`crossings`, `streets`; `rev` counts the changes): traffic stops
   for people on a tile's crossing, people cross there, and the GPS draws
@@ -168,7 +181,7 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   scattered ones (`TILE_PICKUPS`), what its places sell at their doors
   (`<id>.places.json`) and the items put down in the map editor inside it -
   45-70 a tile. They are worked out the first time the tile comes in a
-  round, 4 ms a frame (in one frame it was 50 ms), and kept: each comes
+  round, 2 ms a frame (in one frame it was 50 ms), and kept: each comes
   back where it was, they leave with the tile (with what a robot dropped in
   it) and a pickup taken comes back at another street point of its tile
   (`pickup_point`). A spot counts as reachable when the tile's own mesh
@@ -190,9 +203,8 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   restart the tile came in with the shelter (a stop of bus line 1) and
   without the lamp, also after leaving and coming back.
 
-**Not yet**: the promenade points for the passers-by (`main.crowd` is the
-map's); robots shooting a tile's props; a model dragged from one area into
-another keeps its entry in the first.
+**Not yet**: a model dragged in the map editor from one area into another
+keeps its entry in the first.
 
 **The far view** (`tools/map/far_view.py <world>`): every tile gets a light
 model, `<tile>_far.glb` - its buildings as light blocks (footprint, ground,

@@ -637,7 +637,7 @@ func _pick_goal(radius: float, from := Vector3.INF, away := Vector3.ZERO) -> voi
 		return
 	var map := get_world_3d().navigation_map
 	var base := global_position if from == Vector3.INF else from
-	var crowd: Array = get_tree().current_scene.crowd
+	var crowd: Array = get_tree().current_scene.promenades     # the map's and the tiles'
 	# a goal is taken when the agent's own path reaches it: one path search per
 	# try (the agent keeps it to walk), not a test search and then the real one.
 	# Paths over the city's navmesh are costly: few tries, near goals first
