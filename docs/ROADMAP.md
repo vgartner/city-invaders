@@ -76,6 +76,35 @@ travel cost and the zebra crossings a low one; paths then naturally go
 along pavements and over crossings, while a pedestrian fleeing a robot still
 runs straight across.
 
+## The paving of the Rua dos Andradas and the Esquina Democrática
+
+Asked for by the owner (November 2026), to do later. Seen on site, the
+pedestrian stretch of the Rua dos Andradas and the Esquina Democrática
+(Centro Histórico, Porto Alegre) is paved with large light-grey concrete
+slabs, roughly 0.6-1 m, with bands of red-brown paving across it, yellow
+tactile strips and round manhole covers - and it is one flat surface from
+facade to facade: no raised sidewalk, no kerb. The game paves every
+pedestrian street with the small setts of `PavingStones138` and lays a
+sidewalk along it.
+
+- **A slab material.** The project has none (`godot/assets/materials`:
+  `PavingStones138` and `Concrete034` are the nearest). CC0 candidates to
+  try, none downloaded yet: Poly Haven's `concrete_tiles`,
+  `square_concrete_pavers` and `patterned_concrete_pavers`, and ambientCG's
+  larger `PavingStones`/`Tiles` sets (the source of the materials in
+  `osm2gltf.py`'s `PBR` table). Credit it in `godot/assets/CREDITS.md`.
+- **Which streets get it.** OSM tags these ways `surface=paving_stones`
+  (Rua dos Andradas, Esquina Democrática, as `highway=pedestrian`) against
+  `surface=sett` on the streets around: the `surface` tag can pick the
+  material - `paving_stones` the slabs, `sett` the small stones.
+- **No sidewalk there.** A `highway=pedestrian` way paved wall to wall
+  takes no sidewalk and no kerb (the pavement between a pedestrian street
+  and its facades, MAP_PIPELINE.md, already fills the gap in paving).
+- The red bands, the tactile strips and the manhole covers as details
+  after that (the map already places manholes).
+- Reference photos: Mapillary or Wikimedia Commons only, as for every
+  other image (LICENSING.md).
+
 ## Other ideas
 
 - the Farmácias São João shop front from a real photo; more enterable buildings
