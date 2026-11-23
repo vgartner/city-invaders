@@ -7,9 +7,11 @@ beyond the world's edge.
     godot --headless --path godot --import
 
 For every tile of `godot/city/<world>.world.json` it writes
-`godot/city/<tile>_far.glb`: the tile's buildings as plain boxes (footprint,
+`godot/city/<tile>_far.glb`: the tile's buildings as light blocks (footprint,
 ground, height - the same OSM data and hand-set heights the tile is built
-from), one colour each from a few city tones, on a coarse ground that follows
+from), walls one colour each from a few city tones with window bays the game
+textures, roofs tiled and hipped on low small buildings, flat and darker on the
+others, on a coarse ground that follows
 the terrain, and the water. A ring of `--ring` tiles round the world goes
 into one `godot/city/<world>_far_ring.glb`. The world list gets "far": the
 ring's file. The game shows a tile's far model while the tile is not in and
@@ -28,6 +30,7 @@ from pathlib import Path
 import numpy as np
 import trimesh
 from shapely.geometry import Point, box
+from shapely.geometry.polygon import orient
 from shapely.prepared import prep
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -50,19 +53,30 @@ def material(name, rgb):
 
 
 class Model:
-    """Meshes by colour, merged into one mesh per colour on export."""
+    """Triangles by colour, one mesh per colour on export. The walls carry
+    UVs in window bays (u along the wall, v up, BAY_M x FLOOR_M a unit): the
+    game lays a window texture over them (open_world.gd, _far_windows)."""
 
     def __init__(self):
         self.parts = {}
 
     def add(self, name, rgb, mesh):
-        self.parts.setdefault(name, (rgb, []))[1].append(mesh)
+        self.tris(name, rgb, mesh.vertices, mesh.faces)
+
+    def tris(self, name, rgb, verts, faces, uv=None):
+        part = self.parts.setdefault(name, (rgb, [], [], [], [0]))
+        part[1].append(np.asarray(verts, dtype=float))
+        part[2].append(np.asarray(faces, dtype=np.int64) + part[4][0])
+        if uv is not None:
+            part[3].append(np.asarray(uv, dtype=float))
+        part[4][0] += len(verts)
 
     def export(self, path):
         scene = trimesh.Scene()
-        for name, (rgb, meshes) in self.parts.items():
-            m = trimesh.util.concatenate(meshes)
-            m.visual = trimesh.visual.TextureVisuals(material=material(name, rgb))
+        for name, (rgb, verts, faces, uvs, _n) in self.parts.items():
+            m = trimesh.Trimesh(vertices=np.vstack(verts), faces=np.vstack(faces), process=False)
+            m.visual = trimesh.visual.TextureVisuals(uv=np.vstack(uvs) if uvs else None,
+                                                     material=material(name, rgb))
             scene.add_geometry(m, node_name=name, geom_name=name)
         path.parent.mkdir(parents=True, exist_ok=True)
         scene.export(path)
@@ -75,14 +89,79 @@ def to_godot(mesh):
     return mesh
 
 
-def building(model, poly, height, base, tag):
-    try:
-        m = trimesh.creation.extrude_polygon(poly.simplify(0.5), height)
-    except (ValueError, IndexError):
+BAY_M = 3.6                    # a window bay along a wall
+FLOOR_M = 3.2                  # a storey
+PITCHED_MAX_H = 9.0            # a building this low and small gets a tiled hip roof
+PITCHED_MAX_M2 = 450.0
+TILE_ROOF = (0.50, 0.29, 0.21)
+ROOF_COLOURS = {"grey": (0.42, 0.42, 0.42), "gray": (0.42, 0.42, 0.42), "dimgray": (0.33, 0.33, 0.33),
+                "saddlebrown": (0.45, 0.27, 0.12), "red": TILE_ROOF, "darkred": (0.42, 0.18, 0.14)}
+
+
+def _up(a, b, c):
+    """The triangle's normal (Godot frame, y up)."""
+    return np.cross(np.subtract(b, a), np.subtract(c, a))
+
+
+def building(model, poly, height, base, tag, tags=None):
+    """Walls with window bays, and a roof: a hip of tiles on a low, small
+    building (or one OSM says is pitched), else a flat one a shade darker."""
+    tags = tags or {}
+    poly = orient(poly.simplify(0.5))
+    if poly.is_empty or poly.area < 2.0 or poly.geom_type != "Polygon":
         return False
-    m.apply_translation([0, 0, base])
     k = zlib.crc32(tag.encode()) % len(TONES)
-    model.add(f"far_wall_{k}", TONES[k], to_godot(m))
+    top = base + height
+    c = poly.representative_point()
+    cx, cy = c.x, c.y
+    # walls: a quad per edge, facing away from the inside
+    v, f, uv = [], [], []
+    for ring in [poly.exterior, *poly.interiors]:
+        pts = list(ring.coords)
+        u = 0.0
+        for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+            L = math.hypot(x1 - x0, y1 - y0)
+            if L < 0.05:
+                continue
+            n = len(v)
+            v += [(x0, base, -y0), (x1, base, -y1), (x1, top, -y1), (x0, top, -y0)]
+            uv += [(u / BAY_M, 0.0), ((u + L) / BAY_M, 0.0), ((u + L) / BAY_M, height / FLOOR_M), (u / BAY_M, height / FLOOR_M)]
+            # outward: shapely's oriented exterior runs anticlockwise (y north),
+            # so the outside is on the right of the way; holes run clockwise
+            out = np.array([y1 - y0, 0.0, x1 - x0])        # right of (dx, dy), in the Godot frame (z = -y)
+            tri = [(n, n + 1, n + 2), (n, n + 2, n + 3)]
+            if np.dot(_up(v[n], v[n + 1], v[n + 2]), out) < 0:
+                tri = [(a, cc, b) for a, b, cc in tri]
+            f += tri
+            u += L
+    if not f:
+        return False
+    model.tris(f"far_wall_{k}", TONES[k], v, f, uv)
+    # the roof
+    shape = str(tags.get("roof:shape", ""))
+    cname = str(tags.get("roof:colour", "")).lower()
+    colour = ROOF_COLOURS.get(cname)
+    pitched = shape in ("hipped", "gabled", "pyramidal", "half-hipped") or \
+        (shape in ("", "None") and height <= PITCHED_MAX_H and poly.area <= PITCHED_MAX_M2 and not poly.interiors)
+    if pitched and poly.contains(c):
+        rise = min(0.45 * math.sqrt(poly.area), 5.0) * 0.5
+        apex = (cx, top + rise, -cy)
+        pts = list(poly.exterior.coords)
+        v, f = [apex], []
+        for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+            n = len(v)
+            v += [(x0, top, -y0), (x1, top, -y1)]
+            tri = (0, n, n + 1)
+            if _up(v[0], v[n], v[n + 1])[1] < 0:
+                tri = (0, n + 1, n)
+            f.append(tri)
+        model.tris("far_roof_tile" if colour is None else f"far_roof_{cname}", colour or TILE_ROOF, v, f)
+        return True
+    verts2, faces = trimesh.creation.triangulate_polygon(poly)
+    v = [(x, top, -y) for x, y in verts2]
+    faces = [tuple(t) if _up(v[t[0]], v[t[1]], v[t[2]])[1] > 0 else (t[0], t[2], t[1]) for t in faces]
+    rgb = colour or tuple(x * 0.72 for x in TONES[k])
+    model.tris(f"far_roof_{k}" if colour is None else f"far_roof_{cname}", rgb, v, faces)
     return True
 
 
@@ -176,7 +255,7 @@ def main():
         p = poly.representative_point()
         for k, (model, cell) in cells.items():
             if cell.contains(p) or (k != "ring" and cell.touches(p)):
-                if building(model, poly, float(h), base_of(poly), tags.get("@id", "")):
+                if building(model, poly, float(h), base_of(poly), tags.get("@id", ""), tags):
                     counts[k] += 1
                 break
     for k, (model, cell) in cells.items():

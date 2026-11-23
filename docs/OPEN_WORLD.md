@@ -138,12 +138,19 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
 **Not yet**: occluders, pickups.
 
 **The far view** (`tools/map/far_view.py <world>`): every tile gets a light
-model, `<tile>_far.glb` - its buildings as plain boxes (footprint, ground,
-height: the same OSM data and hand-set heights the tile is built from), one
-colour each from five city tones, on a ground of 25 m squares that follows
-the terrain, and the water - 14-91 kB a tile, no textures, no collision.
+model, `<tile>_far.glb` - its buildings as light blocks (footprint, ground,
+height: the same OSM data and hand-set heights the tile is built from), on a
+ground of 25 m squares that follows the terrain, and the water - 25-190 kB a
+tile, no textures, no collision. The walls are one colour each from five
+city tones and carry UVs in window bays (3.6 m along, a 3.2 m storey up);
+the game lays one window texture over them, made at start (32 px, one pane
+and a sill; `_far_windows`, one material per tone for all the models). A
+building up to 9 m high and 450 m2 gets a hip roof of tiles, as does one OSM
+tags pitched (`roof:shape`); the others a flat roof a shade darker than
+their walls, or OSM's `roof:colour`. From the world's edge the ring reads as
+streets of tiled houses and towers with rows of windows, not boxes.
 A ring of two tiles round the world goes into `<world>_far_ring.glb`
-(763 buildings, 0.6 MB) with bare ground beyond it, 3 km out to the
+(763 buildings, 1.0 MB) with bare ground beyond it, 3 km out to the
 horizon, so a roof never looks over the edge of the city into the sky. The
 list's `"far"` names the ring. `main.open_world()` loads them all
 (`OpenWorld.add_far`, shadows off) and every frame shows a tile's far
@@ -367,9 +374,9 @@ models and people are still imported lossless and hold 4-6 GB
    for 0.7-0.8 s on a thread; the round's map does not keep its mesh yet.
 4. **Bus lines across tiles, breakable props, big landmarks**: done (see
    above). Left: robots shooting a tile's props, its pickups.
-5. **The far view, the rest**: its buildings are boxes of one colour; roofs
-   and a few windows would carry further. The round's map has no far model
-   when it is not a world's tile.
+5. **The far view, the rest**: windows and roofs are in (see The far view).
+   Left: lit windows at night, and gabled roofs that follow a long building
+   rather than a hip to its middle.
 6. **Multiplayer, the rest**: the antennas stay in the round's map with
    other players (the server could place them and tell the clients).
 7. **The round's own tile, the rest**: it leaves and comes back now (one

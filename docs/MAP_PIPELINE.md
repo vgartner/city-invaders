@@ -67,7 +67,8 @@ not built but count: a wall facing one is blind, and no street furniture
 or tree stands in one. `tools/map/tiles.py <map> --name <world> --bounds ...`
 cuts an area of a map's data into a grid of such tiles and builds them;
 `tools/map/far_view.py <world>` then makes the world's far view (each
-tile's buildings as plain boxes, and a ring round the world).
+tile's buildings as light blocks with window bays and simple roofs, and a
+ring round the world).
 
 ## 2. Data
 

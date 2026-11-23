@@ -91,11 +91,43 @@ func add_far(world: String) -> int:
 		node.name = "Far_" + id
 		for mi in node.find_children("*", "GeometryInstance3D", true, false):
 			(mi as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			if mi is MeshInstance3D:
+				_far_windows(mi as MeshInstance3D)
 		add_child(node)
 		far[key] = node
 		n += 1
 	_far_update()
 	return n
+
+
+## The far walls carry UVs in window bays (far_view.py: 3.6 m along, a
+## storey up): a window texture made here, one per bay, over the wall's own
+## colour. One material per colour for all the far models.
+var _far_mats := {}
+var _window_tex: ImageTexture
+func _far_windows(mi: MeshInstance3D) -> void:
+	if mi.mesh == null:
+		return
+	for i in mi.mesh.get_surface_count():
+		var src := mi.mesh.surface_get_material(i) as BaseMaterial3D
+		if src == null or not src.resource_name.begins_with("far_wall"):
+			continue
+		if not _far_mats.has(src.resource_name):
+			if _window_tex == null:
+				var img := Image.create(32, 32, false, Image.FORMAT_RGB8)
+				img.fill(Color.WHITE)
+				img.fill_rect(Rect2i(10, 7, 12, 15), Color(0.30, 0.34, 0.40))      # the pane
+				img.fill_rect(Rect2i(9, 22, 14, 2), Color(0.86, 0.86, 0.86))       # the sill
+				img.generate_mipmaps()
+				_window_tex = ImageTexture.create_from_image(img)
+			var m := StandardMaterial3D.new()
+			m.resource_name = src.resource_name
+			m.albedo_color = src.albedo_color
+			m.albedo_texture = _window_tex
+			m.roughness = 0.95
+			m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+			_far_mats[src.resource_name] = m
+		mi.set_surface_override_material(i, _far_mats[src.resource_name])
 
 
 ## A tile's far model shows while the tile itself is not in the tree.
