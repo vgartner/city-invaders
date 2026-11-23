@@ -155,7 +155,16 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   of its own tile (`_props_here`), and the counters players trade at are
   asked of every Props node standing (`main.trade_counters`).
 
-**Not yet**: occluders, pickups.
+- **Occluders, birds**: the tile's occluders (`<id>.occluders.json`) are
+  made on its builder thread (`main.occluders_of`) and come in with it - from
+  a street of a tile they took 9 % of the triangles drawn off, the draw
+  calls stayed. After its furniture every peer gives it 2 pigeon flocks on
+  its promenade points, 2 pairs of quero-queros on its lawns and birdsong
+  in its greens (`_wildlife`; the map's own functions, seeded by the tile's
+  id), a step a frame, 8-10 ms the worst.
+
+**Not yet**: pickups, the map editor's edits, the promenade points for the
+passers-by (`main.crowd` is the map's).
 
 **The far view** (`tools/map/far_view.py <world>`): every tile gets a light
 model, `<tile>_far.glb` - its buildings as light blocks (footprint, ground,

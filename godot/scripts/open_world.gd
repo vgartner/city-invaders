@@ -27,6 +27,8 @@ const TILE_ROBOTS := 4      # robots on patrol a tile brings
 const TILE_TRAFFIC := 6     # vehicles a tile's streets bring
 const TILE_POLICE := 1      # officers on patrol a tile brings
 const TILE_PARKED := 5      # cars parked at its kerbs a player can drive, at most
+const TILE_FLOCKS := 2      # pigeon flocks on its squares
+const TILE_QUEROS := 2      # pairs of quero-queros on its lawns
 const ROBOT_CLEAR_M := 60.0 # no robot is born nearer a player than this
 const EVEN_S := 1.5         # traffic is evened out between the map and the tiles this often,
 const EVEN_GAP := 2.5       # when one has this many vehicles over its share and another under,
@@ -152,8 +154,11 @@ func add_tile(id: String) -> bool:
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(spawn))
 	var b: Array = data["bounds"]       # [min_x, max_x, min_z, max_z]
 	var ev: Array = data.get("elev", [0.0, 0.0])
+	var crowd := []                     # promenade points, stored [x, z, y]
+	for c in data.get("crowd", []):
+		crowd.append(Vector3(c[0], c[2] if c.size() > 2 else 0.0, c[1]))
 	tiles[id] = {"rect": Rect2(b[0], b[2], b[1] - b[0], b[3] - b[2]), "state": "out", "node": null,
-			"nav": false, "elev": Vector2(ev[0], ev[1]), "foreign": data.get("foreign", [])}
+			"nav": false, "elev": Vector2(ev[0], ev[1]), "foreign": data.get("foreign", []), "crowd": crowd}
 	_edge_walls()
 	# the round's map draws its own far ground and towers where the tiles are
 	var horizon := main.get_node_or_null("Horizon") as Node3D
@@ -377,6 +382,9 @@ func _build(id: String) -> void:
 		var shape: Shape3D = (cs as CollisionShape3D).shape
 		if shape is ConcavePolygonShape3D:
 			(shape as ConcavePolygonShape3D).backface_collision = true
+	if id != HOME:                              # the map's stay with it
+		for oi in main.occluders_of("res://city/%s.occluders.json" % id):
+			root.add_child(oi)
 	t["node"] = root
 	t["top"] = top
 	t.erase("scenes")
@@ -399,6 +407,28 @@ func _enter(id: String, t: Dictionary) -> void:
 	await _furnish(id, t, root)
 	if is_instance_valid(root) and t["node"] == root:
 		_bake(id, t)
+		_wildlife(id, t, root)
+
+
+## Every peer: the tile's pigeons on its squares, quero-queros on its lawns
+## and birdsong in its greens, as the round's map has (seeded by the tile's
+## id: the same on every peer). Local and visual; they go with the tile.
+func _wildlife(id: String, t: Dictionary, root: Node3D) -> void:
+	var t0 := Time.get_ticks_usec()
+	var worst := 0.0
+	var steps := [
+		func(): main.pigeons_at(t.get("crowd", []), id, TILE_FLOCKS, root),
+		func(): main.queros_at(t["rect"], id, TILE_QUEROS, root),
+		func(): main.bird_sounds("res://city/%s.props.json" % id, root),
+	]
+	for step in steps:
+		await get_tree().process_frame
+		if not is_instance_valid(root) or t["node"] != root:
+			return
+		var t1 := Time.get_ticks_usec()
+		step.call()
+		worst = maxf(worst, (Time.get_ticks_usec() - t1) / 1000.0)
+	_note(id, "pigeons, quero-queros and birdsong (main thread): worst frame %.1f ms" % worst, t0)
 
 
 ## The tile's street furniture (<id>.props.json: trees, lamps, signs, benches)

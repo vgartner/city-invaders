@@ -3819,29 +3819,37 @@ func _send_mod() -> void:
 
 ## Every peer: pigeon flocks on squares and promenades (visual only, local).
 func _pigeons() -> void:
-	if crowd.is_empty() or Pigeon.MODELS.is_empty():
-		return
+	var root := pigeons_at(crowd, map_id, FLOCKS, self)
+	if root:
+		_map_nodes.append(root)
+
+
+## `flocks` flocks at some of `points` (an area's promenade points), under
+## `parent`; `key` seeds which, the same on every peer. Null without points.
+func pigeons_at(points: Array, key: String, flocks: int, parent: Node) -> Node3D:
+	if points.is_empty() or Pigeon.MODELS.is_empty():
+		return null
 	var root := Node3D.new()
 	root.name = "Pigeons"
 	root.process_mode = Node.PROCESS_MODE_PAUSABLE
-	add_child(root)
-	_map_nodes.append(root)
+	parent.add_child(root)
 	var rng := RandomNumberGenerator.new()
-	rng.seed = hash(map_id)            # the same squares on every peer
+	rng.seed = hash(key)               # the same squares on every peer
 	var spots := []
 	for attempt in 400:
-		var c: Vector3 = crowd[rng.randi() % crowd.size()]
+		var c: Vector3 = points[rng.randi() % points.size()]
 		if spots.all(func(s): return s.distance_to(c) > 45.0):
 			spots.append(c)
-		if spots.size() >= FLOCKS * 2:
+		if spots.size() >= flocks * 2:
 			break
-	for i in min(FLOCKS, spots.size()):
+	for i in min(flocks, spots.size()):
 		for k in rng.randi_range(8, 14):
 			var p: Node3D = Pigeon.new()
 			p.home = spots[i] + Vector3(rng.randf_range(-3, 3), 0, rng.randf_range(-3, 3))
 			p.landing_spots = spots
 			p.position = p.home
 			root.add_child(p)
+	return root
 
 
 ## The robots' relay antenna (antenna.gd): one per phase with a goal, on a
@@ -4011,28 +4019,35 @@ func antenna_state() -> int:
 ## Quero-queros, the bird of Rio Grande do Sul: pairs on the lawns (visual and
 ## local like the pigeons; the same spots on every peer).
 func _quero_queros() -> void:
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var root := queros_at(bounds, map_id, int(Pigeon.quero_def().get("pairs", 5)), self)
+	if root:
+		_map_nodes.append(root)
+
+
+## `pairs` pairs on lawns of `area` (its ground must be in the physics),
+## under `parent`; `key` seeds where. Null when there are no models.
+func queros_at(area: Rect2, key: String, pairs: int, parent: Node) -> Node3D:
 	if Pigeon.QUERO_MODELS.is_empty():
-		return
-	await get_tree().physics_frame
-	await get_tree().physics_frame
+		return null
 	var space := get_world_3d().direct_space_state
 	var rng := RandomNumberGenerator.new()
-	rng.seed = hash(map_id) + 17
+	rng.seed = hash(key) + 17
 	var lawns := []
-	for attempt in 600:
-		var p := Vector3(rng.randf_range(bounds.position.x, bounds.end.x), 0, rng.randf_range(bounds.position.y, bounds.end.y))
+	for attempt in 120 * pairs:
+		var p := Vector3(rng.randf_range(area.position.x, area.end.x), 0, rng.randf_range(area.position.y, area.end.y))
 		var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(p + Vector3(0, 300, 0), p - Vector3(0, 100, 0), 1))
 		if hit and hit.collider.get_parent() and String(hit.collider.get_parent().name).begins_with("grass") \
 				and lawns.all(func(s): return s.distance_to(hit.position) > 30.0):
 			lawns.append(hit.position)
-		if lawns.size() >= int(Pigeon.quero_def().get("pairs", 5)) * 2:
+		if lawns.size() >= pairs * 2:
 			break
 	var root := Node3D.new()
 	root.name = "QueroQueros"
 	root.process_mode = Node.PROCESS_MODE_PAUSABLE
-	add_child(root)
-	_map_nodes.append(root)
-	for i in min(int(Pigeon.quero_def().get("pairs", 5)), lawns.size()):
+	parent.add_child(root)
+	for i in min(pairs, lawns.size()):
 		for k in 2:
 			var b: Node3D = Pigeon.new()
 			b.quero = true
@@ -4040,6 +4055,7 @@ func _quero_queros() -> void:
 			b.landing_spots = lawns
 			b.position = b.home
 			root.add_child(b)
+	return root
 
 
 ## Lake/river surfaces exported as "water" meshes get the animated water shader.
@@ -4100,13 +4116,20 @@ func _ambience() -> void:
 		p.autoplay = true
 		add_child(p)
 		_map_nodes.append(p)
-	if not FileAccess.file_exists(_city(".props.json")):
-		return
+	_map_nodes.append_array(bird_sounds(_city(".props.json"), self))
+
+
+## Birdsong where the shrubs and ferns of `props_file` stand (one player per
+## 40 m), under `parent`.
+func bird_sounds(props_file: String, parent: Node) -> Array:
+	var out := []
+	if not FileAccess.file_exists(props_file):
+		return out
 	var birds: AudioStreamWAV = load("res://assets/audio/amb_birds.wav")
 	birds.loop_mode = AudioStreamWAV.LOOP_FORWARD
 	birds.loop_end = birds.data.size() / 2
 	var centres := []
-	for pr in JSON.parse_string(FileAccess.get_file_as_string(_city(".props.json"))):
+	for pr in JSON.parse_string(FileAccess.get_file_as_string(props_file)):
 		if pr["type"] in ["shrub", "shrub2", "fern"]:
 			var pos := Vector3(pr["pos"][0], 3.0, pr["pos"][2])
 			if centres.all(func(c): return c.distance_to(pos) > 40.0):
@@ -4119,8 +4142,9 @@ func _ambience() -> void:
 		b.volume_db = -6.0
 		b.autoplay = true
 		b.position = c
-		add_child(b)
-		_map_nodes.append(b)
+		parent.add_child(b)
+		out.append(b)
+	return out
 
 
 # ---- pedestrians and traffic (server) -------------------------------------
@@ -4939,9 +4963,16 @@ static func city_mesh_kind(mi: Node) -> String:
 ## their footprint set a little inside, base, top) block the view, so what
 ## stands behind them is not drawn. One occluder of wall quads per 80 m cell.
 func _occluders() -> void:
-	var path := _city(".occluders.json")
+	for oi in occluders_of(_city(".occluders.json")):
+		nav_region.add_child(oi)
+
+
+## The occluders of a map or an open world's tile, not yet in the tree (a
+## tile makes them on its builder thread).
+func occluders_of(path: String) -> Array:
+	var out := []
 	if not FileAccess.file_exists(path):
-		return
+		return out
 	var cells := {}
 	for o in JSON.parse_string(FileAccess.get_file_as_string(path)):
 		var ring: Array = o[0]
@@ -4969,7 +5000,8 @@ func _occluders() -> void:
 		var oi := OccluderInstance3D.new()
 		oi.occluder = occ
 		oi.name = "occluder_%d_%d" % [key.x, key.y]
-		nav_region.add_child(oi)
+		out.append(oi)
+	return out
 
 
 ## Open-world prototype (open_world.gd, docs/OPEN_WORLD.md): the maps named
