@@ -6,6 +6,7 @@ extends AnimatableBody3D
 
 const BusRoutes := preload("res://scripts/bus_routes.gd")
 const Library := preload("res://scripts/model_library.gd")
+const PropsScript := preload("res://scripts/props.gd")
 ## kind -> folder, share of the traffic, cruise speed (m/s), extra offset to
 ## the right of the lane, riding clip and the ground speed it was animated at
 const KINDS := {
@@ -1006,7 +1007,7 @@ func _drive(delta: float) -> void:
 		var other := col.get_collider()
 		var driver := main.players_root.get_node_or_null(str(driver_peer)) as Node3D
 		if other and (other.has_meta("prop_index") or other.has_meta("crush")) \
-				and main.props.crush(other, MASS.get(kind, 1.3), abs(_speed), fwd * signf(_speed)):
+				and PropsScript.of(other).crush(other, MASS.get(kind, 1.3), abs(_speed), fwd * signf(_speed)):
 			# a bin, bench or lamp knocked over: it costs a little speed, we drive on
 			_speed *= clamp(1.0 - 0.15 / MASS.get(kind, 1.3), 0.6, 0.97)
 		elif other and other.has_method("apply_damage") and abs(_speed) > 2.5:

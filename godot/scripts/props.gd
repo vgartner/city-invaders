@@ -709,6 +709,49 @@ func _aabb(node: Node3D) -> AABB:
 
 # ---- destruction ------------------------------------------------------------
 
+## The street furniture of an open-world tile is a Props node of its own,
+## named by the tile's id here; the round's map has "".
+var tile := ""
+
+
+## The Props node a prop's body belongs to (the map's or a tile's).
+static func of(body: Node) -> Node:
+	var n := body
+	while n != null and not n.has_method("damage_prop"):
+		n = n.get_parent()
+	return n
+
+
+## Server: a prop falls on every peer. A tile's props may not be loaded on
+## another peer: it goes through the map's props (on every peer) and the open
+## world, which keeps it for the tile until the round ends.
+func _fall(index: int, crushable: bool, dir := Vector3.ZERO) -> void:
+	if tile == "":
+		if crushable:
+			knock_over.rpc(index, dir)
+		else:
+			break_prop.rpc(index)
+		return
+	var main := get_tree().current_scene
+	main.props.tile_prop_down.rpc(tile, index, crushable, dir)
+
+
+## Every peer: a tile's prop went down (see _fall).
+@rpc("authority", "call_local", "reliable")
+func tile_prop_down(id: String, index: int, crushable: bool, dir: Vector3) -> void:
+	var ow = get_tree().current_scene.get("open_world_node")
+	if is_instance_valid(ow):
+		ow.call("prop_down", id, index, crushable, dir)
+
+
+## Every peer, a new round: the open world's tiles stand their props again.
+@rpc("authority", "call_local", "reliable")
+func tile_props_up() -> void:
+	var ow = get_tree().current_scene.get("open_world_node")
+	if is_instance_valid(ow):
+		ow.call("restore_props")
+
+
 ## Server: apply damage to a prop hit by a shot (player or robot).
 func damage_prop(index: int, amount: int) -> void:
 	if not multiplayer.is_server() or index < 0 or index >= destructibles.size():
@@ -718,7 +761,7 @@ func damage_prop(index: int, amount: int) -> void:
 		return
 	d["health"] -= amount
 	if d["health"] <= 0:
-		break_prop.rpc(index)
+		_fall(index, false)
 
 
 func find_target(from: Vector3, radius: float, eye := Vector3.INF) -> int:
@@ -865,9 +908,9 @@ func crush(body: Node, mass: float, speed: float, dir: Vector3) -> bool:
 	if mass < need[0] or speed < need[1] * clamp(need[0] * 2.0 / mass, 0.4, 1.0):
 		return false
 	if body.has_meta("prop_index"):
-		break_prop.rpc(body.get_meta("prop_index"))
+		_fall(body.get_meta("prop_index"), false)
 	else:
-		knock_over.rpc(body.get_meta("crush"), dir)
+		_fall(body.get_meta("crush"), true, dir)
 	return true
 
 

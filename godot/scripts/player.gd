@@ -1,6 +1,7 @@
 extends CharacterBody3D
 const Pigeon := preload("res://scripts/pigeon.gd")
 const EnemyScript := preload("res://scripts/enemy.gd")
+const PropsScript := preload("res://scripts/props.gd")
 ## First-person player. The owning peer simulates movement; position, yaw,
 ## health and death are replicated to everyone else. Shots are resolved on
 ## the server (hitscan) so enemy damage stays authoritative. Weapons: pistol
@@ -1811,7 +1812,7 @@ func server_shoot(origin: Vector3, dir: Vector3, w: String = "pistol") -> void:
 	if hit and hit.collider.has_method("apply_damage"):
 		hit.collider.apply_damage(dmg, self)
 	elif hit and hit.collider.has_meta("prop_index"):
-		get_tree().current_scene.props.damage_prop(hit.collider.get_meta("prop_index"), dmg)
+		PropsScript.of(hit.collider).damage_prop(hit.collider.get_meta("prop_index"), dmg)     # the map's or a tile's
 	# gunshots are heard: nearby patrolling robots come to look where it came from
 	for e in get_tree().current_scene.enemies_root.get_children():
 		e.heard(origin)

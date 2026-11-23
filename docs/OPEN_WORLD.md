@@ -48,12 +48,21 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   the map's, 4 ms of it a frame; its landmarks and shops
   (`<id>.landmarks.json`, `<id>.shells.json`) by the map's own
   `_landmark`, one a frame, their models read beforehand on the loader
-  thread. They leave with the tile. A shop walked into (E) has its pocket
+  thread (also the furniture of the shops the game draws itself). A
+  landmark's triangle collision is made on a worker thread and put in one
+  mesh a frame (`main.trimesh_later`, `_shape_later`): the Mercado's 86 000
+  triangles cost a frame of 145 ms on the main thread. They leave with the tile. A shop walked into (E) has its pocket
   under the city built in the shop's tile too (`main.enter_shop`): in the
   round's map it had no floor while the map was out. A player who still
-  falls out of a pocket is put back (`player.gd`). A tile's props are scenery with
-  collision: a lamp there cannot be shot out or knocked over, and its
-  pickups and the map editor's edits are not applied.
+  falls out of a pocket is put back (`player.gd`). A tile's lamps, signals
+  and bins are shot out, and its bins, benches and planters run over, like
+  the map's: its `Props` node carries the tile's id (`tile`), a shot or a
+  vehicle finds the Props its body belongs to (`Props.of`), and the fall
+  goes to every peer through the map's Props (on every peer, whatever tiles
+  each has loaded) to `open_world.prop_down`. The tile keeps what went down
+  while it is out, and a new round stands it up again (`restore_props`).
+  The tile's pickups and the map editor's edits are not applied; robots
+  only shoot at the map's props.
 - **Navigation**: after that the tile gets a navigation mesh of its own. Its
   colliders are read (1 ms), the mesh is baked on a thread
   (`NavigationServer3D.bake_from_source_geometry_data_async`, 0.1 s for a
@@ -116,8 +125,17 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   `open_world_node.threaded = false` builds on the main thread instead, to
   compare.
 
-**Not yet**: occluders, pickups, bus lines
-and stops (they stay the map's).
+- **Bus lines**: the tile's bus shelters (`<id>.props.json`) become stops
+  on the tile's own streets when they first join the graph (`_tile_stops`,
+  the map's rule: the nearest street point within 25 m). Whenever streets
+  open or close, the buses' round is made again over the map's stops (while
+  the map is in) and the open tiles' ones, nearest-next like the map's
+  (`_bus_round`); a bus keeps the stop it was making for while it is still
+  served. Lines designed in the map editor stay the map's. On the centre
+  tile with three neighbours in, the round had 22 stops (13 the map's); a
+  bus sent to a stop in a neighbouring tile drove there and stopped.
+
+**Not yet**: occluders, pickups.
 
 **The far view** (`tools/map/far_view.py <world>`): every tile gets a light
 model, `<tile>_far.glb` - its buildings as plain boxes (footprint, ground,
@@ -283,8 +301,12 @@ Municipal, the Chalé da Praça XV, the Talavera fountain. With them the tile
 is complete (furniture, landmarks, navigation, links) 1.2-2.4 s after the
 player comes near. The furniture takes 0.36 s spread over frames; a shop
 costs a frame of about 25 ms; the Mercado Público, a set laid out from many
-pieces, costs one frame of 170 ms - the worst frame of each of three runs
-(174-180 ms). Building a set a few pieces a frame is still to do.
+pieces, cost one frame of 170 ms - the worst frame of each of three runs
+(174-180 ms) - and a restaurant the game draws, 200-220 ms reading its
+furniture from disk. Measured again: 145 ms of the Mercado's was its triangle
+collision; made on a worker thread (1.4 s later, one mesh a frame, at most
+6 ms) and the shops' furniture read with the tile, the worst landmark frame
+is 14 ms.
 
 **Traffic** (the grid): vehicles started on the map's streets that lead to
 the northern edge drove into the neighbouring tile and on through it to
@@ -343,8 +365,8 @@ models and people are still imported lossless and hold 4-6 GB
    bakes. Measured before (PERFORMANCE.md, loading time step by step): the
    round's map reads its colliders in 40-55 ms on the main thread and bakes
    for 0.7-0.8 s on a thread; the round's map does not keep its mesh yet.
-4. **Bus lines across tiles**; a tile's props breakable like the map's; a
-   big landmark built over several frames.
+4. **Bus lines across tiles, breakable props, big landmarks**: done (see
+   above). Left: robots shooting a tile's props, its pickups.
 5. **The far view, the rest**: its buildings are boxes of one colour; roofs
    and a few windows would carry further. The round's map has no far model
    when it is not a world's tile.

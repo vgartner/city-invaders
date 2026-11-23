@@ -245,9 +245,7 @@ func _files(id: String) -> Array:
 	if ResourceLoader.exists(_col(id)):
 		out.append(_col(id))
 	var path := "res://city/%s.landmarks.json" % id
-	if not FileAccess.file_exists(path):
-		return out
-	var data = JSON.parse_string(FileAccess.get_file_as_string(path))
+	var data = JSON.parse_string(FileAccess.get_file_as_string(path)) if FileAccess.file_exists(path) else []
 	for l in (data if data is Array else []):
 		var model := String(l.get("model", ""))
 		var models := []
@@ -261,6 +259,21 @@ func _files(id: String) -> Array:
 		for m in models:
 			if ResourceLoader.exists(m) and not out.has(m):
 				out.append(m)
+	# the shops the game draws itself: their interior set's furniture (read on
+	# the main thread it cost a frame of 200 ms) and the wall plaster
+	path = "res://city/%s.shells.json" % id
+	var shells = JSON.parse_string(FileAccess.get_file_as_string(path)) if FileAccess.file_exists(path) else []
+	for sh in (shells if shells is Array else []):
+		var interior := String(sh.get("interior", ""))
+		if not FileAccess.file_exists(interior):
+			continue
+		var lay: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(interior))
+		for inst in lay.get("instances", []):
+			var m := interior.get_base_dir().path_join(inst["model"]).simplify_path()
+			if inst.get("category", "") == "furniture" and ResourceLoader.exists(m) and not out.has(m):
+				out.append(m)
+		if not out.has(main.SHELL_PLASTER):
+			out.append(main.SHELL_PLASTER)
 	return out
 
 
@@ -360,14 +373,14 @@ func _furnish(id: String, t: Dictionary, root: Node3D) -> void:
 	var t0 := Time.get_ticks_usec()
 	var props: Node3D = main.Props.new()
 	props.name = "Props"
+	props.set("tile", id)
 	root.add_child(props)
 	await props.call("build", "res://city/%s.props.json" % id, FRAME_MS)
 	if not is_instance_valid(root) or t["node"] != root:
 		return
-	for body in props.find_children("*", "CollisionObject3D", true, false):
-		for key in ["prop_index", "crush"]:      # indices into the map's own props
-			if body.has_meta(key):
-				body.remove_meta(key)
+	t["props"] = props
+	for d in t.get("down", []):                 # shot out or run over before the tile left
+		_prop_fall(props, d[0], d[1], d[2])
 	_note(id, "street furniture, %d pieces, %d ms a frame (main thread)" % [props.get_child_count(), FRAME_MS], t0)
 	var worst := 0.0
 	var total := 0.0
@@ -375,6 +388,7 @@ func _furnish(id: String, t: Dictionary, root: Node3D) -> void:
 	var n0: int = main._landmark_nodes.size()
 	var pickups: int = main.landmark_pickups.size()
 	var todo := []
+	var shaping := []
 	for kind in ["landmarks", "shells"]:
 		var path := "res://city/%s.%s.json" % [id, kind]
 		if FileAccess.file_exists(path):
@@ -392,6 +406,9 @@ func _furnish(id: String, t: Dictionary, root: Node3D) -> void:
 		else:
 			main._shell(item[1])
 		main.landmark_into = null
+		if not main.trimesh_later.is_empty():
+			shaping.append(_shape_later(main.trimesh_later.duplicate()))
+			main.trimesh_later.clear()
 		var ms := (Time.get_ticks_usec() - t1) / 1000.0
 		if ms > 20.0:
 			slow.append("%s %.0f ms" % [String(item[1].get("model", item[1].get("kind", "?"))).get_file(), ms])
@@ -401,9 +418,97 @@ func _furnish(id: String, t: Dictionary, root: Node3D) -> void:
 	main.landmark_pickups.resize(pickups)        # the round's pickups are already out
 	events.append({"id": id, "what": "%d landmarks and shops, one a frame (main thread): worst %.1f ms %s" % [todo.size(), worst, ", ".join(slow)],
 			"ms": snappedf(total, 0.1)})
+	# their triangle collision, built on a worker thread: put in one mesh a frame
+	var t2 := Time.get_ticks_usec()
+	var tris := 0
+	worst = 0.0
+	for job in shaping:
+		while not job["done"][0]:
+			await get_tree().process_frame
+		if not is_instance_valid(root) or t["node"] != root:
+			return
+		tris += job["done"][1]
+		for i in job["nodes"].size():
+			var t3 := Time.get_ticks_usec()
+			_shape_in(job, i)
+			worst = maxf(worst, (Time.get_ticks_usec() - t3) / 1000.0)
+			await get_tree().process_frame
+			if not is_instance_valid(root) or t["node"] != root:
+				return
+	if not shaping.is_empty():
+		_note(id, "landmark collision, %d triangles (worker thread), worst frame %.1f ms to put in" % [tris, worst], t2)
 	# their collision is merged a frame later: the navmesh bake reads it
 	for k in 2:
 		await get_tree().physics_frame
+
+
+## Every peer: a tile's lamp shot out or bin run over (props.gd, _fall). The
+## tile keeps it until the round ends, also while it is out.
+func prop_down(id: String, index: int, crushable: bool, dir: Vector3) -> void:
+	if not tiles.has(id):
+		return
+	var t: Dictionary = tiles[id]
+	if not t.has("down"):
+		t["down"] = []
+	t["down"].append([index, crushable, dir])
+	var props = t.get("props")
+	if t["state"] == "in" and is_instance_valid(props):
+		_prop_fall(props, index, crushable, dir)
+
+
+func _prop_fall(props: Node, index: int, crushable: bool, dir: Vector3) -> void:
+	var n: int = (props.get("crushables") if crushable else props.get("destructibles")).size()
+	if index < 0 or index >= n:
+		return
+	if crushable:
+		props.call("knock_over", index, dir)
+	else:
+		props.call("break_prop", index)
+
+
+## A new round: the tiles' street furniture stands again.
+func restore_props() -> void:
+	for t in tiles.values():
+		t.erase("down")
+		if t["state"] == "in" and is_instance_valid(t.get("props")):
+			t["props"].call("restore_all")
+
+
+## The triangle collision of a landmark's meshes, made on a worker thread:
+## the job's "shapes" and "done" (and the triangles) are sized before it starts, so the thread
+## only fills them in.
+func _shape_later(meshes: Array[MeshInstance3D]) -> Dictionary:
+	var job := {"nodes": meshes, "meshes": meshes.map(func(mi): return mi.mesh), "done": [false, 0]}
+	var shapes := []
+	shapes.resize(meshes.size())
+	job["shapes"] = shapes
+	_jobs.append(WorkerThreadPool.add_task(_make_shapes.bind(job["meshes"], shapes, job["done"])))
+	return job
+
+
+func _make_shapes(meshes: Array, shapes: Array, done: Array) -> void:
+	for i in meshes.size():
+		var shape: Shape3D = (meshes[i] as Mesh).create_trimesh_shape()
+		if shape is ConcavePolygonShape3D:
+			(shape as ConcavePolygonShape3D).backface_collision = true     # both sides, like the city's
+		shapes[i] = shape
+		done[1] += (meshes[i] as Mesh).get_faces().size() / 3
+	done[0] = true
+
+
+## A finished job's shape `i` under its mesh, the way create_trimesh_collision
+## puts it.
+func _shape_in(job: Dictionary, i: int) -> void:
+	var mi: MeshInstance3D = job["nodes"][i]
+	var shape: Shape3D = job["shapes"][i]
+	if not is_instance_valid(mi) or shape == null:
+		return
+	var body := StaticBody3D.new()
+	body.name = String(mi.name) + "_col"
+	var cs := CollisionShape3D.new()
+	cs.shape = shape
+	body.add_child(cs)
+	mi.add_child(body)
 
 
 ## No tile on its way in: everything near the player is loaded (or failed)
@@ -791,6 +896,7 @@ func _streets_in(id: String, t: Dictionary) -> void:
 		var tg: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
 		if _map_edges < 0:
 			_map_edges = g["edges"].size()
+		var e0: int = g["edges"].size()
 		var nodes: Array = g["nodes"]
 		var index := []                          # the tile's node -> the graph's
 		var known: int = nodes.size()
@@ -818,11 +924,66 @@ func _streets_in(id: String, t: Dictionary) -> void:
 			t["ways"].append([int(edge["a"]), [i, true]])
 			if not edge["oneway"]:
 				t["ways"].append([int(edge["b"]), [i, false]])
-		_note(id, "streets: %d edges joined to the road graph at %d nodes" % [tg["edges"].size(), joined], t0)
+		t["stops"] = _tile_stops(id, e0, g["edges"].size())
+		_note(id, "streets: %d edges joined to the road graph at %d nodes, %d bus stops" % [tg["edges"].size(), joined, t["stops"].size()], t0)
 	for w in t["ways"]:
 		(g["out"] as Dictionary).get_or_add(w[0], []).append(w[1])
 	_entries()
 	BusRoutes.invalidate(g)
+	_bus_round()
+
+
+## The tile's bus shelters (<id>.props.json) as stops, [edge, x, z]: the
+## point of the tile's own streets (edges e0..e1) nearest each, as the map
+## takes its own (main._bus_stops).
+func _tile_stops(id: String, e0: int, e1: int) -> Array:
+	var path := "res://city/%s.props.json" % id
+	var props = JSON.parse_string(FileAccess.get_file_as_string(path)) if FileAccess.file_exists(path) else []
+	var g: Dictionary = main.road_graph
+	var out := []
+	for p in (props if props is Array else []):
+		if p.get("type", "") != "bus_stop":
+			continue
+		var at := Vector2(p["pos"][0], p["pos"][2])
+		var best := [-1, 0.0, 0.0]
+		var bd := 25.0                    # a shelter further than this from any street serves none
+		for i in range(e0, e1):
+			for pt in g["edges"][i]["pts"]:
+				var d := at.distance_to(Vector2(pt[0], pt[1]))
+				if d < bd:
+					bd = d
+					best = [i, pt[0], pt[1]]
+		if best[0] >= 0:
+			out.append(best)
+	return out
+
+
+## The buses' round: the map's stops (while the map is in) and those of the
+## tiles whose streets are open, nearest-next like the map's own. A bus keeps
+## the stop it was making for if that stop is still served. Bus lines
+## designed in the map editor stay the map's.
+var _map_stops = null
+func _bus_round() -> void:
+	var g: Dictionary = main.road_graph
+	if not g.has("edges") or not g.get("lines", []).is_empty():
+		return
+	if _map_stops == null:
+		_map_stops = g.get("stops", []).duplicate()
+	var found: Array = _map_stops.duplicate() if home.get("streets", true) else []
+	for t in tiles.values():
+		if t.get("streets", false):
+			found.append_array(t.get("stops", []))
+	var tour := []
+	while not found.is_empty():
+		var from: Vector2 = Vector2(tour[-1][1], tour[-1][2]) if not tour.is_empty() else Vector2(found[0][1], found[0][2])
+		found.sort_custom(func(a, b): return from.distance_to(Vector2(a[1], a[2])) < from.distance_to(Vector2(b[1], b[2])))
+		tour.append(found.pop_front())
+	var old: Array = g.get("stops", [])
+	for v in main.traffic_root.get_children():
+		if v.get("kind") == "bus":
+			var i: int = v.get("_stop_i")
+			v.set("_stop_i", tour.find(old[i]) if i >= 0 and i < old.size() else -1)
+	g["stops"] = tour
 
 
 ## The tile leaves: the ways into its streets close (the edges stay in the
@@ -841,6 +1002,7 @@ func _streets_out(t: Dictionary) -> void:
 				break
 	_entries()
 	BusRoutes.invalidate(g)
+	_bus_round()
 
 
 ## Where traffic drives in: the dead ends of the streets open now, at the edge
@@ -1188,6 +1350,7 @@ func _home_in() -> void:
 	home["streets"] = true
 	_entries()
 	BusRoutes.invalidate(g)
+	_bus_round()
 	main.home_out = false
 	home["state"] = "in"
 	# the tiles that came in while it was out have no links to it

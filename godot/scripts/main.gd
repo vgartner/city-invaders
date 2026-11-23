@@ -3138,6 +3138,7 @@ func _restart_round() -> void:
 	director.set_process(true)
 	director.reset()
 	props.restore_all.rpc()
+	props.tile_props_up.rpc()
 	for pk in pickups_root.get_children():
 		if pk.respawns:
 			pk.active = true
@@ -4555,6 +4556,7 @@ func _shells() -> void:
 		_shell(sh)
 
 
+const SHELL_PLASTER := "res://assets/materials/PaintedPlaster017/color.jpg"
 func _shell(sh: Dictionary) -> void:
 	var ring := PackedVector2Array()
 	for q in sh["ring"]:
@@ -4593,7 +4595,7 @@ func _shell(sh: Dictionary) -> void:
 	_landmark_nodes.append(root)
 	root.set_meta("landmark", {"id": "shell", "model": sh["interior"], "label": sh["caption"]})
 	var wall := StandardMaterial3D.new()
-	wall.albedo_texture = load("res://assets/materials/PaintedPlaster017/color.jpg")
+	wall.albedo_texture = load(SHELL_PLASTER)
 	wall.albedo_color = SHELL_PAINT[abs(hash(sh["id"])) % SHELL_PAINT.size()]
 	wall.uv1_triplanar = true
 	wall.uv1_world_triplanar = true
@@ -4892,6 +4894,10 @@ const LAMP_FADE_M := 30.0
 ## Where landmarks are added: the map's navigation region, or the tile being
 ## built (open_world.gd sets landmark_into while it adds a tile's).
 var landmark_into: Node
+## A tile's landmark meshes still to get their triangle collision: the tile
+## builds the shapes on a worker thread (the Mercado's 86 000 triangles cost
+## a frame of 145 ms on the main one) and takes the list as it goes.
+var trimesh_later: Array[MeshInstance3D] = []
 func _landmark_parent() -> Node:
 	return landmark_into if is_instance_valid(landmark_into) else nav_region
 
@@ -5019,6 +5025,9 @@ func _landmark(l: Dictionary) -> void:
 				shop_faces.append(mi)          # the walls and floor: one shape, below
 			continue
 		if not String(mi.name).ends_with("glass") and not String(mi.name).ends_with("skylight"):
+			if is_instance_valid(landmark_into):
+				trimesh_later.append(mi as MeshInstance3D)
+				continue
 			(mi as MeshInstance3D).create_trimesh_collision()
 			# both sides, like the city's: a shop floor only stopped things from below
 			for cs in mi.find_children("*", "CollisionShape3D", true, false):
