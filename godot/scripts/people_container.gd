@@ -53,11 +53,6 @@ func _ready() -> void:
 	_label.modulate = Color(1.0, 0.6, 0.2)
 	_label.position = Vector3(0, HEIGHT + 1.0, 0)
 	add_child(_label)
-	var sync := MultiplayerSynchronizer.new()
-	var cfg := SceneReplicationConfig.new()
-	cfg.add_property(NodePath(".:position"))
-	sync.replication_config = cfg
-	add_child(sync)
 	_refresh()
 
 
@@ -135,6 +130,30 @@ static func grey(fig: Node3D) -> void:
 		_grey_mat.roughness = 0.8
 	for mi in fig.find_children("*", "MeshInstance3D", true, false):
 		(mi as MeshInstance3D).material_override = _grey_mat
+
+
+## Server: where it is goes to the others by rpc, not a MultiplayerSynchronizer.
+## It is made by an rpc on every peer; a peer still loading the map when it
+## came never confirms a synchroniser's path, and Godot then sends that peer
+## nothing more of it - a player who joined saw it hang in the air. An rpc
+## falls back to the full path. Sent while it moves, and every 2 s, to the
+## peers that have the map (main.container_peers).
+var _sent := Vector3.INF
+var _resend := 0.0
+func _physics_process(delta: float) -> void:
+	if multiplayer.multiplayer_peer is OfflineMultiplayerPeer or not multiplayer.is_server():
+		return
+	_resend -= delta
+	if position.distance_squared_to(_sent) > 0.0001 or _resend <= 0.0:
+		_sent = position
+		_resend = 2.0
+		for id in get_tree().current_scene.get("container_peers"):
+			moved.rpc_id(id, position)
+
+
+@rpc("authority", "call_remote", "unreliable_ordered")
+func moved(p: Vector3) -> void:
+	position = p
 
 
 func _process(delta: float) -> void:

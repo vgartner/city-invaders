@@ -174,8 +174,15 @@ server's calls on a player (score, getting into and out of a vehicle, the
 drone, burning) were "authority" calls the client refused; and a client put
 back after a fall went to (0, 1, 0), under the ground, because only the
 server works out the start (the player's spawn now carries it). The
-antennas are placed by every peer itself, so with other players they stay
-in the round's map, the same on every peer.
+server places the relay antennas anywhere in what it has loaded - the
+round's map and the tiles round every player - and sends their spots
+(`antennas_at`); a player who joins later asks for them (`want_antennas`)
+and gets those brought down or spotted as they are, and the containers
+already out (`want_containers`). A client sees an antenna on a tile it has
+not loaded standing over that tile's far model. Tested with a host and a
+client joining after an antenna went down: the same three spots on both,
+the fallen one gone, the next one brought down falling on both, the HUD's
+state the same, the two containers where the host has them, no errors.
 
 **The round's own map leaves too** (`_home_check`, one player). Everything
 the round's map built hangs under its navigation region: the city and its
@@ -377,8 +384,8 @@ models and people are still imported lossless and hold 4-6 GB
 5. **The far view, the rest**: windows and roofs are in (see The far view).
    Left: lit windows at night, and gabled roofs that follow a long building
    rather than a hip to its middle.
-6. **Multiplayer, the rest**: the antennas stay in the round's map with
-   other players (the server could place them and tell the clients).
+6. **Multiplayer, the rest**: done - the server places the antennas in the
+   whole loaded world and tells the others (see Multiplayer).
 7. **The round's own tile, the rest**: it leaves and comes back now (one
    player), but as itself: its landmarks, street furniture and navigation
    mesh sleep in memory. Every tile equal means the round's map built

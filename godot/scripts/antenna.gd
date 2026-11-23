@@ -196,6 +196,17 @@ func _burst() -> void:
 	get_tree().create_timer(0.7).timeout.connect(flash.queue_free)
 
 
+## A player joining late: this antenna was brought down before - no fall,
+## no sound, it is just not there.
+func gone() -> void:
+	health = 0
+	collision_layer = 0
+	visible = false
+	set_process(false)
+	if _beacon:
+		_beacon.queue_free()
+
+
 ## Every peer: someone's drone found it - it shows on the GPS from now on.
 @rpc("any_peer", "call_local", "reliable")
 func mark_spotted() -> void:

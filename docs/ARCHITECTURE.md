@@ -69,6 +69,16 @@ come from the server (`_from_server()`): an `authority` RPC on a node the
 client owns refuses the server. The player spawn carries the server's start
 (`"at"`), which a client never works out itself.
 
+Nodes every peer makes itself on a server's RPC (the people containers,
+`new_container`) take no `MultiplayerSynchronizer`: a peer still loading the
+map when the node came never confirms the synchroniser's path, and Godot then
+sends that peer nothing more of it. The server sends a container's position
+by RPC (which falls back to the full path) to the peers that have the map
+(`main.container_peers`). A player who joins asks for what is already there
+(`want_containers`, `want_antennas`): the containers with who is inside, and
+the relay antennas the server placed, those brought down or spotted as they
+are.
+
 ## Collision layers
 
 | Layer | Bit | Used by |

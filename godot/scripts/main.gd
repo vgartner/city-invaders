@@ -1413,6 +1413,7 @@ func _on_peer_connected(id: int) -> void:
 
 
 func _on_peer_disconnected(id: int) -> void:
+	container_peers.erase(id)
 	var node := players_root.get_node_or_null(str(id))
 	if node:
 		node.queue_free()
@@ -3833,32 +3834,35 @@ func _pigeons() -> void:
 
 
 ## The robots' relay antenna (antenna.gd): one per phase with a goal, on a
-## high roof away from the start, the same spot on every peer.
+## high roof away from the start. The server picks the roofs in the whole
+## loaded world - the round's map and the open world's tiles round every
+## player - and tells the others (antennas_at); a player who joins later asks
+## for them (want_antennas) and gets those brought down or spotted as they are.
 const Antenna := preload("res://scripts/antenna.gd")
 var _antennas: Array = []
+var _antenna_spots = null            # server: the roofs picked this round (null: not yet)
+var _antenna_asked: Array[int] = []  # server: peers that asked before they were picked
 func _place_antenna() -> void:
-	for a in _antennas:
-		if is_instance_valid(a):
-			a.queue_free()
-	_antennas = []
+	_antennas_at([], [])
+	_antenna_spots = null
 	director.reinforce = 1.0
 	if _map_spec(map_id)[3] <= 0:
 		return                          # free play: no objective
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 	await wait_for_world()
+	if not multiplayer.is_server():
+		want_antennas.rpc_id(1)         # the server picked them
+		return
 	var space := get_world_3d().direct_space_state
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(map_id) + 5
-	# several high roofs, well apart, away from the start. Every peer places
-	# them itself, so with others in the game only in the round's map (the
-	# same everywhere); alone, anywhere in the loaded world, the open world's
-	# tiles too. High is 10 m over the start in the round's map, 10 m over
+	# several high roofs, well apart, away from the start, anywhere in the
+	# loaded world. High is 10 m over the start in the round's map, 10 m over
 	# the street next to the building in a tile (the world's tiles by the
 	# river lie 15-20 m lower than the Centro's ridge)
-	var alone := multiplayer.multiplayer_peer is OfflineMultiplayerPeer
-	var areas: Array = world_areas() if alone else [bounds]
-	if alone and areas.size() > 1:
+	var areas: Array = world_areas()
+	if areas.size() > 1:
 		await wait_for_navmesh()
 	var nav_map := get_world_3d().navigation_map
 	var spots := []
@@ -3875,36 +3879,84 @@ func _place_antenna() -> void:
 		if not hit or hit.normal.y <= 0.9:
 			continue
 		var base := spawn_point.y
-		if alone and not bounds.has_point(Vector2(p.x, p.z)):
+		if not bounds.has_point(Vector2(p.x, p.z)):
 			base = NavigationServer3D.map_get_closest_point(nav_map, hit.position).y
 		if hit.position.y - base > 10.0 and rng.randf() < 0.35:
 			spots.append(hit.position)
-	for at in spots:
-		var a: StaticBody3D = Antenna.new()
-		a.name = "RelayAntenna%d" % _antennas.size()
-		add_child(a)
-		_map_nodes.append(a)
-		a.global_position = at
-		a.destroyed.connect(_antenna_down)
-		_antennas.append(a)
+	_antenna_spots = spots
+	_antennas_at(spots, [])
+	if not multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
+		antennas_at.rpc(spots, [])
+	for id in _antenna_asked:
+		want_antennas_from(id)
+	_antenna_asked.clear()
+	for k in _antennas.size():
 		# nobody found it from the air: after a while a civilian reports it
-		if multiplayer.is_server():
-			# a weak reference: an antenna brought down (or a new round) before
-			# then is simply gone, no "Lambda capture was freed"
-			var wa: WeakRef = weakref(a)
-			get_tree().create_timer(360.0 + 60.0 * _antennas.size()).timeout.connect(func():
-				var ant: Node = wa.get_ref()
-				if ant and ant.is_alive() and not ant.spotted:
-					ant.mark_spotted.rpc())
+		# (a weak reference: an antenna brought down, or a new round, before
+		# then is simply gone - no "Lambda capture was freed")
+		var wa: WeakRef = weakref(_antennas[k])
+		get_tree().create_timer(360.0 + 60.0 * (k + 1)).timeout.connect(func():
+			var ant: Node = wa.get_ref()
+			if ant and ant.is_alive() and not ant.spotted:
+				ant.mark_spotted.rpc())
 	if _antennas.is_empty():
 		return
-	director.reinforce = Difficulty.get_value("antenna_reinforce")
 	# the last phase: the robot commander guards one antenna's building
-	if _map_spec(map_id)[2] == "" and multiplayer.is_server():
+	if _map_spec(map_id)[2] == "":
 		await wait_for_navmesh()
 		var post: Vector3 = NavigationServer3D.map_get_closest_point(get_world_3d().navigation_map, spots[0])
 		enemy_spawner.spawn({"id": _next_enemy_id(), "pos": post + Vector3(0, 0.5, 0), "variant": "mech",
 				"commander": true, "post": post})
+
+
+## Every peer: the round's antennas stand at `spots`; `states` (a player who
+## joined late) holds for each 0 standing, 1 spotted, 2 brought down.
+@rpc("authority", "call_local", "reliable")
+func antennas_at(spots: Array, states: Array) -> void:
+	_antennas_at(spots, states)
+
+
+func _antennas_at(spots: Array, states: Array) -> void:
+	for a in _antennas:
+		if is_instance_valid(a):
+			_map_nodes.erase(a)
+			a.name = "OldAntenna"            # its name is free at once for the new one
+			a.queue_free()
+	_antennas = []
+	for k in spots.size():
+		var a: StaticBody3D = Antenna.new()
+		a.name = "RelayAntenna%d" % k
+		add_child(a)
+		_map_nodes.append(a)
+		a.global_position = spots[k]
+		a.destroyed.connect(_antenna_down)
+		_antennas.append(a)
+		var st: int = states[k] if k < states.size() else 0
+		if st == 2:
+			a.gone()
+		elif st == 1:
+			a.spotted = true
+	director.reinforce = Difficulty.get_value("antenna_reinforce") \
+			if _antennas.any(func(a): return a.is_alive()) else 1.0
+
+
+## Server: a player who joined asks where the antennas are.
+@rpc("any_peer", "call_remote", "reliable")
+func want_antennas() -> void:
+	if not multiplayer.is_server():
+		return
+	var id := multiplayer.get_remote_sender_id()
+	if _antenna_spots == null:
+		_antenna_asked.append(id)        # not picked yet: answered when they are
+	else:
+		want_antennas_from(id)
+
+
+func want_antennas_from(id: int) -> void:
+	var states := []
+	for a in _antennas:
+		states.append(2 if not is_instance_valid(a) or not a.is_alive() else (1 if a.spotted else 0))
+	antennas_at.rpc_id(id, _antenna_spots, states)
 
 
 ## Server: a tower detector bought at a repair shop - the nearest antenna
@@ -5579,8 +5631,11 @@ func _place_containers() -> void:
 	_containers = []
 	_container_seq = 0
 	containers_lost = 0
-	if _map_spec(map_id)[3] <= 0 or not multiplayer.is_server():
+	if _map_spec(map_id)[3] <= 0:
 		return                          # free play: no objective
+	if not multiplayer.is_server():
+		want_containers.rpc_id(1)       # those already brought before this player joined
+		return
 	await wait_for_navmesh()
 	await get_tree().create_timer(2.0).timeout
 	await wait_for_world()
@@ -5641,9 +5696,9 @@ func _deliver_container(spot: Vector3) -> void:
 			"stops": [[spot, hover, 12.0]], "container": str(_containers[-1].get_path())})
 
 
-func _add_container(at: Vector3, spot: Vector3) -> Node3D:
+func _add_container(at: Vector3, spot: Vector3, named := "") -> Node3D:
 	var c: StaticBody3D = PeopleContainer.new()
-	c.name = "PeopleContainer%d" % _container_seq
+	c.name = named if named != "" else "PeopleContainer%d" % _container_seq
 	_container_seq += 1
 	c.capacity = int(Difficulty.get_value("container_cap"))
 	c.position = at
@@ -5669,6 +5724,38 @@ func reset_containers() -> void:
 @rpc("authority", "call_local", "reliable")
 func new_container(at: Vector3, spot: Vector3) -> void:
 	_add_container(at, spot)
+
+
+## Server: a player who joined asks for the containers already out, with
+## who is inside each. From then on it is sent where they move
+## (people_container.gd): a peer still loading the map has no containers.
+var container_peers: Array[int] = []
+@rpc("any_peer", "call_remote", "reliable")
+func want_containers() -> void:
+	if not multiplayer.is_server():
+		return
+	var list := []
+	for c in _containers:
+		if is_instance_valid(c):
+			list.append([String(c.name), c.position, c.ground_spot, c.lifting, c.people, c.capacity])
+	var id := multiplayer.get_remote_sender_id()
+	containers_now.rpc_id(id, list, containers_lost, _container_seq)
+	if not container_peers.has(id):
+		container_peers.append(id)
+
+
+@rpc("authority", "call_remote", "reliable")
+func containers_now(list: Array, lost: int, seq: int) -> void:
+	for e in list:
+		if has_node(NodePath(String(e[0]))):
+			continue                     # brought (new_container) after it asked
+		var c: Node3D = _add_container(e[1], e[2], e[0])
+		c.set("lifting", e[3])
+		c.set("people", (e[4] as Array).duplicate())
+		c.set("capacity", e[5])
+		c.call("_refresh")
+	containers_lost = lost
+	_container_seq = maxi(_container_seq, seq)
 
 
 @rpc("authority", "call_local", "reliable")
