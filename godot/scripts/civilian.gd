@@ -454,7 +454,10 @@ func _physics_process(delta: float) -> void:
 			return
 	if not vendor and home != Vector3.INF and state == State.WANDER and float(person.get("roam", 0.0)) > 0.0:
 		# a footballer on its pitch, a child at the playground: wander about the spot
-		if _goal == Vector3.INF or global_position.distance_to(_goal) < 1.2 or global_position.distance_to(home) > float(person["roam"]) * 2.0:
+		# (a goal far from the spot - it ran from a robot - is dropped for one
+		# near it. Asking how far it stands itself made it pick a new goal
+		# every few seconds and never walk: away from its spot it stood for ever)
+		if _goal == Vector3.INF or global_position.distance_to(_goal) < 1.2 or _goal.distance_to(home) > float(person["roam"]) * 2.0:
 			_pause -= delta
 			if _pause <= 0.0:
 				var r := float(person["roam"])
