@@ -213,5 +213,5 @@ func _on_body(body: Node) -> void:
 ## Server: reappear at a new street point, away from where it was taken.
 func _respawn_elsewhere() -> void:
 	if not fixed:
-		global_position = get_tree().current_scene.random_pickup_point(global_position)
+		global_position = get_tree().current_scene.random_pickup_point(global_position, self)
 	active = true

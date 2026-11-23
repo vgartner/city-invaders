@@ -163,8 +163,21 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   in its greens (`_wildlife`; the map's own functions, seeded by the tile's
   id), a step a frame, 8-10 ms the worst.
 
-**Not yet**: pickups, the map editor's edits, the promenade points for the
-passers-by (`main.crowd` is the map's).
+- **Pickups and places**: the server gives a tile its pickups by the map's
+  rule (`main.pickups_for`): the items its landmarks hold, half the map's
+  scattered ones (`TILE_PICKUPS`), what its places sell at their doors
+  (`<id>.places.json`) and the items put down in the map editor inside it -
+  45-70 a tile. They are worked out the first time the tile comes in a
+  round, 4 ms a frame (in one frame it was 50 ms), and kept: each comes
+  back where it was, they leave with the tile (with what a robot dropped in
+  it) and a pickup taken comes back at another street point of its tile
+  (`pickup_point`). A spot counts as reachable when the tile's own mesh
+  reaches it, whichever neighbours are in. The tile's places show on the
+  GPS while it is in (`main.all_places`) and its pharmacies get their green
+  cross.
+
+**Not yet**: the map editor's edits (the released game's, and editing a
+tile), the promenade points for the passers-by (`main.crowd` is the map's).
 
 **The far view** (`tools/map/far_view.py <world>`): every tile gets a light
 model, `<tile>_far.glb` - its buildings as light blocks (footprint, ground,

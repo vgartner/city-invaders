@@ -114,7 +114,7 @@ func _draw() -> void:
 	# (placed by hand too) by their pictograms; smaller on the round one
 	var reach := RANGE_M * (1.0 if panel == Vector2.ZERO else panel.x / panel.y)
 	var pic := 26.0 if panel != Vector2.ZERO else 18.0
-	for pl in main.get("places") if main.get("places") != null else []:
+	for pl in main.all_places() if main.has_method("all_places") else []:     # the map's and the tiles'
 		if pl["kind"] == "repair_shop":
 			continue                  # drawn from the counters below: only those trade
 		var icon: String = main.place_kinds.get(pl["kind"], {}).get("icon", "")

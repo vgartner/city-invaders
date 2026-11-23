@@ -1441,16 +1441,44 @@ static func _v3(v: Vector3) -> Array:
 ## Server: scatter medkits, ammo boxes and machine guns over reachable
 ## street points (respawning pickups).
 func _place_pickups() -> void:
-	if not multiplayer.is_server() or pickups_root.get_child_count() > 0:
+	# (an open world's tile may have brought its own already)
+	if not multiplayer.is_server() or pickups_root.get_children().any(func(pk): return not pk.has_meta("tile")):
 		return
 	await wait_for_navmesh()
 	var map := get_world_3d().navigation_map
-	for lp in landmark_pickups:
-		var at := _reachable_spot(map, lp[1], 8.0)
+	for pk in await pickups_for(map, bounds, 1.0, landmark_pickups, places, user_edits(),
+			func(): return NavigationServer3D.map_get_random_point(map, 1, true),
+			func(at: Vector3, max_m: float): return _reachable_spot(map, at, max_m)):
+		_spawn_pickup(pk[0], pk[1], true, pk[2])
+	# the round starts unarmed: a couple of pistols a short walk from the start
+	for k in 2:
+		var near := NavigationServer3D.map_get_closest_point(map,
+				spawn_point + Vector3.FORWARD.rotated(Vector3.UP, k * PI + randf()) * randf_range(7.0, 14.0))
+		_spawn_pickup("pistol", near, true)
+
+
+## The pickups of an area - the round's map or an open world's tile - as
+## [kind, position, fixed]: those its landmarks hold (`fixed_spots`, their
+## markers), `share` of PICKUP_COUNTS scattered over street points (`point`
+## gives a random one of the area's navigation mesh), what the area's places
+## sell at their doors, and the items put down in the map editor inside it.
+## Only where it can be walked to: `reach` gives the walkable spot within so
+## many metres of a point, or Vector3.INF. With `frame_ms` the work stops for
+## a frame whenever it has taken that long (a tile coming in mid-game).
+func pickups_for(map: RID, area: Rect2, share: float, fixed_spots: Array, area_places: Array,
+		edits: Dictionary, point: Callable, reach: Callable, frame_ms := 0.0) -> Array:
+	var out := []
+	var t0 := Time.get_ticks_usec()
+	for lp in fixed_spots:
+		if frame_ms > 0.0 and (Time.get_ticks_usec() - t0) / 1000.0 > frame_ms:
+			await get_tree().process_frame
+			t0 = Time.get_ticks_usec()
+		var at: Vector3 = reach.call(lp[1], 8.0)
 		if at == Vector3.INF:
 			push_warning("landmark %s at %s: no walkable way to it within 8 m, left out" % [lp[0], lp[1]])
 			continue
-		_spawn_pickup(lp[0], at, true, true)
+		out.append([lp[0], at, true])
+	var inner := area.grow(-10.0)
 	var placed := []
 	for key in PICKUP_COUNTS:
 		var kind: String = role(key) if Entities.get_def(key).is_empty() else key
@@ -1458,22 +1486,24 @@ func _place_pickups() -> void:
 			continue
 		var n := 0
 		var tries := 0
-		while n < int(round(PICKUP_COUNTS[key] * density() * Difficulty.get_value("pickups"))) and tries < 400:
+		while n < int(round(PICKUP_COUNTS[key] * share * density() * Difficulty.get_value("pickups"))) and tries < 400:
 			tries += 1
-			var pos := NavigationServer3D.map_get_random_point(map, 1, true)
-			if not in_bounds(pos, 10.0) or pos.distance_to(spawn_point) < 8:
+			if frame_ms > 0.0 and (Time.get_ticks_usec() - t0) / 1000.0 > frame_ms:
+				await get_tree().process_frame
+				t0 = Time.get_ticks_usec()
+			var pos: Vector3 = point.call()
+			if not inner.has_point(Vector2(pos.x, pos.z)) or pos.distance_to(spawn_point) < 8:
 				continue
-			var path := NavigationServer3D.map_get_path(map, spawn_point, pos, true)
-			if path.is_empty() or path[path.size() - 1].distance_to(pos) > 1.0:
+			if reach.call(pos, 0.0) == Vector3.INF:
 				continue
 			if placed.any(func(q): return q.distance_to(pos) < 15.0):
 				continue
 			placed.append(pos)
-			_spawn_pickup(kind, pos, true)
+			out.append([kind, pos, false])
 			n += 1
 	# what a place sells waits at its door (a pharmacy's medicine, a market's
 	# mate...): place_kinds.json "pickup", a role or an item id
-	for pl in places:
+	for pl in area_places:
 		var want: String = place_kinds.get(pl["kind"], {}).get("pickup", "")
 		if want == "":
 			continue
@@ -1481,25 +1511,23 @@ func _place_pickups() -> void:
 		if item == "":
 			continue
 		var at := NavigationServer3D.map_get_closest_point(map, Vector3(pl["door"][0], 0, pl["door"][1]))
-		at = _reachable_spot(map, at, 4.0)       # not on a walkable island cut off from the streets
+		at = reach.call(at, 4.0)                 # not on a walkable island cut off from the streets
 		if at != Vector3.INF and at.distance_to(Vector3(pl["door"][0], at.y, pl["door"][1])) < 4.0:
 			# on whatever floor is there now (a shop's front pad sits above the street)
 			var top := get_world_3d().direct_space_state.intersect_ray(
 					PhysicsRayQueryParameters3D.create(at + Vector3(0, 1.2, 0), at - Vector3(0, 2.0, 0), 1))
 			if top:
 				at.y = top.position.y
-			_spawn_pickup(item, at, true, true)
+			out.append([item, at, true])
 	# items put down by hand in the map editor (by type in its palette)
-	for p in user_edits().get("_pickups", []):
+	for p in edits.get("_pickups", []):
+		if not area.grow(1.0).has_point(Vector2(p["x"], p["z"])):
+			continue                     # maps cut from one city share their edits: another map's
 		var at := NavigationServer3D.map_get_closest_point(map, Vector3(p["x"], p.get("y", 0.0), p["z"]))
 		if p.has("y"):
 			at = Vector3(p["x"], p["y"], p["z"])
-		_spawn_pickup(p["id"], at, true, true)
-	# the round starts unarmed: a couple of pistols a short walk from the start
-	for k in 2:
-		var near := NavigationServer3D.map_get_closest_point(map,
-				spawn_point + Vector3.FORWARD.rotated(Vector3.UP, k * PI + randf()) * randf_range(7.0, 14.0))
-		_spawn_pickup("pistol", near, true)
+		out.append([p["id"], at, true])
+	return out
 
 
 ## The map's user edits (edits.gd): read live, so what the map editor saves
@@ -1519,10 +1547,7 @@ func _load_places() -> void:
 	places = []
 	if FileAccess.file_exists("res://assets/place_kinds.json"):
 		place_kinds = JSON.parse_string(FileAccess.get_file_as_string("res://assets/place_kinds.json"))
-	if FileAccess.file_exists(_city(".places.json")):
-		places = JSON.parse_string(FileAccess.get_file_as_string(_city(".places.json")))
-	var off: Array = user_edits().get("_place_kinds_off", [])
-	places = places.filter(func(pl): return not pl["kind"] in off)
+	places = places_of(_city(".places.json"), user_edits())
 	# the city's collection (the Studio's import window), else Rio Grande do Sul's
 	collection = String(user_edits().get("_collection", "rio_grande_do_sul"))
 	for n in _signs:
@@ -1534,6 +1559,22 @@ func _load_places() -> void:
 	for pl in places:
 		if place_kinds.get(pl["kind"], {}).get("sign", "") == "cross" and not pl.get("model"):
 			_cross_sign(pl)
+
+
+## The places of the map and of the open world's tiles that are in.
+func all_places() -> Array:
+	if not is_instance_valid(open_world_node):
+		return places
+	return places + open_world_node.call("places_in")
+
+
+## The places of an area's <id>.places.json without the kinds its user
+## edits switch off.
+func places_of(path: String, edits: Dictionary) -> Array:
+	if not FileAccess.file_exists(path):
+		return []
+	var off: Array = edits.get("_place_kinds_off", [])
+	return (JSON.parse_string(FileAccess.get_file_as_string(path)) as Array).filter(func(pl): return not pl["kind"] in off)
 
 
 ## The place an OSM building is ({} if none) - for the editor's building panel.
@@ -2051,7 +2092,7 @@ func route_destinations(from: Vector3, with_containers := false) -> Array:
 		out.append(["Saída da fase  (%d m)" % int(_exit.global_position.distance_to(from)), _exit.global_position])
 	nearest.call("Assistência técnica", repair_shops())
 	var kinds := {}
-	for pl in places:
+	for pl in all_places():
 		var label: String = place_kinds.get(pl["kind"], {}).get("label", "")
 		if label == "" or pl["kind"] == "repair_shop":
 			continue
@@ -2156,7 +2197,7 @@ func _cross_at(marker: Node3D) -> void:
 
 
 ## A glowing green pharmacy cross on the facade above the door.
-func _cross_sign(pl: Dictionary) -> void:
+func _cross_sign(pl: Dictionary, parent: Node = null) -> void:
 	var door := Vector3(pl["door"][0], 0, pl["door"][1])
 	var at := Vector3(pl["at"][0], 0, pl["at"][1])
 	var space := get_world_3d().direct_space_state
@@ -2172,8 +2213,11 @@ func _cross_sign(pl: Dictionary) -> void:
 	if hit.is_empty():
 		return
 	var root := Node3D.new()
-	add_child(root)
-	_signs.append(root)
+	if parent != null:
+		parent.add_child(root)           # an open world's tile: the sign goes with it
+	else:
+		add_child(root)
+		_signs.append(root)
 	var n: Vector3 = hit.normal
 	n.y = 0
 	n = n.normalized() if n.length() > 0.1 else -dir
@@ -6220,7 +6264,9 @@ func _reachable_spot(map: RID, at: Vector3, max_m: float) -> Vector3:
 
 
 ## Server: a fresh reachable street point for a respawning pickup.
-func random_pickup_point(avoid: Vector3) -> Vector3:
+func random_pickup_point(avoid: Vector3, taken: Node = null) -> Vector3:
+	if taken != null and taken.has_meta("tile") and is_instance_valid(open_world_node):
+		return open_world_node.call("pickup_point", taken, avoid)     # a tile's pickup stays in its tile
 	var map := get_world_3d().navigation_map
 	for attempt in 60:
 		var pos := NavigationServer3D.map_get_random_point(map, 1, true)

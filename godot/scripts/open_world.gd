@@ -27,6 +27,7 @@ const TILE_ROBOTS := 4      # robots on patrol a tile brings
 const TILE_TRAFFIC := 6     # vehicles a tile's streets bring
 const TILE_POLICE := 1      # officers on patrol a tile brings
 const TILE_PARKED := 5      # cars parked at its kerbs a player can drive, at most
+const TILE_PICKUPS := 0.5   # of the map's scattered pickups (main.PICKUP_COUNTS)
 const TILE_FLOCKS := 2      # pigeon flocks on its squares
 const TILE_QUEROS := 2      # pairs of quero-queros on its lawns
 const ROBOT_CLEAR_M := 60.0 # no robot is born nearer a player than this
@@ -420,6 +421,12 @@ func _wildlife(id: String, t: Dictionary, root: Node3D) -> void:
 		func(): main.pigeons_at(t.get("crowd", []), id, TILE_FLOCKS, root),
 		func(): main.queros_at(t["rect"], id, TILE_QUEROS, root),
 		func(): main.bird_sounds("res://city/%s.props.json" % id, root),
+		func():
+			# its places: on the GPS while it is in, a green cross on a pharmacy's wall
+			t["places"] = main.places_of("res://city/%s.places.json" % id, Edits.read(id))
+			for pl in t["places"]:
+				if main.place_kinds.get(pl["kind"], {}).get("sign", "") == "cross" and not pl.get("model"):
+					main._cross_sign(pl, root),
 	]
 	for step in steps:
 		await get_tree().process_frame
@@ -451,7 +458,7 @@ func _furnish(id: String, t: Dictionary, root: Node3D) -> void:
 	var worst := 0.0
 	var total := 0.0
 	var slow := []
-	var pickups: int = main.landmark_pickups.size()
+	var fixed := []                      # its landmarks' items (the server places them)
 	var todo := []
 	var shaping := []
 	for kind in ["landmarks", "shells"]:
@@ -467,12 +474,17 @@ func _furnish(id: String, t: Dictionary, root: Node3D) -> void:
 		var t1 := Time.get_ticks_usec()
 		main.landmark_into = root
 		main.trimesh_defer = true
+		var n0: int = main.landmark_pickups.size()
 		if item[0] == "landmarks":
 			main._landmark(item[1])
 		else:
 			main._shell(item[1])
 		main.landmark_into = null
 		main.trimesh_defer = false
+		# the list is the map's: what this landmark added is the tile's (taken
+		# at once - another tile may be adding its own between two frames)
+		fixed.append_array(main.landmark_pickups.slice(n0))
+		main.landmark_pickups.resize(n0)
 		if not main.trimesh_later.is_empty():
 			shaping.append(_shape_later(main.trimesh_later.duplicate()))
 			main.trimesh_later.clear()
@@ -481,7 +493,7 @@ func _furnish(id: String, t: Dictionary, root: Node3D) -> void:
 			slow.append("%s %.0f ms" % [String(item[1].get("model", item[1].get("kind", "?"))).get_file(), ms])
 		worst = maxf(worst, ms)
 		total += ms
-	main.landmark_pickups.resize(pickups)        # the round's pickups are already out
+	t["fixed_pickups"] = fixed
 	t["furnished"] = true
 	for b in (t.get("bursts", {}) as Dictionary).values():      # shops wrecked before the tile left
 		main.wreck_shops(b[0], b[1])
@@ -907,7 +919,7 @@ func _baked(id: String, root_id: int, nm: NavigationMesh, t1: int, went: Vector2
 ## at its pitches and playgrounds, someone waiting at each bus stop, cars
 ## parked at its kerbs that can be driven, and its robots on patrol. A step a
 ## frame. They leave with the tile (_vacate).
-func _populate(id: String, root: Node3D, region: NavigationRegion3D) -> void:
+func _populate(id: String, root: Node3D, region: NavigationRegion3D, again := false) -> void:
 	var t: Dictionary = tiles[id]
 	var t0 := Time.get_ticks_usec()
 	var worst := 0.0
@@ -951,6 +963,72 @@ func _populate(id: String, root: Node3D, region: NavigationRegion3D) -> void:
 		if not is_instance_valid(root) or not tiles.has(id) or tiles[id]["node"] != root:
 			return
 	_note(id, "people, parked cars and robots, a step a frame (main thread): worst %.1f ms %s" % [worst, str(times)], t0)
+	if not again:                               # a new round leaves the pickups where they are
+		t0 = Time.get_ticks_usec()
+		await _pickups_in(id, t, root, region)
+		if is_instance_valid(root) and t["node"] == root:
+			_note(id, "%d pickups, %d ms a frame (main thread)" % [t["pickups"].size(), FRAME_MS], t0)
+
+
+## Server: the tile's pickups, as the round's map has its own
+## (main.pickups_for): worked out the first time it comes in a round and
+## kept, so each comes back where it was; they leave with the tile. A spot
+## can be walked to when the tile's own mesh reaches it - what nobody can
+## reach was dropped from it (drop_islands) - whichever neighbours are in.
+## A few milliseconds a frame.
+func _pickups_in(id: String, t: Dictionary, root: Node3D, region: NavigationRegion3D) -> void:
+	var rid := region.get_rid()
+	if not t.has("pickups"):
+		var map: RID = main.get_world_3d().navigation_map
+		if not t.has("places"):
+			t["places"] = main.places_of("res://city/%s.places.json" % id, Edits.read(id))
+		var reach := func(at: Vector3, max_m: float) -> Vector3:
+			var q := NavigationServer3D.region_get_closest_point(rid, at)
+			if q.distance_to(at) < 1.2:
+				return at
+			return q if Vector2(q.x - at.x, q.z - at.z).length() <= max_m and absf(q.y - at.y) <= 3.0 else Vector3.INF
+		var found: Array = await main.pickups_for(map, t["rect"], TILE_PICKUPS, t.get("fixed_pickups", []), t["places"],
+				Edits.read(id), func(): return NavigationServer3D.region_get_random_point(rid, 1, true), reach, FRAME_MS)
+		if not is_instance_valid(root) or t["node"] != root:
+			return
+		t["pickups"] = found
+	for k in t["pickups"].size():
+		if k % 8 == 7:
+			await get_tree().process_frame
+			if not is_instance_valid(root) or t["node"] != root:
+				return
+		var pk: Array = t["pickups"][k]
+		var node: Node = main._spawn_pickup(pk[0], pk[1], true, pk[2])
+		node.set_meta("tile", id)
+		node.set_meta("spot", k)
+
+
+## Server: a tile's pickup taken comes back at another street point of its
+## tile (main.random_pickup_point); the tile keeps where.
+func pickup_point(pk: Node, avoid: Vector3) -> Vector3:
+	var id: String = pk.get_meta("tile")
+	var t: Dictionary = tiles.get(id, {})
+	var region := (t["node"] as Node).get_node_or_null("Navigation") as NavigationRegion3D if t.get("state", "") == "in" and is_instance_valid(t.get("node")) else null
+	if region == null:
+		return avoid
+	for attempt in 60:
+		var pos := NavigationServer3D.region_get_random_point(region.get_rid(), 1, true)
+		if not (t["rect"] as Rect2).grow(-10.0).has_point(Vector2(pos.x, pos.z)) or pos.distance_to(avoid) < 25.0:
+			continue
+		if main.pickups_root.get_children().any(func(o): return (o as Node3D).global_position.distance_to(pos) < 15.0):
+			continue
+		t["pickups"][int(pk.get_meta("spot"))][1] = pos
+		return pos
+	return avoid
+
+
+## The places of the tiles that are in (main.all_places).
+func places_in() -> Array:
+	var out := []
+	for t in tiles.values():
+		if t["state"] == "in":
+			out.append_array(t.get("places", []))
+	return out
 
 
 ## Server, a new round (every passer-by and robot was removed): the tiles
@@ -963,7 +1041,7 @@ func repopulate() -> void:
 			for v in main.traffic_root.get_children():
 				if v.get_meta("tile_parked", "") == id and not v.has_meta("taken"):
 					v.queue_free()
-			_populate(id, t["node"], region)
+			_populate(id, t["node"], region, true)
 
 
 ## Server: the tile's own robots on patrol, away from the players. They carry
@@ -1311,6 +1389,12 @@ func _vacate(t: Dictionary) -> bool:
 	for c in main.civilians_root.get_children():
 		if area.has_point(Vector2((c as Node3D).global_position.x, (c as Node3D).global_position.z)):
 			c.queue_free()
+	# its pickups (it brings them again), and what a robot dropped in it
+	for pk in main.pickups_root.get_children():
+		var mine: bool = pk.has_meta("tile") and tiles.get(pk.get_meta("tile")) == t
+		if mine or (not pk.has_meta("tile") and not pk.get("respawns") \
+				and area.has_point(Vector2((pk as Node3D).global_position.x, (pk as Node3D).global_position.z))):
+			pk.queue_free()
 	return true
 
 
