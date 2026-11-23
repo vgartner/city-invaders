@@ -15,14 +15,21 @@ const PICK_LAYER := 128            # design mode clicks find photos here; nothin
 static var _nodes := {}            # id -> MeshInstance3D
 
 
-## Every photo of the map, built again (after loading the map).
-static func apply_all(main: Node, map_id: String) -> void:
+## A new map: no photo stands.
+static func clear() -> void:
 	for n in _nodes.values():
 		if is_instance_valid(n):
 			n.queue_free()
 	_nodes.clear()
+
+
+## The photos of one area (the round's map, an open world's tile) built:
+## those of its user edits that lie in it (main.area_of) - maps cut from one
+## city share their edits. A tile's go with the tile (main.area_node).
+static func apply_area(main: Node, map_id: String) -> void:
 	for p in Edits.read(map_id).get("_photos", []):
-		_build(main, map_id, p)
+		if main.area_of(Vector3(p["pos"][0], p["pos"][1], p["pos"][2])) == map_id:
+			_build(main, map_id, p)
 
 
 ## A new photo from `image_path` (any file on disk) on the wall at `at`
@@ -142,7 +149,7 @@ static func _build(main: Node, map_id: String, p: Dictionary) -> void:
 	mat.albedo_texture = ImageTexture.create_from_image(img)
 	mi.material_override = mat
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	main.add_child(mi)
+	main.area_node(Vector3(p["pos"][0], p["pos"][1], p["pos"][2])).add_child(mi)
 	mi.set_meta("photo", p["id"])
 	# a thin pick box so the editor can click it
 	var body := StaticBody3D.new()

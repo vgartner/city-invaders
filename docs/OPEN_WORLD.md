@@ -176,8 +176,23 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   GPS while it is in (`main.all_places`) and its pharmacies get their green
   cross.
 
-**Not yet**: the map editor's edits (the released game's, and editing a
-tile), the promenade points for the passers-by (`main.crowd` is the map's).
+- **The map editor's edits**: an edit belongs to the area it lies in
+  (`main.area_of`: the tile under the point, else the round's map). The
+  editor reads and writes that area's edits (unsaved edits are kept by file,
+  as a world's tiles share one when playing from the sources), removes a
+  tile's lamp from the tile's own street furniture, parents what it places
+  to the tile, saves every area edited and rebuilds each. A tile coming in
+  applies its own (`main.apply_edits`): its wall photos, and in the released
+  game its placed models and removed objects; its bus shelters placed by
+  hand, its item spots and its place kinds switched off are read by the
+  rules above. Tested as the released game: a shelter placed and a lamp
+  removed in a neighbouring tile went to that tile's file, and after a
+  restart the tile came in with the shelter (a stop of bus line 1) and
+  without the lamp, also after leaving and coming back.
+
+**Not yet**: the promenade points for the passers-by (`main.crowd` is the
+map's); robots shooting a tile's props; a model dragged from one area into
+another keeps its entry in the first.
 
 **The far view** (`tools/map/far_view.py <world>`): every tile gets a light
 model, `<tile>_far.glb` - its buildings as light blocks (footprint, ground,

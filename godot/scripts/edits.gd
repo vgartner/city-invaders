@@ -46,13 +46,17 @@ static func file(map_id: String) -> String:
 
 
 ## Edits made in design mode stay here until File > Save (or the save
-## question when leaving): nothing reaches the disk on its own.
-static var _pending := {}         # map id -> its user edits, not saved yet
+## question when leaving): nothing reaches the disk on its own. Kept by
+## file: maps cut from one city (an open world's tiles) share theirs, so an
+## edit made on one is the others' at once.
+static var _pending := {}         # edits file -> its user edits, not saved yet
+static var touched := {}          # map id -> true: edited this session (the rebuild takes each)
 
 
 static func read(map_id: String) -> Dictionary:
-	if _pending.has(map_id):
-		return (_pending[map_id] as Dictionary).duplicate(true)
+	var f := file(map_id)
+	if _pending.has(f):
+		return (_pending[f] as Dictionary).duplicate(true)
 	return read_saved(map_id)
 
 
@@ -66,25 +70,50 @@ static func read_saved(map_id: String) -> Dictionary:
 
 
 static func write(map_id: String, user: Dictionary) -> void:
-	_pending[map_id] = user.duplicate(true)
+	_pending[file(map_id)] = user.duplicate(true)
+	touched[map_id] = true
 
 
 static func dirty(map_id: String) -> bool:
-	return _pending.has(map_id)
+	return _pending.has(file(map_id))
+
+
+## Unsaved edits on any map (design mode edits every area round the camera).
+static func any_dirty() -> bool:
+	return not _pending.is_empty()
 
 
 static func save(map_id: String) -> void:
-	if _pending.has(map_id):
-		_write_file(map_id, _pending[map_id])
-		_pending.erase(map_id)
+	var f := file(map_id)
+	if _pending.has(f):
+		_write_path(f, _pending[f])
+		_pending.erase(f)
+
+
+static func save_all() -> void:
+	for f in _pending:
+		_write_path(f, _pending[f])
+	_pending.clear()
 
 
 static func discard(map_id: String) -> void:
-	_pending.erase(map_id)
+	_pending.erase(file(map_id))
 
 
-static func _write_file(map_id: String, user: Dictionary) -> void:
+static func discard_all() -> void:
+	_pending.clear()
+
+
+## What was written straight to a map's file (the editor's placed models)
+## also goes into its unsaved edits, or File > Save would write it away.
+static func mirror(map_id: String, key: String, value) -> void:
 	var f := file(map_id)
+	touched[map_id] = true
+	if _pending.has(f):
+		_pending[f][key] = value
+
+
+static func _write_path(f: String, user: Dictionary) -> void:
 	DirAccess.make_dir_recursive_absolute(f.get_base_dir())
 	var fa := FileAccess.open(f, FileAccess.WRITE)
 	if fa:

@@ -169,6 +169,13 @@ paving and rectified photos need the map pipeline, so those tools only show
 when playing from the repository (`edits.gd` decides;
 `CITY_INVADERS_NO_SOURCES=1` plays as the released game does).
 
+**In an open world** an edit belongs to the area it is made in - the
+round's map or the tile under the click (`main.area_of`): it is kept in
+that area's edits, shows there at once (a tile's lamp removed, a model
+placed in the tile and leaving with it), File > Save keeps every area
+edited, and Rebuild rebuilds each of them. A tile applies its own edits
+when it comes in, like the map.
+
 Click a building: its panel shows the OpenStreetMap id, name and
 address. Change its height (a yellow ghost shows the new volume), then:
 

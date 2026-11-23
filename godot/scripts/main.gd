@@ -1446,7 +1446,7 @@ func _place_pickups() -> void:
 		return
 	await wait_for_navmesh()
 	var map := get_world_3d().navigation_map
-	for pk in await pickups_for(map, bounds, 1.0, landmark_pickups, places, user_edits(),
+	for pk in await pickups_for(map, map_id, bounds, 1.0, landmark_pickups, places, user_edits(),
 			func(): return NavigationServer3D.map_get_random_point(map, 1, true),
 			func(at: Vector3, max_m: float): return _reachable_spot(map, at, max_m)):
 		_spawn_pickup(pk[0], pk[1], true, pk[2])
@@ -1465,7 +1465,7 @@ func _place_pickups() -> void:
 ## Only where it can be walked to: `reach` gives the walkable spot within so
 ## many metres of a point, or Vector3.INF. With `frame_ms` the work stops for
 ## a frame whenever it has taken that long (a tile coming in mid-game).
-func pickups_for(map: RID, area: Rect2, share: float, fixed_spots: Array, area_places: Array,
+func pickups_for(map: RID, id: String, area: Rect2, share: float, fixed_spots: Array, area_places: Array,
 		edits: Dictionary, point: Callable, reach: Callable, frame_ms := 0.0) -> Array:
 	var out := []
 	var t0 := Time.get_ticks_usec()
@@ -1521,8 +1521,8 @@ func pickups_for(map: RID, area: Rect2, share: float, fixed_spots: Array, area_p
 			out.append([item, at, true])
 	# items put down by hand in the map editor (by type in its palette)
 	for p in edits.get("_pickups", []):
-		if not area.grow(1.0).has_point(Vector2(p["x"], p["z"])):
-			continue                     # maps cut from one city share their edits: another map's
+		if area_of(Vector3(p["x"], 0, p["z"])) != id:
+			continue                     # maps cut from one city share their edits: another area's
 		var at := NavigationServer3D.map_get_closest_point(map, Vector3(p["x"], p.get("y", 0.0), p["z"]))
 		if p.has("y"):
 			at = Vector3(p["x"], p["y"], p["z"])
@@ -2243,14 +2243,22 @@ func _cross_sign(pl: Dictionary, parent: Node = null) -> void:
 ## the removed objects of the map's user edits.
 func _apply_edits() -> void:
 	await get_tree().physics_frame
-	Photos.apply_all(self, map_id)
+	Photos.clear()
+	apply_edits(map_id, null, props)
+
+
+## The user edits of one area - the round's map, or an open world's tile
+## (`into`: its node, `pr`: its street furniture) - that the game applies
+## itself: what lies in that area.
+func apply_edits(id: String, into: Node, pr: Node) -> void:
+	Photos.apply_area(self, id)
 	if not Edits.runtime():
 		return
-	var user := user_edits()
+	var user := Edits.read(id)
 	var space := get_world_3d().direct_space_state
 	for p in user.get("_props", []):
 		if not p.has("model") or not (FileAccess.file_exists(p["model"]) if String(p["model"]).ends_with(".json") \
-				else ResourceLoader.exists(p["model"])):
+				else ResourceLoader.exists(p["model"])) or area_of(Vector3(p["x"], 0, p["z"])) != id:
 			continue
 		var y: float = p.get("y", 0.0)
 		if not p.has("y"):
@@ -2263,9 +2271,13 @@ func _apply_edits() -> void:
 		for k in ["leisure", "scale", "parts"]:
 			if p.has(k):
 				l[k] = p[k]
+		landmark_into = into
 		_landmark(l)
+		landmark_into = null
 	for at in user.get("_remove", []):
-		props.remove_near(Vector2(at[0], at[1]))
+		if area_of(Vector3(at[0], 0, at[1])) != id:
+			continue
+		pr.call("remove_near", Vector2(at[0], at[1]))
 		for lm in _landmark_nodes:
 			if is_instance_valid(lm) and Vector2(lm.global_position.x, lm.global_position.z).distance_to(Vector2(at[0], at[1])) < 1.0:
 				lm.visible = false
@@ -2659,7 +2671,7 @@ func toggle_design() -> void:
 	var p := _local_player()
 	if p == null or p.dead:
 		return
-	if design and Edits.dirty(map_id) and not _leaving:
+	if design and Edits.any_dirty() and not _leaving:
 		_ask_leave_design()               # unsaved edits: save them first?
 		return
 	if not design and not multiplayer.get_peers().is_empty():
@@ -2747,7 +2759,7 @@ func design_select(from: Vector3, dir: Vector3, additive := false) -> void:
 		q.exclude = [p.get_rid()]
 	var hit := get_world_3d().direct_space_state.intersect_ray(q)
 	if editor_tools and editor_tools.placing != "" and not hit.is_empty():
-		editor_tools.place_at(map_id, hit.position)
+		editor_tools.place_at(area_of(hit.position), hit.position)
 		return
 	if hit.is_empty():
 		if not additive:
@@ -2814,7 +2826,7 @@ func design_select(from: Vector3, dir: Vector3, additive := false) -> void:
 				node = lm
 				what = "object"
 		# a knocked-over bin or lamp has no collision any more
-		for dp in props.destructibles:
+		for dp in props_at(hit.position).get("destructibles"):
 			if dp["broken"]:
 				var d := (dp["root"] as Node3D).global_position.distance_to(hit.position)
 				if d < best_d:
@@ -2867,7 +2879,7 @@ func design_select(from: Vector3, dir: Vector3, additive := false) -> void:
 	elif what == "building":
 		_ensure_editor()
 		map_editor.set("_wall_normal", hit.normal)
-		var b: Dictionary = map_editor.select(map_id, what, hit.position)
+		var b: Dictionary = map_editor.select(area_of(hit.position), what, hit.position)
 		extra = ("%s  %s" % [b["name"], b["id"]]) if not b.is_empty() else String(hit.collider.get_parent().name)
 	if what != "building" and map_editor:
 		map_editor.close()
@@ -2902,9 +2914,9 @@ func design_turn(deg: float) -> bool:
 	if node == null or not is_instance_valid(node) or design_selection["what"] != "object" \
 			or String(node.get_meta("landmark", {}).get("id", "")) != "prop":
 		return false
-	var entry: Dictionary = editor_tools.prop_entry(map_id, node)
+	var entry: Dictionary = editor_tools.prop_entry(area_of(node.global_position), node)
 	var yaw := float(entry.get("yaw", rad_to_deg(node.rotation.y))) + deg
-	editor_tools.update_prop(map_id, node, {"yaw": yaw})
+	editor_tools.update_prop(area_of(node.global_position), node, {"yaw": yaw})
 	_show_selection()
 	return true
 
@@ -2941,7 +2953,7 @@ func design_drag_move(from: Vector3, dir: Vector3) -> void:
 		return
 	var node: Node3D = _drag["node"]
 	if _drag["what"] == "photo":
-		var p := Photos.entry(map_id, String(node.get_meta("photo")))
+		var p := Photos.entry(area_of(node.global_position), String(node.get_meta("photo")))
 		if p.is_empty():
 			return
 		var b := Photos.basis_of(p)
@@ -2984,13 +2996,14 @@ func design_drag_end() -> void:
 		return
 	if d["what"] == "photo":
 		var id := String(node.get_meta("photo"))
-		var p := Photos.entry(map_id, id)
+		var from_area := area_of(d["from"])        # where its entry is kept
+		var p := Photos.entry(from_area, id)
 		var c: Vector3 = node.global_position - Photos.basis_of(p).z * float(p.get("out", 0.06))
-		Photos.update(self, map_id, id, {"pos": [c.x, c.y, c.z]})
+		Photos.update(self, from_area, id, {"pos": [c.x, c.y, c.z]})
 	else:
 		var to := node.global_position
 		node.global_position = d["from"]           # update_prop moves it there and saves
-		editor_tools.update_prop(map_id, node, {"x": snappedf(to.x, 0.01), "z": snappedf(to.z, 0.01)}, d["from"])
+		editor_tools.update_prop(area_of(d["from"]), node, {"x": snappedf(to.x, 0.01), "z": snappedf(to.z, 0.01)}, d["from"])
 		node.global_position = to
 	design_selection["pos"] = node.global_position
 	_show_selection()
@@ -3016,7 +3029,7 @@ func _show_selection() -> void:
 	design_selection = {} if design_selections.is_empty() else design_selections[-1]
 	var last: Dictionary = design_selection
 	if editor_tools:
-		editor_tools.on_selection(map_id, last, last.get("node"))
+		editor_tools.on_selection(area_of(last["pos"]) if last.has("pos") else map_id, last, last.get("node"))
 	if inspector:
 		inspector.show_selection(design_selections)
 	if last.is_empty():
@@ -3074,12 +3087,12 @@ func _ask_leave_design() -> void:
 		add_child(_leave_dialog)
 		_leave_dialog.add_button("Don't save", true, "discard")
 		_leave_dialog.confirmed.connect(func():
-			Edits.save(map_id)
+			Edits.save_all()
 			_leave_design_now())
 		_leave_dialog.custom_action.connect(func(action: StringName):
 			if action == "discard":
 				_leave_dialog.hide()
-				Edits.discard(map_id)
+				Edits.discard_all()
 				if studio_session:
 					edit_phase(map_id)       # back to the map as saved
 				else:
@@ -3087,7 +3100,7 @@ func _ask_leave_design() -> void:
 		_leave_dialog.canceled.connect(func(): Input.mouse_mode = Input.MOUSE_MODE_CAPTURED)
 	if _leave_dialog.visible:
 		return
-	var unsaved := Edits.dirty(map_id)
+	var unsaved := Edits.any_dirty()
 	_leave_dialog.dialog_text = "You have unsaved changes on this map.\nSave them before going back to the game?" \
 			if unsaved else "Leave design mode and go back to the game?"
 	_leave_dialog.ok_button_text = "Save and leave" if unsaved else "Leave"
@@ -4433,7 +4446,7 @@ func refresh_bus_stops() -> void:
 	if road_graph.has("edges"):
 		_map_bus_stops()
 		if is_instance_valid(open_world_node):
-			open_world_node.call("_bus_round")       # with the open tiles' stops
+			open_world_node.call("refresh_stops")    # the tiles' own, and the round with them
 		else:
 			set_bus_round([map_stops])
 
@@ -5133,6 +5146,32 @@ func _landmark_parent() -> Node:
 func _props_here() -> Node:
 	var p: Node = landmark_into.get_node_or_null("Props") if is_instance_valid(landmark_into) else null
 	return p if p != null else props
+
+
+## The area a point is in: the open world's tile there, else the round's
+## map. What the map editor changes at a point belongs to its area (its
+## user edits, its rebuild).
+func area_of(p: Vector3) -> String:
+	if is_instance_valid(open_world_node) and not in_bounds(p):
+		var id: String = open_world_node.call("tile_at", Vector2(p.x, p.z))
+		if id != "":
+			return id
+	return map_id
+
+
+## The node that holds what stands at `p`: its tile while that is in (so it
+## leaves with the tile), else the scene.
+func area_node(p: Vector3) -> Node:
+	var id := area_of(p)
+	var n: Node = open_world_node.call("tile_node", id) if id != map_id else null
+	return n if n != null else self
+
+
+## The street furniture at `p`: its tile's, else the map's.
+func props_at(p: Vector3) -> Node:
+	var n := area_node(p)
+	var pr: Node = n.get_node_or_null("Props") if n != self else null
+	return pr if pr != null else props
 
 
 ## Every street-furniture node standing: the map's and the loaded tiles'.

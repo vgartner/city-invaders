@@ -300,7 +300,7 @@ func remove_node(map_id: String, node: Node3D, what: String) -> bool:
 		# gone now as well (a tree's batched picture too), not only after a rebuild
 		var main := get_tree().current_scene
 		if main.get("props"):
-			main.props.remove_near(Vector2(at.x, at.z))
+			main.props_at(at).call("remove_near", Vector2(at.x, at.z))      # the map's or its tile's
 	_write_user(map_id, user)
 	if is_instance_valid(node) and not node.is_queued_for_deletion():
 		node.visible = false
@@ -408,7 +408,7 @@ func place_at(map_id: String, at: Vector3) -> void:
 		_place_item(map_id, at)
 		return
 	var m: Node3D = (load(placing) as PackedScene).instantiate()
-	get_tree().current_scene.add_child(m)
+	get_tree().current_scene.area_node(at).add_child(m)       # in an open world's tile it goes with the tile
 	m.global_position = at
 	var faced := face_yaw(placing, at)
 	if not is_nan(faced):
@@ -467,7 +467,7 @@ func _place_set(map_id: String, at: Vector3) -> void:
 		# the layout turns clockwise seen from above; Godot's yaw the other way
 		var yaw: float = _yaw - float(inst.get("rotation_degrees", [0, 0, 0])[1])
 		var m: Node3D = (load(path) as PackedScene).instantiate()
-		get_tree().current_scene.add_child(m)
+		get_tree().current_scene.area_node(at).add_child(m)
 		m.global_position = w + Vector3(0, float(p[1]), 0)
 		m.rotation.y = deg_to_rad(yaw)
 		var room: bool = inst.get("category", "") in ["room", "ceiling", "wall", "facade"]
@@ -506,6 +506,7 @@ func _save_props() -> void:
 	var f := FileAccess.open(path, FileAccess.WRITE)
 	f.store_string(JSON.stringify(user, " "))
 	f.close()
+	Edits.mirror(map_id, "_props", props)     # File > Save must not write the file back without them
 
 
 func undo() -> void:
@@ -520,4 +521,5 @@ func undo() -> void:
 		var f := FileAccess.open(path, FileAccess.WRITE)
 		f.store_string(JSON.stringify(user, " "))
 		f.close()
+		Edits.mirror(last[2], "_props", user["_props"])
 	_say("Removed")

@@ -494,6 +494,7 @@ func _furnish(id: String, t: Dictionary, root: Node3D) -> void:
 		worst = maxf(worst, ms)
 		total += ms
 	t["fixed_pickups"] = fixed
+	main.apply_edits(id, root, props)           # its wall photos; in the released game its placed and removed objects
 	t["furnished"] = true
 	for b in (t.get("bursts", {}) as Dictionary).values():      # shops wrecked before the tile left
 		main.wreck_shops(b[0], b[1])
@@ -545,6 +546,20 @@ func _prop_fall(props: Node, index: int, crushable: bool, dir: Vector3) -> void:
 		props.call("knock_over", index, dir)
 	else:
 		props.call("break_prop", index)
+
+
+## The tile `at` (x, z) lies in, "" if none: also one that is not loaded.
+func tile_at(at: Vector2) -> String:
+	for id in tiles:
+		if (tiles[id]["rect"] as Rect2).has_point(at):
+			return id
+	return ""
+
+
+## A tile's node while it is in, else null.
+func tile_node(id: String) -> Node:
+	var t: Dictionary = tiles.get(id, {})
+	return t["node"] if t.get("state", "") == "in" and is_instance_valid(t.get("node")) else null
 
 
 ## The street furniture of the tiles that are in (main.all_props).
@@ -987,7 +1002,7 @@ func _pickups_in(id: String, t: Dictionary, root: Node3D, region: NavigationRegi
 			if q.distance_to(at) < 1.2:
 				return at
 			return q if Vector2(q.x - at.x, q.z - at.z).length() <= max_m and absf(q.y - at.y) <= 3.0 else Vector3.INF
-		var found: Array = await main.pickups_for(map, t["rect"], TILE_PICKUPS, t.get("fixed_pickups", []), t["places"],
+		var found: Array = await main.pickups_for(map, id, t["rect"], TILE_PICKUPS, t.get("fixed_pickups", []), t["places"],
 				Edits.read(id), func(): return NavigationServer3D.region_get_random_point(rid, 1, true), reach, FRAME_MS)
 		if not is_instance_valid(root) or t["node"] != root:
 			return
@@ -1155,7 +1170,8 @@ func _streets_in(id: String, t: Dictionary) -> void:
 			if not edge["oneway"]:
 				t["ways"].append([int(edge["b"]), [i, false]])
 		# its bus stops (the map's rule), its zebra crossings and street names
-		t["stops"] = main.area_stops(Edits.read(id), "res://city/%s.props.json" % id, e0, g["edges"].size(), t["rect"])
+		t["e1"] = g["edges"].size()
+		t["stops"] = main.area_stops(Edits.read(id), "res://city/%s.props.json" % id, e0, t["e1"], t["rect"])
 		var stops := 0
 		for n in t["stops"]["lines"]:
 			stops += t["stops"]["lines"][n].size()
@@ -1169,6 +1185,15 @@ func _streets_in(id: String, t: Dictionary) -> void:
 		(g["out"] as Dictionary).get_or_add(w[0], []).append(w[1])
 	_entries()
 	BusRoutes.invalidate(g)
+	_bus_round()
+
+
+## Map editor: a bus shelter was placed or moved - every tile's stops again.
+func refresh_stops() -> void:
+	for id in tiles:
+		var t: Dictionary = tiles[id]
+		if t.has("e1"):
+			t["stops"] = main.area_stops(Edits.read(id), "res://city/%s.props.json" % id, t["e0"], t["e1"], t["rect"])
 	_bus_round()
 
 

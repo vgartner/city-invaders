@@ -97,7 +97,7 @@ func _refresh_title() -> void:
 	var id: String = _main().get("map_id")
 	for m in _main().all_maps():
 		if m[0] == id:
-			_title.text = "·  " + m[1] + ("  *unsaved" if Edits.dirty(id) else "")
+			_title.text = "·  " + m[1] + ("  *unsaved" if Edits.any_dirty() else "")
 
 
 func _process(_delta: float) -> void:
@@ -107,7 +107,7 @@ func _process(_delta: float) -> void:
 
 ## File > Save: the map's edits go to its user/buildings_user.json.
 func save() -> void:
-	Edits.save(_main().map_id)
+	Edits.save_all()                  # the map's and, in an open world, the tiles' edited
 	set_status("Saved")
 	_refresh_title()
 
@@ -115,10 +115,10 @@ func save() -> void:
 ## File > Discard: back to the saved edits (the phase reloads in design mode).
 func _discard() -> void:
 	var id: String = _main().map_id
-	if not Edits.dirty(id):
+	if not Edits.any_dirty():
 		set_status("Nothing to discard")
 		return
-	Edits.discard(id)
+	Edits.discard_all()
 	_main().edit_phase(id)
 
 
@@ -135,7 +135,7 @@ func _remove_selected() -> void:
 	var main := _main()
 	var n := 0
 	for s in main.design_selections:
-		if _tools().remove_node(main.map_id, s.get("node"), s["what"]):
+		if _tools().remove_node(main.area_of(s["pos"]) if s.has("pos") else main.map_id, s.get("node"), s["what"]):
 			n += 1
 	set_status("Removed %d object(s)" % n)
 	main.design_deselect()

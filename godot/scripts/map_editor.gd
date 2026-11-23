@@ -309,17 +309,22 @@ func _send_josm() -> void:
 func _rebuild() -> void:
 	if not _sel.is_empty():
 		_save()
-	Edits.save(_map)                   # the pipeline reads the saved edits
-	_status.text = "Rebuilding the map... (this takes a minute)"
+	Edits.save_all()                   # the pipeline reads the saved edits
+	# every map edited this session: in an open world the tiles edited, each rebuilt
+	var maps: Array = Edits.touched.keys()
+	if not maps.has(_map):
+		maps.append(_map)
+	_status.text = "Rebuilding %s... (a minute each)" % ("the map" if maps.size() == 1 else "%d maps" % maps.size())
 	await get_tree().process_frame
 	await get_tree().process_frame
 	var repo := repo_dir()
-	var out := []
-	var code := OS.execute(repo.path_join("tools/.venv/bin/python"),
-			[repo.path_join("tools/map/building_photo.py"), "rebuild", _map], out, true)
-	if code != 0:
-		_status.text = "Rebuild failed:\n" + "\n".join(out).right(400)
-		return
+	for id in maps:
+		var out := []
+		var code := OS.execute(repo.path_join("tools/.venv/bin/python"),
+				[repo.path_join("tools/map/building_photo.py"), "rebuild", id], out, true)
+		if code != 0:
+			_status.text = "Rebuild of %s failed:\n" % id + "\n".join(out).right(400)
+			return
 	OS.execute(OS.get_executable_path(), ["--headless", "--path", repo.path_join("godot"), "--import"], [], true)
 	# start again with the same arguments (keeps --devagent), the new map loads
 	OS.set_restart_on_exit(true, OS.get_cmdline_args())

@@ -112,7 +112,7 @@ func _object_page(s: Dictionary) -> void:
 	var node: Node3D = s.get("node")
 	var what: String = s["what"]
 	var main := _main()
-	var map_id: String = main.get("map_id")
+	var map_id: String = main.area_of(node.global_position) if node else main.get("map_id")     # the area it stands in
 	_section(what.capitalize())
 	var lm: Dictionary = node.get_meta("landmark", {}) if node else {}
 	var placed := not lm.is_empty() and String(lm.get("id", "")) == "prop"
@@ -195,7 +195,7 @@ func _object_page(s: Dictionary) -> void:
 ## fit it over the whole side of the building, or change its picture.
 func _photo_page(s: Dictionary) -> void:
 	var main := _main()
-	var map_id: String = main.get("map_id")
+	var map_id: String = main.area_of(s["pos"]) if s.has("pos") else main.get("map_id")
 	var id: String = s["detail"]
 	var p := Photos.entry(map_id, id)
 	if p.is_empty():
@@ -289,7 +289,7 @@ func _many_page(sels: Array) -> void:
 func _remove(sels: Array) -> void:
 	var n := 0
 	for s in sels:
-		if tools.remove_node(_main().get("map_id"), s.get("node"), s["what"]):
+		if tools.remove_node(_main().area_of(s["pos"]) if s.has("pos") else _main().get("map_id"), s.get("node"), s["what"]):
 			n += 1
 	tools._say("Removed %d object(s) - kept out of the map from the next rebuild" % n)
 	_main().design_deselect()
