@@ -775,7 +775,7 @@ func in_world(p: Vector3, margin := 0.0) -> bool:
 		return in_bounds(p, margin)
 	for d in [Vector3.ZERO, Vector3(margin, 0, 0), Vector3(-margin, 0, 0), Vector3(0, 0, margin), Vector3(0, 0, -margin)]:
 		var q: Vector3 = p + d
-		if not ((in_bounds(q) and not home_out) or open_world_node.call("walkable", q, 0.0)):
+		if not ((in_bounds(q) and not home_out and not map_is_tile) or open_world_node.call("walkable", q, 0.0)):
 			return false
 		if margin == 0.0:
 			break
@@ -785,7 +785,7 @@ func in_world(p: Vector3, margin := 0.0) -> bool:
 ## The rectangles people and robots may walk in now: the map (unless it is
 ## out) and the open-world tiles that are in.
 func world_areas() -> Array:
-	var out := [] if home_out else [bounds]
+	var out := [] if home_out or map_is_tile else [bounds]     # (a world's tile is among the open world's)
 	if is_instance_valid(open_world_node):
 		out.append_array(open_world_node.call("areas"))
 	return out
@@ -873,6 +873,7 @@ func enter_map(id: String) -> void:
 			await get_tree().process_frame
 		return
 	map_id = id
+	models_warm = false
 	var label := id
 	for m in all_maps():
 		if m[0] == id:
@@ -882,7 +883,9 @@ func enter_map(id: String) -> void:
 	_load_t0 = Time.get_ticks_usec()
 	await get_tree().process_frame     # let the loading screen paint first
 	await get_tree().process_frame
-	var paths := [_city(".glb"), _city("_collision.glb"), _city("_horizon.glb")].filter(
+	# a world's tile is read and built by the open world, like its neighbours
+	map_is_tile = OpenWorld.world_of(id) != ""
+	var paths := [] if map_is_tile else [_city(".glb"), _city("_collision.glb"), _city("_horizon.glb")].filter(
 			func(p): return ResourceLoader.exists(p))
 	for p in paths:
 		ResourceLoader.load_threaded_request(p)
@@ -910,13 +913,21 @@ func enter_map(id: String) -> void:
 	_load_roads()
 	_load_mark("streets")
 	_set_loading(0.8, "Mapping the streets for robots and people...")
-	_warm_people_request()              # read from disk on threads while the navmesh bakes
+	if not map_is_tile:
+		_warm_people_request()          # read from disk on threads while the navmesh bakes
 	var t := 0.0
 	while not nav_ready:
 		t += get_process_delta_time()
 		_set_loading(0.8 + 0.18 * (1.0 - exp(-t / 4.0)), "Mapping the streets for robots and people...")
 		await get_tree().process_frame
-	_load_mark("navigation mesh: bake (thread)")
+	if map_is_tile:
+		# only now: the start tile is read on the loader's threads too, and
+		# the two sets of threaded loads at once froze the game one start in
+		# five (the main thread waiting for a load that never came)
+		_warm_people_request()
+		while Array(_warm_people).any(func(p): return ResourceLoader.load_threaded_get_status(p) == ResourceLoader.THREAD_LOAD_IN_PROGRESS):
+			await get_tree().process_frame
+	_load_mark("navigation mesh: bake (thread)" if not map_is_tile else "the start tile: read, built, furnished, navigation mesh")
 	await wait_for_navmesh()
 	_load_mark("navigation mesh: taken in by the map")
 	_set_loading(0.96, "Assembling the robots...")
@@ -924,6 +935,7 @@ func enter_map(id: String) -> void:
 	_warm_models()                     # ships and every robot kind loaded (and kept) now
 	for k in Enemy.VARIANTS:
 		Wreck.prepare(Enemy.VARIANTS[k]["model"])     # split into plates now, not at the first kill
+	models_warm = true
 	_load_mark("robots and ships")
 	_set_loading(0.97, "Filling the streets...")
 
@@ -1231,6 +1243,9 @@ func _load_city() -> void:
 	nav_region.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(nav_region)
 	_map_nodes.append(nav_region)
+	if map_is_tile:
+		_load_as_tile()
+		return
 	var packed: PackedScene = load(_city(".glb"))
 	var city := packed.instantiate()
 	city.name = "City"
@@ -1318,20 +1333,7 @@ func _load_city() -> void:
 	_place_containers.call_deferred()
 
 	# street-level navigation mesh for the robots (roofs are unreachable islands)
-	var nm := NavigationMesh.new()
-	nm.geometry_parsed_geometry_type = NavigationMesh.PARSED_GEOMETRY_STATIC_COLLIDERS
-	nm.geometry_collision_mask = 1
-	nm.agent_radius = 0.5
-	nm.agent_height = 2.0
-	nm.agent_max_climb = 0.25
-	# 0.4 m cells, edges simplified to 2 cells: about half the polygons of 0.25 m
-	# (Centro 24,000 -> 12,900) and every path search that much cheaper - the
-	# people's walking goals were the biggest script cost in a play-through
-	nm.cell_size = 0.4
-	nm.cell_height = 0.25
-	nm.edge_max_error = 2.0
-	nm.filter_baking_aabb = AABB(Vector3(bounds.position.x - 10, elev.x - 2, bounds.position.y - 10),
-			Vector3(bounds.size.x + 20, elev.y - elev.x + 6, bounds.size.y + 20))
+	var nm := _navmesh_settings()
 	nav_region.navigation_mesh = nm
 	nav_region.bake_finished.connect(func():
 		# islands nobody can walk to (kiosk roofs, wall tops) go: see OpenWorld.drop_islands
@@ -1451,10 +1453,11 @@ func _place_pickups() -> void:
 		return
 	await wait_for_navmesh()
 	var map := get_world_3d().navigation_map
-	for pk in await pickups_for(map, map_id, bounds, 1.0, landmark_pickups, places, user_edits(),
-			func(): return NavigationServer3D.map_get_random_point(map, 1, true),
-			func(at: Vector3, max_m: float): return _reachable_spot(map, at, max_m)):
-		_spawn_pickup(pk[0], pk[1], true, pk[2])
+	if not map_is_tile:                  # a tile brings its own pickups
+		for pk in await pickups_for(map, map_id, bounds, 1.0, landmark_pickups, places, user_edits(),
+				func(): return NavigationServer3D.map_get_random_point(map, 1, true),
+				func(at: Vector3, max_m: float): return _reachable_spot(map, at, max_m)):
+			_spawn_pickup(pk[0], pk[1], true, pk[2])
 	# the round starts unarmed: a couple of pistols a short walk from the start
 	for k in 2:
 		var near := NavigationServer3D.map_get_closest_point(map,
@@ -1552,7 +1555,7 @@ func _load_places() -> void:
 	places = []
 	if FileAccess.file_exists("res://assets/place_kinds.json"):
 		place_kinds = JSON.parse_string(FileAccess.get_file_as_string("res://assets/place_kinds.json"))
-	places = places_of(_city(".places.json"), user_edits())
+	places = [] if map_is_tile else places_of(_city(".places.json"), user_edits())     # (a tile keeps its own)
 	# the city's collection (the Studio's import window), else Rio Grande do Sul's
 	collection = String(user_edits().get("_collection", "rio_grande_do_sul"))
 	for n in _signs:
@@ -3225,9 +3228,10 @@ func _restart_round() -> void:
 	await get_tree().create_timer(0.5).timeout
 	director.populate()
 	_spawn_civilians(civilians_wanted())
-	_spawn_vendors()
-	_spawn_police()
-	_spawn_leisure_people()
+	if not map_is_tile:
+		_spawn_vendors()
+		_spawn_police()
+		_spawn_leisure_people()
 	if is_instance_valid(open_world_node):
 		open_world_node.call("repopulate")       # the tiles' own people and robots
 
@@ -4177,7 +4181,8 @@ func _ambience() -> void:
 		p.autoplay = true
 		add_child(p)
 		_map_nodes.append(p)
-	_map_nodes.append_array(bird_sounds(_city(".props.json"), self))
+	if not map_is_tile:                  # a tile's greens bring their own
+		_map_nodes.append_array(bird_sounds(_city(".props.json"), self))
 
 
 ## Birdsong where the shrubs and ferns of `props_file` stand (one player per
@@ -4211,6 +4216,12 @@ func bird_sounds(props_file: String, parent: Node) -> Array:
 # ---- pedestrians and traffic (server) -------------------------------------
 
 func _load_roads() -> void:
+	if map_is_tile:
+		# no streets of its own: every tile joins its streets to this graph
+		# when it comes in (open_world._streets_in), the start tile first
+		road_graph = {"nodes": [], "edges": [], "out": {}, "len": [], "crossings": [], "streets": [], "entries": [], "stops": []}
+		map_stops = {}
+		return
 	if not FileAccess.file_exists(_city(".roads.json")):
 		return
 	road_graph = JSON.parse_string(FileAccess.get_file_as_string(_city(".roads.json")))
@@ -4248,10 +4259,11 @@ func _start_world() -> void:
 	await wait_for_navmesh()
 	var map := get_world_3d().navigation_map
 	_spawn_civilians(civilians_wanted())
-	_spawn_vendors()
-	_spawn_police()
-	_spawn_leisure_people()
-	if not road_graph.is_empty():
+	if not map_is_tile:                  # a tile brings its own vendors, officers, people at play and traffic
+		_spawn_vendors()
+		_spawn_police()
+		_spawn_leisure_people()
+	if not road_graph.is_empty() and not map_is_tile:
 		var edges: Array = road_graph["edges"]
 		for k in int(round(TRAFFIC * density())):
 			var ei := (k * 7) % edges.size()
@@ -5085,6 +5097,76 @@ func occluders_of(path: String) -> Array:
 	return out
 
 
+## The navigation mesh's settings (the open world's tiles bake with the same).
+func _navmesh_settings() -> NavigationMesh:
+	var nm := NavigationMesh.new()
+	nm.geometry_parsed_geometry_type = NavigationMesh.PARSED_GEOMETRY_STATIC_COLLIDERS
+	nm.geometry_collision_mask = 1
+	nm.agent_radius = 0.5
+	nm.agent_height = 2.0
+	nm.agent_max_climb = 0.25
+	# 0.4 m cells, edges simplified to 2 cells: about half the polygons of 0.25 m
+	# (Centro 24,000 -> 12,900) and every path search that much cheaper - the
+	# people's walking goals were the biggest script cost in a play-through
+	nm.cell_size = 0.4
+	nm.cell_height = 0.25
+	nm.edge_max_error = 2.0
+	nm.filter_baking_aabb = AABB(Vector3(bounds.position.x - 10, elev.x - 2, bounds.position.y - 10),
+			Vector3(bounds.size.x + 20, elev.y - elev.x + 6, bounds.size.y + 20))
+	return nm
+
+
+## The round's map is a tile of an open world (docs/OPEN_WORLD.md): the open
+## world reads, builds, furnishes and frees it like its neighbours, and this
+## scene builds no city of its own. What stays here is the round: where it
+## starts (the tile's <id>.spawn.json), its bounds as the start area, the
+## goals, the score, the exit. `nav_region` and `props` stay as empty nodes:
+## the default parent of a landmark and the home of the props' effects.
+var map_is_tile := false
+## The people's, robots' and pickups' models are read (enter_map: on threads
+## while the map comes in, collected by _warm_models). Until then nothing
+## that uses them is made: the start tile holds what it brings - a load() on
+## the main thread of a model a thread was still reading froze the game.
+var models_warm := false
+func _load_as_tile() -> void:
+	_kit_mats.clear()
+	for n in _landmark_nodes:
+		if is_instance_valid(n):
+			n.queue_free()
+	_landmark_nodes = []
+	landmark_pickups = []
+	_screens = []
+	_bands = []
+	crowd = []
+	promenades = []
+	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(_city(".spawn.json")))
+	var s: Array = data["spawn"]
+	spawn_point = Vector3(s[0], s[1], s[2])
+	map_half = data.get("half", map_half)
+	var ev: Array = data.get("elev", [0.0, 0.0])
+	elev = Vector2(ev[0], ev[1])
+	var b: Array = data["bounds"]       # [min_x, max_x, min_z, max_z]
+	bounds = Rect2(b[0], b[2], b[1] - b[0], b[3] - b[2])
+	nav_region.navigation_mesh = _navmesh_settings()     # the settings the tiles bake with; nothing is baked here
+	props = Props.new()
+	props.name = "Props"
+	nav_region.add_child(props)
+	props_down = {}
+	if not multiplayer.is_server():
+		want_props_down.rpc_id(1)
+	_load_places()                   # the kinds of places and the collection; the places are the tiles'
+	_ambience()
+	open_world(OpenWorld.world_of(map_id))
+	_load_mark("the round's start, the world's tiles listed")
+	_place_antenna.call_deferred()
+	_place_containers.call_deferred()
+	# the start tile comes in under the loading screen; the round begins on it
+	open_world_node.call("load_now", map_id)
+	while is_instance_valid(open_world_node) and not open_world_node.call("ready_for_round", map_id):
+		await get_tree().process_frame
+	nav_ready = true
+
+
 ## Open-world prototype (open_world.gd, docs/OPEN_WORLD.md): the maps named
 ## (comma separated; or a world, for all its tiles) come in and go out round
 ## the player as tiles next to the round's own map. A round on a tile of a
@@ -5103,7 +5185,7 @@ func open_world(ids: String) -> Dictionary:
 		# a world's name stands for all its tiles but the round's own map
 		var tiles: Array = OpenWorld.world_tiles(id)
 		for tid in (tiles if not tiles.is_empty() else [id]):
-			if tid != map_id and open_world_node.call("add_tile", tid):
+			if (map_is_tile or tid != map_id) and open_world_node.call("add_tile", tid):
 				added.append(tid)
 		if not tiles.is_empty():
 			open_world_node.call("add_far", id)       # the far view (tools/map/far_view.py), if built
@@ -5957,6 +6039,8 @@ func _place_containers() -> void:
 		return
 	await wait_for_navmesh()
 	await get_tree().create_timer(2.0).timeout
+	while not models_warm:               # the container's model is among those still being read
+		await get_tree().process_frame
 	await wait_for_world()
 	for k in int(Difficulty.get_value("containers")):
 		var spot := _container_spot()
@@ -6300,9 +6384,9 @@ func _spawn_civilians(n: int) -> void:
 		if placed >= n:
 			break
 		var pos := NavigationServer3D.map_get_random_point(map, 1, true)
-		if not crowd.is_empty() and randf() < 0.45:      # promenades are busier
-			pos = NavigationServer3D.map_get_closest_point(map, crowd.pick_random())
-		if not in_bounds(pos, 10.0):
+		if not promenades.is_empty() and randf() < 0.45:      # promenades are busier
+			pos = NavigationServer3D.map_get_closest_point(map, promenades.pick_random())
+		if not in_world(pos, 10.0):
 			continue
 		var visible := false
 		for pl in players:

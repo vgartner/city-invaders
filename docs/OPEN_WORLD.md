@@ -255,7 +255,62 @@ client joining after an antenna went down: the same three spots on both,
 the fallen one gone, the next one brought down falling on both, the HUD's
 state the same, the two containers where the host has them, no errors.
 
-**The round's own map leaves too** (`_home_check`, one player). Everything
+**In a world, the round's map is a tile** (`main.map_is_tile`). A round
+started on a tile of a world builds no city in `main.gd`: the open world
+reads, builds, furnishes, populates and frees that tile like its
+neighbours (`main._load_as_tile`, `open_world.load_now`: it comes in under
+the loading screen, before there is a player to be near it). What stays in
+`main` is the round - where it starts (the tile's `spawn.json`), its bounds
+as the start area, goals, score, exit - with `nav_region` and `props` as
+empty nodes (the default parent of a landmark, the home of the props'
+effects) and a road graph that starts empty and takes each tile's streets.
+`main.home_out` says whether the start tile is in; it leaves at 220 m like
+any tile, also with several players (the server keeps the tiles round all
+of them), and comes back as a tile does: its pickups where they were, what
+was shot out lying down, the war machine and the round's own pickups asleep
+meanwhile. A robot of the round left in a tile that goes is freed and the
+Director sends others; a heavy mech or a collector still keeps its tile.
+
+*Density by distance.* What moves follows the players: the round's crowd is
+born anywhere in the loaded world (`_spawn_civilians`, `in_world`), a tile a
+player stands in has a map's traffic (16, with buses) and the others 6
+(`_share`). What stands is brought full - a map's pickups, parked cars,
+officers, pigeon flocks and quero-queros - by the tile a player is in when
+it comes in (the start tile; without the tile's own 14 people and 4 robots
+on top of the round's), and light by the others; a light tile is topped up
+once when a player walks into it (`_fill`: parked cars only where no player
+is within 50 m). Tested: the start tile came in with 92 pickups, 70 pigeons
+and a traffic share of 16, a neighbour with 57 and 21, topped up to 97 and
+79 on entering; 360 m away the start tile left (nodes 20,100 -> 11,200,
+static memory 414 -> 331 MB, draw calls 2,480 -> 650 with two tiles in) and
+came back with its 92 pickups; a host and a client had the same antennas and
+containers (one in a neighbouring tile), and a lamp shot out in a tile lay
+down for the client who joined later.
+
+*Loading.* The start tile takes 4.6 s of the loading screen (read 2.0 s,
+then built, furnished, its mesh read back) - what `_load_city` took for the
+same map. The antennas and the first containers wait until the tiles round
+the start have been looked at once with a player in the scene
+(`open_world.settled`, `_looked`): asked before, "nothing is on its way in"
+was true only because nothing had started.
+
+*A freeze, and what stopped it.* With the start tile on the tile path one
+start in three to ten froze for good a second or two after the round began:
+the main thread waiting for a worker task, worker threads waiting for a
+lock (thread samples; the engine build has no symbols, so the call was
+never named). The published code before did not freeze (0 of 16 starts).
+Two changes together did (0 of 80 starts; either alone still froze, 4 of
+40 and 4 of 64): the tiles' files are read without the loader's sub-threads
+(`load_threaded_request(path)`: a tile read while the main thread loads
+other things is new with the start tile), and the containers and antennas
+are placed after the neighbours are in, as before. The round's models are
+also read only after the start tile is in, and nothing a tile brings is
+made before they are (`main.models_warm`). To check again after a change
+to the start: start the round 40 times through the DevAgent and see that
+the game still answers 25 s after each.
+
+**A map that is no world's tile leaves too** (`_home_check`, one player;
+`--open-world=` on a map played alone, the prototype's first form). Everything
 the round's map built hangs under its navigation region: the city and its
 collision, the street furniture, the landmarks, the occluders. When the
 player is 220 m from its bounds and stands on a tile:
@@ -474,15 +529,17 @@ models and people are still imported lossless and hold 4-6 GB
       `main.reach_from()`. Left for stage 3, with the map's streets going
       through the tile path: the traffic's counts that assume the map's
       edges come first (`_map_edges`, `_map_vehicles`).
-   3. The round's map of a world built through the tile path, `main.gd`
-      keeping the round's state only (goals, score, exit, start); its
-      navigation mesh kept on disk like a tile's. The numbers a tile brings
-      (`TILE_*`: 14 people, 4 robots, half the pickups) and the map's own
-      then become one rule.
-   4. The map's own leave-and-return code (`_home_*`) goes; with several
-      players the server keeps and frees it like any tile.
+   3. *Done* - the round's map of a world comes through the tile path
+      (see "In a world, the round's map is a tile"); its navigation mesh is
+      kept on disk like any tile's; density by distance from the players.
+      With several players the start tile leaves and comes back like the
+      others.
+   4. The map's own leave-and-return code (`_home_*`) is only reached now
+      by a map that is no world's tile with tiles added to it
+      (`--open-world=`); it goes with stage 5.
    5. A map that is no world's tile (the Gasômetro) as a world of one tile:
-      one way to build everything.
+      one way to build everything, and `_load_city`'s own city building
+      goes.
 8. **A tile's files smaller**: 40-90 MB of glb each; the release packages
    know nothing of worlds yet (the menu and the map editor do).
 

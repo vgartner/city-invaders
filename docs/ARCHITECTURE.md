@@ -50,6 +50,17 @@ There are no hand-made scenes: `main.tscn` only holds `main.gd`.
 | `texture_sharing.gd` | Loading-time sharing of byte-identical imported texture payloads in retained scenes and live meshes; the files hashed on worker threads and remembered in `user://texture_hashes.json`; weak caches, no pixel or import changes |
 | `model_library.gd` | Lists the `.glb` models of a folder |
 
+## A round on a map, a round on a world's tile
+
+`main.gd` builds a map played alone itself (`_load_city`: the city, its
+collision, street furniture, landmarks, navigation mesh). A round started on
+a tile of an open world builds none of it: `open_world.gd` brings that tile
+in like its neighbours and `main` keeps only the round (start, goals, score,
+exit) - `main.map_is_tile`, [OPEN_WORLD.md](OPEN_WORLD.md). Code that asks
+about "the map" should ask about areas instead: `in_world`, `world_areas`,
+`area_of`, `props_at`, `all_props`, `all_places`, `trade_counters`,
+`reach_from`.
+
 ## Networking
 
 Server-authoritative ENet (port 24680). The host simulates robots, pedestrians,
