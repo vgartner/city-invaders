@@ -33,4 +33,6 @@ maps/*/facades/commons_clean_contact.png
 
 # the open-world test grid (docs/OPEN_WORLD.md, tools/map/tiles.py): rebuilt, not committed
 godot/city/centro_world*
+# a tile's baked navigation mesh, kept by the game the first time it is played
+godot/city/*.nav.res
 maps/centro_world_*/

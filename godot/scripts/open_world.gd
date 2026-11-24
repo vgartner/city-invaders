@@ -1,15 +1,17 @@
 extends Node
-## Open-world prototype (docs/OPEN_WORLD.md): neighbouring map tiles come in
-## and go out round the player while the round's own map stays as it is.
-## A tile is another map of the same source and frame (res://city/<id>.glb,
+## The open world (docs/OPEN_WORLD.md): the city is made of tiles that come
+## in and go out round the players. A tile is a map (res://city/<id>.glb,
 ## <id>_collision.glb, <id>.spawn.json with its bounds): its meshes, its
 ## collision and a navigation mesh of its own, baked on a thread once it is
-## in and joined to the meshes round it by links across the edge, so people
-## and robots walk over; its street furniture and its landmarks; and its
-## streets, joined to the round's road graph, so traffic drives in and out.
+## in (kept on disk after) and joined to the meshes round it by links across
+## the edge, so people and robots walk over; its street furniture and its
+## landmarks; its streets, joined to the round's road graph, so traffic
+## drives in and out; and who and what it brings (_populate).
 ##
-## A round on a tile of a world (tools/map/tiles.py, <name>.world.json) starts
-## it by itself; or `main.open_world("<id or world>")` (DevAgent `eval`), or
+## Every round is played on tiles: a world's (tools/map/tiles.py,
+## <name>.world.json) with the round's start tile in under the loading
+## screen (load_now), or a map of its own as a world of one tile. More can
+## be added: `main.open_world("<id or world>")` (DevAgent `eval`), or
 ## `-- --open-world=<id or world>`.
 ## Each step is timed (`report()`): reading the files on a loader thread,
 ## building the scene and its collision on a worker thread, and the frame
@@ -27,16 +29,15 @@ const TILE_ROBOTS := 4      # robots on patrol a tile brings
 const TILE_TRAFFIC := 6     # vehicles a tile's streets bring
 const TILE_POLICE := 1      # officers on patrol a tile brings
 const TILE_PARKED := 5      # cars parked at its kerbs a player can drive, at most
-const TILE_PICKUPS := 0.5   # of the map's scattered pickups (main.PICKUP_COUNTS)
+const TILE_PICKUPS := 0.5   # of the scattered pickups of a tile a player is in (main.PICKUP_COUNTS)
 const TILE_FLOCKS := 2      # pigeon flocks on its squares
 const TILE_QUEROS := 2      # pairs of quero-queros on its lawns
 const ROBOT_CLEAR_M := 60.0 # no robot is born nearer a player than this
-const EVEN_S := 1.5         # traffic is evened out between the map and the tiles this often,
+const EVEN_S := 1.5         # traffic is evened out between the tiles this often,
 const EVEN_GAP := 2.5       # when one has this many vehicles over its share and another under,
 const EVEN_CLEAR_M := 100.0 # by moving one no player is this near to a street no player is this near
 const FRAME_MS := 4.0       # street furniture: this much building a frame
-const HOME := "@home"       # the round's own map in the events and the builder
-const HOME_KEEPERS := ["mech", "collector"]   # robots that keep the round's map in: a goal of the round, people aboard
+const KEEPERS := ["mech", "collector"]   # robots of the round that keep their tile in: a goal of the round, people aboard
 
 var main: Node
 var threaded := true        # false: build on the main thread (to compare the hitch)
@@ -45,11 +46,8 @@ var tiles := {}             # id -> {rect, state, node, task, t0, ...}
 var events: Array = []      # [{id, what, ms}, ...] in order
 var _since := 0.0
 var _even := 0.0
-var _map_edges := -1        # how many of the road graph's edges are the round's map's
-var _map_vehicles := -1     # the vehicles of the round's map, parked ones too, before any tile's
 var _walls: StaticBody3D
-var home := {}              # the round's own map, which leaves and comes back like a tile (_home_check)
-var far := {}               # tile id (HOME for the round's map) -> its far model (tools/map/far_view.py)
+var far := {}               # tile id -> its far model (tools/map/far_view.py)
 var _jobs: Array[int] = []  # worker tasks after a bake, waited for when done (_reap) or when the world goes
 var _baking: Array[NavigationMesh] = []    # meshes the navigation server is baking
 
@@ -90,9 +88,8 @@ func add_far(world: String) -> int:
 	if data.has("far"):
 		ids.append(String(data["far"]))
 	for id in ids:
-		var key: String = HOME if id == main.map_id and not main.map_is_tile else id
 		var path := "res://city/%s.glb" % (id if id == data.get("far", "") else id + "_far")
-		if far.has(key) or not ResourceLoader.exists(path):
+		if far.has(id) or not ResourceLoader.exists(path):
 			continue
 		var node: Node3D = (load(path) as PackedScene).instantiate()
 		node.name = "Far_" + id
@@ -101,7 +98,7 @@ func add_far(world: String) -> int:
 			if mi is MeshInstance3D:
 				_far_windows(mi as MeshInstance3D)
 		add_child(node)
-		far[key] = node
+		far[id] = node
 		n += 1
 	_far_update()
 	return n
@@ -141,22 +138,20 @@ func _far_windows(mi: MeshInstance3D) -> void:
 ## promenade points people stroll to are those of what is in.
 var _walks_of := ""
 func _far_update() -> void:
-	var here := str(main.home_out)
+	var here := ""
 	for id in tiles:
 		if tiles[id]["state"] == "in":
-			here += id
+			here += id + " "
 	if here != _walks_of:                       # what is in changed
 		_walks_of = here
-		var walks: Array = [] if main.home_out else (main.crowd as Array).duplicate()
+		var walks: Array = []
 		for t in tiles.values():
 			if t["state"] == "in":
 				walks.append_array(t.get("crowd", []))
 		main.promenades = walks
 	for key in far:
 		var node: Node3D = far[key]
-		if key == HOME:
-			node.visible = not home.is_empty() and home["state"] != "in"
-		elif tiles.has(key):
+		if tiles.has(key):
 			node.visible = tiles[key]["state"] != "in"
 		else:
 			node.visible = true                  # the ring round the world
@@ -167,39 +162,43 @@ func add_tile(id: String) -> bool:
 	if tiles.has(id) or not FileAccess.file_exists(spawn) or not ResourceLoader.exists(_glb(id)):
 		return false
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(spawn))
-	var b: Array = data["bounds"]       # [min_x, max_x, min_z, max_z]
 	var ev: Array = data.get("elev", [0.0, 0.0])
 	var crowd := []                     # promenade points, stored [x, z, y]
 	for c in data.get("crowd", []):
 		crowd.append(Vector3(c[0], c[2] if c.size() > 2 else 0.0, c[1]))
-	tiles[id] = {"rect": Rect2(b[0], b[2], b[1] - b[0], b[3] - b[2]), "state": "out", "node": null,
+	tiles[id] = {"rect": bounds_of(data), "state": "out", "node": null,
 			"nav": false, "elev": Vector2(ev[0], ev[1]), "foreign": data.get("foreign", []), "crowd": crowd}
 	_edge_walls()
-	# the round's map draws its own far ground and towers where the tiles are
+	# a map of its own draws its far ground and towers where more tiles would be
 	var horizon := main.get_node_or_null("Horizon") as Node3D
-	if horizon:
+	if horizon and tiles.size() > 1:
 		horizon.visible = false
 	return true
+
+
+## A map's rectangle from its <id>.spawn.json: "bounds" [min_x, max_x, min_z,
+## max_z], or a square of "half" round the origin.
+static func bounds_of(data: Dictionary) -> Rect2:
+	if data.has("bounds"):
+		var b: Array = data["bounds"]
+		return Rect2(b[0], b[2], b[1] - b[0], b[3] - b[2])
+	var half := float(data.get("half", 150.0))
+	return Rect2(-half, -half, half * 2.0, half * 2.0)
 
 
 func report() -> Dictionary:
 	var states := {}
 	for id in tiles:
 		states[id] = tiles[id]["state"]
-	if not home.is_empty():
-		states[HOME] = home["state"]
 	return {"tiles": states, "events": events, "threaded": threaded}
 
 
-## People, robots and vehicles in each tile now, and in the round's map
-## ("map"); "driving": the vehicles with their own driver aboard.
+## People, robots and vehicles in each tile now; "driving": the vehicles
+## with their own driver aboard.
 func census() -> Dictionary:
 	var out := {}
-	var rects := {"map": main.bounds}
 	for id in tiles:
-		rects[id] = tiles[id]["rect"]
-	for id in rects:
-		var r: Rect2 = rects[id]
+		var r: Rect2 = tiles[id]["rect"]
 		var n := [0, 0, 0, 0]
 		for k in 3:
 			for c in ([main.civilians_root, main.enemies_root, main.traffic_root][k] as Node).get_children():
@@ -231,7 +230,6 @@ func _process(dt: float) -> void:
 					WorkerThreadPool.wait_for_task_completion(t["task"])
 					_note(id, "build (worker thread)", t["t0"])
 					_enter(id, t)
-	_home_poll()
 	_reap()
 	_bring()
 	var cam := get_viewport().get_camera_3d()
@@ -247,7 +245,7 @@ func _process(dt: float) -> void:
 		_even_traffic()
 	var p := Vector2(cam.global_position.x, cam.global_position.z)
 	_looked = true
-	_home_check(cam.global_position)
+	main.home_out = tiles.get(main.map_id, {}).get("state", "") != "in"
 	_far_update()
 	var others := _others()
 	for id in tiles:
@@ -255,7 +253,7 @@ func _process(dt: float) -> void:
 		var d := _distance(t["rect"], p)
 		for q in others:
 			d = minf(d, _distance(t["rect"], q))
-		if t["state"] == "in" and main.map_is_tile and not (t.get("full", false) and t.get("birds_full", false)) and _near(id):
+		if t["state"] == "in" and not (t.get("full", false) and t.get("birds_full", true)) and _near(id):
 			_fill(id, t)
 		if t["state"] == "in" and not t.get("streets", false):
 			_streets_in(id, t)
@@ -267,7 +265,7 @@ func _process(dt: float) -> void:
 			t["paths"] = _files(id)
 			for path in t["paths"]:
 				ResourceLoader.load_threaded_request(path)
-		elif t["state"] == "in" and d > UNLOAD_M:
+		elif t["state"] == "in" and d > UNLOAD_M and tiles.size() > 1:     # (a map of its own stays)
 			if not _vacate(t):
 				continue                       # a robot of the round is in it: the tile stays
 			var t0 := Time.get_ticks_usec()
@@ -373,9 +371,11 @@ func _poll_loading(id: String, t: Dictionary) -> void:
 
 
 ## The tile's scene with its collision, not yet in the tree (so a worker
-## thread may build it): the same rules as main.gd _load_city.
+## thread may build it): every mesh of the city gets its triangle collision
+## but what is only looked at (main.VISUAL_ONLY when the map has its own
+## sidewalk collision, NO_COLLISION); roofs on their own layer.
 func _build(id: String) -> void:
-	var t: Dictionary = home if id == HOME else tiles[id]
+	var t: Dictionary = tiles[id]
 	var scenes: Array = t["scenes"]
 	var root := Node3D.new()
 	root.name = "Tile_" + id
@@ -404,9 +404,8 @@ func _build(id: String) -> void:
 		var shape: Shape3D = (cs as CollisionShape3D).shape
 		if shape is ConcavePolygonShape3D:
 			(shape as ConcavePolygonShape3D).backface_collision = true
-	if id != HOME:                              # the map's stay with it
-		for oi in main.occluders_of("res://city/%s.occluders.json" % id):
-			root.add_child(oi)
+	for oi in main.occluders_of("res://city/%s.occluders.json" % id):
+		root.add_child(oi)
 	t["node"] = root
 	t["top"] = top
 	t.erase("scenes")
@@ -435,16 +434,15 @@ func _enter(id: String, t: Dictionary) -> void:
 
 
 ## Every peer: the tile's pigeons on its squares, quero-queros on its lawns
-## and birdsong in its greens, as the round's map has (seeded by the tile's
-## id: the same on every peer). Local and visual; they go with the tile.
+## and birdsong in its greens (seeded by the tile's id: the same on every
+## peer). Local and visual; they go with the tile.
 func _wildlife(id: String, t: Dictionary, root: Node3D) -> void:
 	if not extras:
 		return
 	var t0 := Time.get_ticks_usec()
 	var worst := 0.0
-	var full: bool = main.map_is_tile and _near(id)     # a player's tile: a map's flocks and pairs
-	if full:
-		t["birds_full"] = true
+	var full := _near(id)                       # a player's tile: all its flocks and pairs
+	t["birds_full"] = full                      # (decided here: _fill tops up only what came in light)
 	var steps := [
 		func(): main.pigeons_at(t.get("crowd", []), id, main.FLOCKS if full else TILE_FLOCKS, root),
 		func(): main.queros_at(t["rect"], id, int(main.Pigeon.quero_def().get("pairs", 5)) if full else TILE_QUEROS, root),
@@ -469,9 +467,8 @@ func _wildlife(id: String, t: Dictionary, root: Node3D) -> void:
 
 
 ## The tile's street furniture (<id>.props.json: trees, lamps, signs, benches)
-## and its landmarks and shops (<id>.landmarks.json, <id>.shells.json), built
-## the way the round's map builds its own, a few per frame. They are scenery
-## with collision: a tile's lamp cannot be shot out or knocked over.
+## and its landmarks and shops (<id>.landmarks.json, <id>.shells.json), a
+## few per frame, then the map editor's edits (main.apply_edits).
 func _furnish(id: String, t: Dictionary, root: Node3D) -> void:
 	var t0 := Time.get_ticks_usec()
 	var props: Node3D = main.Props.new()
@@ -510,7 +507,7 @@ func _furnish(id: String, t: Dictionary, root: Node3D) -> void:
 			main._shell(item[1])
 		main.landmark_into = null
 		main.trimesh_defer = false
-		# the list is the map's: what this landmark added is the tile's (taken
+		# the list is the scene's: what this landmark added is the tile's (taken
 		# at once - another tile may be adding its own between two frames)
 		fixed.append_array(main.landmark_pickups.slice(n0))
 		main.landmark_pickups.resize(n0)
@@ -570,6 +567,37 @@ func load_now(id: String) -> void:
 func ready_for_round(id: String) -> bool:
 	var t: Dictionary = tiles.get(id, {})
 	return t.is_empty() or t["state"] == "failed" or (t["state"] == "in" and t.get("nav", false) and t.get("furnished", false))
+
+
+## DevAgent / Studio (main.reload_objects): the street furniture and the
+## landmarks of every tile that is in, built again from their files (a model
+## changed and imported again); on the server the vendors come back to their
+## stalls. The ground and the navigation mesh stay. Returns the pieces of
+## street furniture standing.
+func refurnish() -> int:
+	var n := 0
+	for id in tiles.keys():
+		var t: Dictionary = tiles[id]
+		var root := t.get("node") as Node3D
+		if t["state"] != "in" or not t.get("furnished", false) or not is_instance_valid(root):
+			continue
+		if is_instance_valid(t.get("props")):
+			(t["props"] as Node).name = "PropsGoing"
+			(t["props"] as Node).queue_free()
+		for lm in main._landmark_nodes.duplicate():
+			if not is_instance_valid(lm) or root.is_ancestor_of(lm):
+				main._landmark_nodes.erase(lm)
+				if is_instance_valid(lm):
+					lm.queue_free()
+		t.erase("furnished")
+		await _furnish(id, t, root)
+		if not is_instance_valid(root) or t.get("node") != root:
+			continue
+		n += (t["props"] as Node).get_child_count()
+		if multiplayer.is_server():
+			for data in main.vendor_spawns("res://city/%s.props.json" % id):
+				_later(id, root, func(): main.spawn_civilian(data))
+	return n
 
 
 ## The tile `at` (x, z) lies in, "" if none: also one that is not loaded.
@@ -655,9 +683,9 @@ func settled() -> bool:
 		return false                            # not yet looked round a player: nothing is on its way in *yet*
 	for id in tiles:
 		var t: Dictionary = tiles[id]
-		if t["state"] in ["loading", "building", "entering"] or (t["state"] == "in" and not t["nav"]):
+		if t["state"] in ["loading", "building"] or (t["state"] == "in" and not t["nav"]):
 			return false
-	return home.is_empty() or home["state"] in ["in", "out", "failed"]
+	return true
 
 
 ## The tiles people can walk in now, as rectangles.
@@ -669,9 +697,9 @@ func areas() -> Array:
 	return out
 
 
-## Things of the round standing where a tile or the map goes out (a people
-## container, an antenna; in the map also who and what is in it) sleep in
-## place - hidden, stopped, out of the physics - until it is back.
+## Things of the round standing where a tile goes out (a people container,
+## an antenna, the war machine, the round's own pickups) sleep in place -
+## hidden, stopped, out of the physics - until it is back.
 func _sleep(nodes: Array, area: Rect2) -> Array:
 	var asleep := []
 	for n in nodes:
@@ -869,7 +897,7 @@ func _exit_tree() -> void:
 		while NavigationServer3D.is_baking_navigation_mesh(nm) and Time.get_ticks_msec() - t0 < 10000:
 			OS.delay_msec(5)
 	_baking.clear()
-	for t in tiles.values() + [home]:
+	for t in tiles.values():
 		if t.get("state", "") == "building" and t.has("task"):
 			WorkerThreadPool.wait_for_task_completion(t["task"])
 			t["state"] = "out"
@@ -947,8 +975,7 @@ func _baked(id: String, root_id: int, nm: NavigationMesh, t1: int, went: Vector2
 		_populate(id, root, region)
 
 
-## Server: who and what a tile brings, as the round's map has its own -
-## passers-by, an officer on patrol, the vendors at its stalls, the people
+## Server: who and what a tile brings - passers-by, an officer on patrol, the vendors at its stalls, the people
 ## at its pitches and playgrounds, someone waiting at each bus stop, cars
 ## parked at its kerbs that can be driven, its robots on patrol and its
 ## pickups. Each is one thing to make (_later): a character or a car costs
@@ -957,16 +984,16 @@ func _baked(id: String, root_id: int, nm: NavigationMesh, t1: int, went: Vector2
 func _populate(id: String, root: Node3D, region: NavigationRegion3D, again := false) -> void:
 	var t: Dictionary = tiles[id]
 	var rid := region.get_rid()
-	var full: bool = main.map_is_tile and _near(id)     # a player's tile: a map's numbers
+	var full := _near(id)                       # a player's tile: the full numbers
 	if full:
 		t["full"] = true
 	var walks: Array = t.get("crowd", []) if extras else []
-	# (the tile the round starts in has the round's own crowd and the
-	# Director's robots, as a map played alone: none of the tile's on top)
+	# (a tile a player is in has the round's own crowd and the Director's
+	# robots: none of the tile's on top)
 	for k in (0 if full else TILE_PEOPLE):
 		_later(id, root, func():
 			var at := NavigationServer3D.region_get_random_point(rid, 1, true)
-			if not walks.is_empty() and randf() < 0.45:      # promenades are busier, as in the map
+			if not walks.is_empty() and randf() < 0.45:      # promenades are busier
 				at = NavigationServer3D.region_get_closest_point(rid, walks.pick_random())
 			if at != Vector3.ZERO:
 				main.spawn_civilian({"pos": at + Vector3(0, 0.1, 0), "model": main.Civilian.pick()}))
@@ -982,9 +1009,10 @@ func _populate(id: String, root: Node3D, region: NavigationRegion3D, again := fa
 				main.spawn_civilian({"pos": at + Vector3(0, 0.1, 0), "model": officers.pick_random()}))
 	for data in main.vendor_spawns("res://city/%s.props.json" % id) + main.leisure_spawns(root):
 		_later(id, root, func(): main.spawn_civilian(data))
-	for n in (t.get("stops", {}).get("lines", {}) as Dictionary):
-		for stop in t["stops"]["lines"][n]:
-			_later(id, root, func(): main._spawn_waiting(Vector3(stop[1], 0, stop[2]), main.get_world_3d().navigation_map))
+	for k in (main.WAITING_PER_STOP if full else 1):
+		for n in (t.get("stops", {}).get("lines", {}) as Dictionary):
+			for stop in t["stops"]["lines"][n]:
+				_later(id, root, func(): main._spawn_waiting(Vector3(stop[1], 0, stop[2]), main.get_world_3d().navigation_map))
 	var away := []                              # a car a player drove off is not made again
 	for v in main.traffic_root.get_children():
 		if v.get_meta("tile_parked", "") == id and not v.is_queued_for_deletion():
@@ -997,12 +1025,14 @@ func _populate(id: String, root: Node3D, region: NavigationRegion3D, again := fa
 
 
 ## A player walked into a tile that came in with the lighter numbers: it is
-## topped up to a map's - more officers, parked cars (not where a player
+## topped up to the full ones - more officers, parked cars (not where a player
 ## would see them appear), pickups; on every peer more pigeons and
 ## quero-queros. Once: it stays full until it leaves.
 func _fill(id: String, t: Dictionary) -> void:
 	var root: Node3D = t["node"]
-	if extras and not t.get("birds_full", false) and t.get("furnished", false):
+	if extras and t.get("birds_full", true) == false:
+		# (not before _wildlife brought the first: a client with a player
+		# already in the tile had both the full flocks and the top-up)
 		t["birds_full"] = true
 		main.pigeons_at(t.get("crowd", []), id + "+", main.FLOCKS - TILE_FLOCKS, root)
 		main.queros_at(t["rect"], id + "+", int(main.Pigeon.quero_def().get("pairs", 5)) - TILE_QUEROS, root)
@@ -1031,10 +1061,10 @@ func _fill(id: String, t: Dictionary) -> void:
 	_more_pickups(id, t, root, rid)
 
 
-## Server: the rest of a map's scattered pickups for a tile topped up (_fill).
+## Server: the rest of the scattered pickups for a tile topped up (_fill).
 func _more_pickups(id: String, t: Dictionary, root: Node3D, rid: RID) -> void:
 	if t.get("pickups_full", false):
-		return                                  # it has a map's share already (this round: also after it left and came back)
+		return                                  # it has them all already (this round: also after it left and came back)
 	t["pickups_full"] = true
 	var reach := func(at: Vector3, _max_m: float) -> Vector3: return at     # a point of the tile's own mesh
 	var more: Array = await main.pickups_for(main.get_world_3d().navigation_map, id, t["rect"], 1.0 - TILE_PICKUPS, [], [], {},
@@ -1081,8 +1111,7 @@ func _bring() -> void:
 			break
 
 
-## Server: the tile's pickups, as the round's map has its own
-## (main.pickups_for): worked out the first time it comes in a round and
+## Server: the tile's pickups (main.pickups_for): worked out the first time it comes in a round and
 ## kept, so each comes back where it was; they leave with the tile. A spot
 ## can be walked to when the tile's own mesh reaches it - what nobody can
 ## reach was dropped from it (drop_islands) - whichever neighbours are in.
@@ -1131,6 +1160,16 @@ func pickup_point(pk: Node, avoid: Vector3) -> Vector3:
 		t["pickups"][int(pk.get_meta("spot"))][1] = pos
 		return pos
 	return avoid
+
+
+## The fixed items of the landmarks of the tiles that are in, [kind,
+## position] (DevAgent nav_probe).
+func fixed_pickups() -> Array:
+	var out := []
+	for t in tiles.values():
+		if t["state"] == "in":
+			out.append_array(t.get("fixed_pickups", []))
+	return out
 
 
 ## The places of the tiles that are in (main.all_places).
@@ -1234,8 +1273,6 @@ func _streets_in(id: String, t: Dictionary) -> void:
 			return
 		var t0 := Time.get_ticks_usec()
 		var tg: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
-		if _map_edges < 0:
-			_map_edges = g["edges"].size()
 		var e0: int = g["edges"].size()
 		t["e0"] = e0
 		var nodes: Array = g["nodes"]
@@ -1265,7 +1302,7 @@ func _streets_in(id: String, t: Dictionary) -> void:
 			t["ways"].append([int(edge["a"]), [i, true]])
 			if not edge["oneway"]:
 				t["ways"].append([int(edge["b"]), [i, false]])
-		# its bus stops (the map's rule), its zebra crossings and street names
+		# its bus stops (main.area_stops), its zebra crossings and street names
 		t["e1"] = g["edges"].size()
 		t["stops"] = main.area_stops(Edits.read(id), "res://city/%s.props.json" % id, e0, t["e1"], t["rect"])
 		var stops := 0
@@ -1293,13 +1330,13 @@ func refresh_stops() -> void:
 	_bus_round()
 
 
-## The buses' round (main.set_bus_round): the map's stops while the map is
-## in, and those of the tiles whose streets are open.
+## The buses' round (main.set_bus_round): the stops of the tiles whose
+## streets are open.
 func _bus_round() -> void:
 	var g: Dictionary = main.road_graph
 	if not g.has("edges"):
 		return
-	var sets := [main.map_stops] if _map_open() and not (main.map_stops as Dictionary).is_empty() else []
+	var sets := []
 	for t in tiles.values():
 		if t.get("streets", false) and t.has("stops"):
 			sets.append(t["stops"])
@@ -1326,7 +1363,7 @@ func _streets_out(t: Dictionary) -> void:
 
 
 ## Where traffic drives in: the dead ends of the streets open now, at the edge
-## of what is loaded (the same rule as main._load_roads, with the tiles).
+## of what is loaded.
 func _entries() -> void:
 	var g: Dictionary = main.road_graph
 	var open := {}                               # edge -> true: a way leads onto it
@@ -1348,12 +1385,11 @@ func _entries() -> void:
 	g["entries"] = entries
 
 
-## In the map or a tile whose streets are open, `margin` from the edge of
-## their union (a point on the seam between two of them is inside).
+## In a tile whose streets are open, `margin` from the edge of their union (a point on the seam between two of them is inside).
 func _inside(p: Vector2, margin: float) -> bool:
 	for d in [Vector2(margin, 0), Vector2(-margin, 0), Vector2(0, margin), Vector2(0, -margin)]:
 		var q: Vector2 = p + d
-		var found: bool = _map_open() and main.in_bounds(Vector3(q.x, 0.0, q.y))
+		var found := false
 		for id in tiles:
 			if found:
 				break
@@ -1372,20 +1408,10 @@ func _moving() -> Array:
 	return out
 
 
-## The moving traffic of the round's map while its streets are open.
-func _map_share() -> int:
-	return int(round(main.TRAFFIC * main.density())) if _map_open() else 0
-
-
-## The round's map has streets of its own that are open: never when it is a
-## world's tile (main.map_is_tile), which is among `tiles`.
-func _map_open() -> bool:
-	return not main.map_is_tile and home.get("streets", true)
-
-
-## A tile a player stands in (or the round starts in) is as full as a map
-## played alone - its traffic, officers, parked cars, pickups, birds; the
-## tiles round it bring the lighter TILE_* numbers.
+## A tile a player stands in (or the round starts in) is full - its
+## traffic, officers, parked cars, pickups, birds by the numbers in main,
+## which grow with the start tile's size (main.density); the tiles round it
+## bring the lighter TILE_* numbers.
 func _near(id: String) -> bool:
 	var r: Rect2 = tiles[id]["rect"]
 	var players: Array = main.players_root.get_children()
@@ -1394,14 +1420,14 @@ func _near(id: String) -> bool:
 	return players.any(func(pl): return r.has_point(Vector2((pl as Node3D).global_position.x, (pl as Node3D).global_position.z)))
 
 
-## The moving traffic a tile should hold: a map's where a player is, else TILE_TRAFFIC.
+## The moving traffic a tile should hold: main.TRAFFIC where a player is, else TILE_TRAFFIC.
 func _share(id: String) -> int:
-	return int(round(main.TRAFFIC * main.density())) if main.map_is_tile and _near(id) else TILE_TRAFFIC
+	return int(round(main.TRAFFIC * main.density())) if _near(id) else TILE_TRAFFIC
 
 
-## Traffic the loaded world should hold: the map's, and each open tile's.
+## Traffic the loaded world should hold: each open tile's.
 func _traffic_wanted() -> int:
-	var n := _map_share()
+	var n := 0
 	for id in tiles:
 		if tiles[id].get("streets", false):
 			n += _share(id)
@@ -1409,17 +1435,14 @@ func _traffic_wanted() -> int:
 
 
 ## Server: traffic left to itself gathers where the one-way streets lead and
-## thins out elsewhere (most of all in the round's map, which the tiles'
-## streets drain). Each area - the map, each tile with its streets open - has
-## its share of the moving traffic (16 to 6); when one is EVEN_GAP over it and
-## another as much under, a vehicle of the first that no player is near starts
-## again on a street of the second that no player is near.
+## thins out elsewhere. Each tile with its streets open has its share of the
+## moving traffic (16 where a player is, 6 elsewhere); when one is EVEN_GAP
+## over it and another as much under, a vehicle of the first that no player
+## is near starts again on a street of the second that no player is near.
 func _even_traffic() -> void:
-	if not multiplayer.is_server() or _map_edges < 0 or not main._round_live:
+	if not multiplayer.is_server() or not main._round_live:
 		return
 	var areas := []
-	if _map_open():
-		areas.append({"rect": main.bounds, "want": float(_map_share()), "ways": [], "have": [], "map": true})
 	for id in tiles:
 		if tiles[id].get("streets", false) and not (tiles[id]["ways"] as Array).is_empty():
 			areas.append({"rect": tiles[id]["rect"], "want": float(_share(id)), "ways": tiles[id]["ways"], "have": []})
@@ -1457,12 +1480,7 @@ func _even_traffic() -> void:
 		if v.get("kind") == "bus" or not clear.call((v as Node3D).global_position.x, (v as Node3D).global_position.z):
 			continue
 		for attempt in 8:
-			var way: Array
-			if least.has("map"):
-				var i: int = randi() % _map_edges
-				way = [i, g["edges"][i]["oneway"] or randf() < 0.5]
-			else:
-				way = (least["ways"] as Array).pick_random()[1]
+			var way: Array = (least["ways"] as Array).pick_random()[1]
 			var pts: Array = g["edges"][way[0]]["pts"]
 			var mid: Array = pts[pts.size() / 2]
 			if clear.call(mid[0], mid[1]):
@@ -1478,16 +1496,17 @@ func _traffic_in(t: Dictionary) -> void:
 		return
 	t["cars"] = true
 	var g: Dictionary = main.road_graph
-	if _map_vehicles < 0:
-		_map_vehicles = main.traffic_root.get_child_count()
-	# vehicles their drivers ran from stay in the map: they count, or every
-	# tile coming in after a fight would add to them without end
-	var room: int = _map_vehicles + _traffic_wanted() - _map_share() - main.traffic_root.get_child_count() \
-			+ main.traffic_root.get_children().filter(func(v): return v.has_meta("tile_parked")).size()   # the tiles' parked cars are not traffic
-	room -= _cars_coming                        # those other tiles are still bringing
+	# vehicles their drivers ran from stay where they are and count, or every
+	# tile coming in after a fight would add to them without end; the parked
+	# cars and the war machine are not traffic
+	var have := 0
+	for v in main.traffic_root.get_children():
+		if not v.has_meta("tile_parked") and v.get("kind") != "harvester":
+			have += 1
+	var room: int = _traffic_wanted() - have - _cars_coming     # (those other tiles are still bringing)
 	var id: String = tiles.find_key(t)
-	var full: bool = _share(id) > TILE_TRAFFIC     # a player's tile: a map's traffic, buses too
-	for k in mini(mini(_share(id), room), _traffic_wanted() - _moving().size() - _cars_coming):
+	var full: bool = _share(id) > TILE_TRAFFIC     # a player's tile: the full traffic, buses too
+	for k in mini(_share(id), room):
 		var way: Array = ways.pick_random()[1]
 		var model: int = main.Car.pick()
 		while (main.Car.kind_of(main.Car.MODELS[model]) == "bus" and not full) \
@@ -1515,7 +1534,7 @@ func _vacate(t: Dictionary) -> bool:
 		if area.has_point(Vector2((e as Node3D).global_position.x, (e as Node3D).global_position.z)):
 			# a goal of the round or people aboard keeps the tile; another
 			# robot of the round goes and the Director sends others
-			if not e.has_meta("tile") and (e.get("kind") in HOME_KEEPERS or not main.map_is_tile):
+			if not e.has_meta("tile") and e.get("kind") in KEEPERS:
 				return false
 			robots.append(e)
 	var traffic := []
@@ -1556,200 +1575,13 @@ func _vacate(t: Dictionary) -> bool:
 	return true
 
 
-## The round's own map as a tile. Everything it built hangs under its
-## navigation region (main._load_city): the city and its collision, the
-## street furniture, the landmarks, the occluders. When the player is
-## UNLOAD_M away and stands on a tile, the map goes: the city's meshes and
-## collision are freed (the memory), the rest is put to sleep where it is -
-## hidden, out of the physics, its navigation mesh off - with the people,
-## the vehicles and the pickups in it, and its streets close like a tile's.
-## The round's state lives outside it (main: goals, score, the exit, the
-## Director's robots), so nothing of the round is lost. At LOAD_M the city
-## is read and built on threads like a tile, and all of it wakes up as it
-## was: no navigation mesh is baked again, a lamp shot out stays out.
-## The round's robots left in it are not the map's: they go, and the
-## Director sends others where the player is - but a heavy mech (a goal of
-## the round) or a collector (people aboard) keeps the map in. One player
-## only (the server's): with more, the map stays.
-func _home_check(at: Vector3) -> void:
-	if main.map_is_tile:
-		# the round's map is one of `tiles`: main only needs to know whether it is in
-		main.home_out = tiles.get(main.map_id, {}).get("state", "") != "in"
-		return
-	if home.is_empty():
-		home = {"state": "in", "streets": true, "asleep": []}
-	var d := _distance(main.bounds, Vector2(at.x, at.z))
-	if home["state"] == "in" and d > UNLOAD_M and _home_may_leave(at):
-		_home_out()
-	elif home["state"] == "out" and d < LOAD_M:
-		home["state"] = "loading"
-		home["t0"] = Time.get_ticks_usec()
-		home["paths"] = [main._city(".glb")]
-		if ResourceLoader.exists(main._city("_collision.glb")):
-			home["paths"].append(main._city("_collision.glb"))
-		for path in home["paths"]:
-			ResourceLoader.load_threaded_request(path)
-
-
-func _home_may_leave(at: Vector3) -> bool:
-	if tiles.is_empty() or not multiplayer.is_server() or main.players_root.get_child_count() > 1:
-		return false
-	if not main._round_live or not main.nav_ready or main.design or main.studio_session:
-		return false
-	if not (main.road_graph as Dictionary).has("out") or not walkable(at):
-		return false
-	var area: Rect2 = (main.bounds as Rect2).grow(3.0)
-	for e in main.enemies_root.get_children():
-		if e.get("kind") in HOME_KEEPERS and area.has_point(Vector2((e as Node3D).global_position.x, (e as Node3D).global_position.z)):
-			return false
-	return true
-
-
-func _home_out() -> void:
-	var t0 := Time.get_ticks_usec()
-	var area: Rect2 = (main.bounds as Rect2).grow(3.0)
-	var inside := func(n: Node) -> bool:
-		return n is Node3D and area.has_point(Vector2((n as Node3D).global_position.x, (n as Node3D).global_position.z))
-	for e in main.enemies_root.get_children():
-		if inside.call(e):
-			e.queue_free()                       # a tile's patrol; or the round's, and the Director sends others
-	# who and what is in it sleeps where it stands
-	var asleep := _sleep(main.civilians_root.get_children() + main.traffic_root.get_children()
-			+ main.pickups_root.get_children() + main._containers + main._antennas, area)
-	home["asleep"] = asleep
-	# its streets close
-	var g: Dictionary = main.road_graph
-	if _map_edges < 0:
-		_map_edges = g["edges"].size()
-	if not home.has("ways"):
-		home["ways"] = []
-		for node in g["out"]:
-			for w in g["out"][node]:
-				if int(w[0]) < _map_edges:
-					home["ways"].append([node, w])
-	_streets_out(home)
-	# the city goes, what stays sleeps
-	var region: NavigationRegion3D = main.nav_region
-	region.enabled = false
-	region.visible = false
-	region.process_mode = Node.PROCESS_MODE_DISABLED
-	for part in ["City", "SidewalkCollision"]:
-		var n := region.get_node_or_null(part)
-		if n:
-			n.name = part + "Leaving"
-			n.queue_free()
-	_home_links(false)
-	main.home_out = true
-	home["state"] = "out"
-	_note(HOME, "unload: %d asleep" % asleep.size(), t0)
-
-
-## The links between the round's map and the tiles round it (the tiles' own
-## and the map's) are off while the map is out: a link with one end on no
-## mesh makes the path search report an error.
-func _home_links(on: bool) -> void:
-	var area: Rect2 = (main.bounds as Rect2).grow(LINK_REACH_M + 0.5)
-	var roots := []
-	for id in tiles:
-		if is_instance_valid(tiles[id]["node"]):
-			roots.append(tiles[id]["node"])
-	if is_instance_valid(home.get("links")):
-		roots.append(home["links"])
-	for root in roots:
-		for l in (root as Node).get_children():
-			if l is NavigationLink3D:
-				var a: Vector3 = (l as NavigationLink3D).get_global_start_position()
-				var b: Vector3 = (l as NavigationLink3D).get_global_end_position()
-				if area.has_point(Vector2(a.x, a.z)) and area.has_point(Vector2(b.x, b.z)):
-					(l as NavigationLink3D).enabled = on
-
-
-func _home_poll() -> void:
-	if home.is_empty() or main.map_is_tile:
-		return
-	if home["state"] == "loading":
-		for path in home["paths"]:
-			var st := ResourceLoader.load_threaded_get_status(path)
-			if st == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
-				return
-			if st != ResourceLoader.THREAD_LOAD_LOADED:
-				home["state"] = "failed"
-				return
-		home["scenes"] = (home["paths"] as Array).map(func(path: String) -> Resource: return ResourceLoader.load_threaded_get(path))
-		_note(HOME, "read files (loader thread)", home["t0"])
-		home["t0"] = Time.get_ticks_usec()
-		home["state"] = "building"
-		home["task"] = WorkerThreadPool.add_task(_build.bind(HOME))
-	elif home["state"] == "building" and WorkerThreadPool.is_task_completed(home["task"]):
-		WorkerThreadPool.wait_for_task_completion(home["task"])
-		_note(HOME, "build (worker thread)", home["t0"])
-		home["state"] = "entering"
-		_home_in()
-
-
-func _home_in() -> void:
-	var t0 := Time.get_ticks_usec()
-	var region: NavigationRegion3D = main.nav_region
-	var built: Node3D = home["node"]
-	home.erase("node")
-	for part in built.get_children():
-		built.remove_child(part)
-		region.add_child(part)
-	built.free()
-	var city := region.get_node("City")
-	main._water(city)
-	main._matte_grass(city)
-	main._add_grass_detail(city)
-	main._kit_facades(city, true)
-	region.visible = true
-	region.process_mode = Node.PROCESS_MODE_PAUSABLE
-	_note(HOME, "enter the tree (main thread)", t0)
-	for k in 2:                                  # the ground is in the physics before anyone stands on it
-		await get_tree().physics_frame
-	if not is_instance_valid(region):
-		return
-	region.enabled = true
-	_home_links(true)
-	_wake(home["asleep"])
-	home["asleep"] = []
-	var g: Dictionary = main.road_graph
-	for w in home["ways"]:
-		(g["out"] as Dictionary).get_or_add(w[0], []).append(w[1])
-	home["streets"] = true
-	_entries()
-	BusRoutes.invalidate(g)
-	_bus_round()
-	main.home_out = false
-	home["state"] = "in"
-	# the tiles that came in while it was out have no links to it
-	t0 = Time.get_ticks_usec()
-	var map: RID = main.get_world_3d().navigation_map
-	var probe: Vector3 = main.spawn_point
-	for k in 600:
-		await get_tree().physics_frame
-		if NavigationServer3D.map_get_closest_point(map, probe).distance_to(probe) < 3.0:
-			break
-	if not is_instance_valid(region) or home["state"] != "in":
-		return
-	if is_instance_valid(home.get("links")):
-		(home["links"] as Node).queue_free()
-	var links := Node3D.new()
-	links.name = "HomeLinks"
-	add_child(links)
-	home["links"] = links
-	_note(HOME, "%d links across the edge (main thread)" % _link(links, main.bounds), t0)
-
-
 func _note(id: String, what: String, t0: int) -> void:
 	events.append({"id": id, "what": what, "ms": snappedf((Time.get_ticks_usec() - t0) / 1000.0, 0.1)})
 
 
-## The map's invisible border walls, moved out to enclose the tiles too.
+## Invisible walls round all the tiles: players cannot leave the world (what
+## lies beyond is scenery).
 func _edge_walls() -> void:
-	var old := main.get_node_or_null("EdgeWalls")
-	if old:
-		old.queue_free()
-		old.name = "EdgeWallsOld"
 	if _walls:
 		_walls.queue_free()
 	var r: Rect2 = main.bounds

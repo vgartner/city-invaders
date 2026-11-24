@@ -9,7 +9,7 @@ There are no hand-made scenes: `main.tscn` only holds `main.gd`.
 
 | Script | What it does |
 |---|---|
-| `main.gd` | Menu, loading, phases, networking (ENet host/join), the city, navmesh bake, spawners (pedestrians, traffic, robots, pickups, dropships), status broadcast to the HUDs, score, design mode, landmarks, cinema screens, pause and settings menus |
+| `main.gd` | Menu, loading, phases, networking (ENet host/join), the round (start, goals, score, exit), spawners (pedestrians, traffic, robots, pickups, dropships), status broadcast to the HUDs, design mode, how a landmark is built, cinema screens, pause and settings menus. The city itself is `open_world.gd`'s |
 | `player.gd` | First-person player: movement, mouse look, weapons and view models, health / pala armour, pickups, vehicles (enter, drive, chase camera), score display |
 | `tablet.gd` | Field tablet apps and video UI; video titles refresh on list entry, with retained pictograms for draw callbacks |
 | `hud.gd` | The Doom-style status bar (health, weapon, ammo, robots, civilians, threat, score), objective banner, prompts |
@@ -38,7 +38,7 @@ There are no hand-made scenes: `main.tscn` only holds `main.gd`.
 | `tune.gd` | Autoload `Tune`: gameplay tuning values (vehicle tilt limits, horn interval, pigeon spook radius, police range, robot sight, poncho absorption, Fruki effect) read live - the DevAgent `tune` changes them in a running game |
 | `settings.gd` | Autoload: key bindings, mute, friendly fire, steering sensitivity, player name (`user://settings.cfg`) |
 | `packs.gd` | Autoload `Packs` (first): in a released game, loads each map package `maps/<id>.pck` (from next to the executable and `user://map_packs/`), refusing any with game code ([BUILDING.md](BUILDING.md)) |
-| `open_world.gd` | Prototype: other maps streamed in and out round the player as tiles (meshes, collision, street furniture, landmarks, a navigation mesh linked across the edge and streets joined to the road graph), started by `main.open_world("<id>")` ([OPEN_WORLD.md](OPEN_WORLD.md)) |
+| `open_world.gd` | The city: every map is a tile, streamed in and out round the players (meshes, collision, street furniture, landmarks, a navigation mesh linked across the edge, streets joined to the road graph, who and what the tile brings); a world's tiles, or a map of its own as a world of one ([OPEN_WORLD.md](OPEN_WORLD.md)) |
 | `map_store.gd` | The title screen's Maps screen: reads the release's `catalog.json`, downloads a map into `user://map_packs/`, checks its SHA-256 and loads it ([BUILDING.md](BUILDING.md)) |
 | `controls_menu.gd` | Key rebinding UI |
 | `sfx.gd` | Autoload: sound cues |
@@ -50,16 +50,16 @@ There are no hand-made scenes: `main.tscn` only holds `main.gd`.
 | `texture_sharing.gd` | Loading-time sharing of byte-identical imported texture payloads in retained scenes and live meshes; the files hashed on worker threads and remembered in `user://texture_hashes.json`; weak caches, no pixel or import changes |
 | `model_library.gd` | Lists the `.glb` models of a folder |
 
-## A round on a map, a round on a world's tile
+## The city is tiles, the round is main's
 
-`main.gd` builds a map played alone itself (`_load_city`: the city, its
-collision, street furniture, landmarks, navigation mesh). A round started on
-a tile of an open world builds none of it: `open_world.gd` brings that tile
-in like its neighbours and `main` keeps only the round (start, goals, score,
-exit) - `main.map_is_tile`, [OPEN_WORLD.md](OPEN_WORLD.md). Code that asks
-about "the map" should ask about areas instead: `in_world`, `world_areas`,
-`area_of`, `props_at`, `all_props`, `all_places`, `trade_counters`,
-`reach_from`.
+`main.gd` builds no city. Every map is a tile of the open world
+(`open_world.gd`, [OPEN_WORLD.md](OPEN_WORLD.md)): a world's tile with the
+others round it, or a map of its own as a world of one. The open world
+reads, builds, furnishes, populates and frees the tiles; `main` keeps the
+round (`_load_city`: start, bounds, goals, score, exit; an empty road graph
+the tiles join their streets to). Code that asks about "the map" asks
+about areas: `in_world`, `world_areas`, `area_of`, `area_node`, `props_at`,
+`all_props`, `all_places`, `trade_counters`, `reach_from`.
 
 ## Networking
 
@@ -94,8 +94,8 @@ has confirmed its containers (`have_containers`): an unreliable move can
 overtake the reliable list.
 
 Street furniture (`props.gd`) makes no network calls of its own: a lamp
-shot out or a bin run over is the scene's call (`main.prop_down`, by area:
-the round's map or an open world's tile), so it reaches a peer whether or
+shot out or a bin run over is the scene's call (`main.prop_down`, by the
+tile's id), so it reaches a peer whether or
 not that peer has the area loaded.
 
 ## Collision layers

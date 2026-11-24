@@ -1,14 +1,19 @@
-# Open world (prototype)
+# Open world
 
-Today a round plays on one map: a square of about 400 m, built by the
-pipeline into one model (`godot/city/<map>.glb`, 90-170 MB), loaded whole
-with its collision, navigation mesh, props, people and traffic. This page
-is about going past that: a city of many **tiles** that come in and go out
-round the player. So far it is a prototype that answers the first question
-- can a neighbouring tile enter and leave a running round without the
-player feeling it?
+A city is made of **tiles** that come in and go out round the players
+(`godot/scripts/open_world.gd`). Every round is played on them: a **world**
+is a grid of tiles cut from one city's data, and a map of its own (the
+Gasômetro, about 400-750 m across, `godot/city/<map>.glb`, 90-170 MB) is a
+world of one tile. There is one way to build a city in the game - the
+tile's: read on a loader thread, built on a worker thread, furnished a few
+milliseconds a frame, its navigation mesh baked once and kept - and
+`main.gd` builds none of it (see "Every map is a tile").
 
-## What the prototype does
+It began as a prototype next to the maps, to answer whether a neighbouring
+tile can enter and leave a running round without the player feeling it;
+this page keeps what was measured on the way.
+
+## What it does
 
 `godot/scripts/open_world.gd`. A **world** is a grid of tiles cut from one
 city's data, each a map of its own:
@@ -44,19 +49,17 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   are built on a worker thread, and one frame puts it into the tree. Beyond
   220 m (`UNLOAD_M`) it is freed.
 - **Street furniture and landmarks**: the tile's `<id>.props.json` (trees,
-  lamps, signs, benches, bus shelters) is built by the same `props.gd` as
-  the map's, 4 ms of it a frame; its landmarks and shops
-  (`<id>.landmarks.json`, `<id>.shells.json`) by the map's own
-  `_landmark`, one a frame, their models read beforehand on the loader
+  lamps, signs, benches, bus shelters) is built by `props.gd`, 4 ms of it a
+  frame; its landmarks and shops (`<id>.landmarks.json`,
+  `<id>.shells.json`) by `main._landmark` and `_shell`, one a frame, their models read beforehand on the loader
   thread (also the furniture of the shops the game draws itself). A
   landmark's triangle collision is made on a worker thread and put in one
   mesh a frame (`main.trimesh_later`, `_shape_later`): the Mercado's 86 000
   triangles cost a frame of 145 ms on the main thread. They leave with the tile. A shop walked into (E) has its pocket
-  under the city built in the shop's tile too (`main.enter_shop`): in the
-  round's map it had no floor while the map was out. A player who still
+  under the city built in the shop's tile too (`main.enter_shop`). A player who still
   falls out of a pocket is put back (`player.gd`). A tile's lamps, signals
-  and bins are shot out, and its bins, benches and planters run over, like
-  the map's: its `Props` node carries the tile's id (`tile`), a shot or a
+  and bins are shot out, and its bins, benches and planters run over: its
+  `Props` node carries the tile's id (`tile`), a shot or a
   vehicle finds the Props its body belongs to (`Props.of`), and the fall
   goes to every peer through the scene (`main.prop_down`: on every peer,
   whatever tiles each has loaded). The scene keeps what went down this
@@ -82,12 +85,12 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   every 2.5 m where both sides can be walked, a `NavigationLink3D` joins
   them (26 on the test edge). The neighbours' buildings that reach into a
   tile (`<id>.spawn.json` `foreign`, written by the pipeline in tile mode)
-  are `NavigationObstacle3D`s: holes in its mesh, in the round's map too.
+  are `NavigationObstacle3D`s: holes in its mesh.
 - **People and robots**: the tile brings 14 passers-by of its own
   (`TILE_PEOPLE`); people and robots choose goals in a tile that has its
   mesh (`main.in_world`), and robots chasing a player follow across the
   edge. When a tile is due to leave, its passers-by leave the streets with
-  it. Like the round's map it also brings an officer on patrol
+  it. It also brings an officer on patrol
   (`TILE_POLICE`), the vendors at its stalls, the people at its pitches and
   playgrounds, someone waiting at each of its bus stops and up to 5 cars
   parked at its kerbs that a player can drive (`TILE_PARKED`, the map's
@@ -130,17 +133,16 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   (meta `taken`) keeps the tile. Abandoned vehicles count against what
   the tiles may bring, so fights do not add vehicles without end.
 - **Traffic evened out**: left to itself the traffic gathers where the
-  one-way streets lead and the round's map empties. Every 1.5 s the map and
-  each open tile are compared with their share of the vehicles driving (16
-  to 6); when one is 2.5 over and another as much under, one vehicle of the
+  one-way streets lead. Every 1.5 s the open tiles are compared with their
+  share of the vehicles driving (16 where a player is, 6 elsewhere); when one is 2.5 over and another as much under, one vehicle of the
   first starts again on a street of the second - both at least 100 m from
   every player (`_even_traffic`).
-- The map's invisible border walls move out to enclose the tiles, and its
-  horizon (far ground and towers, which would stand where the tiles are) is
-  hidden.
+- Invisible walls enclose all the tiles together (`_edge_walls`). A map of
+  its own has its horizon (`<id>_horizon.glb`: far ground and towers); it
+  is hidden once more tiles are added, as it would stand where they are.
 - `main.open_world_node.report()` lists every step with its time,
   `census()` the people, robots and vehicles (all, and those driving) in
-  each tile and in the round's map;
+  each tile;
   `open_world_node.threaded = false` builds on the main thread instead, to
   compare.
 
@@ -175,8 +177,7 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   a street of a tile they took 9 % of the triangles drawn off, the draw
   calls stayed. After its furniture every peer gives it 2 pigeon flocks on
   its promenade points, 2 pairs of quero-queros on its lawns and birdsong
-  in its greens (`_wildlife`; the map's own functions, seeded by the tile's
-  id), a step a frame, 8-10 ms the worst.
+  in its greens (`_wildlife`, seeded by the tile's id: the same on every peer), a step a frame, 8-10 ms the worst.
 
 - **Pickups and places**: the server gives a tile its pickups by the map's
   rule (`main.pickups_for`): the items its landmarks hold, half the map's
@@ -192,7 +193,7 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   cross.
 
 - **The map editor's edits**: an edit belongs to the area it lies in
-  (`main.area_of`: the tile under the point, else the round's map). The
+  (`main.area_of`: the tile under the point). The
   editor reads and writes that area's edits (unsaved edits are kept by file,
   as a world's tiles share one when playing from the sources), removes a
   tile's lamp from the tile's own street furniture, parents what it places
@@ -225,15 +226,13 @@ A ring of two tiles round the world goes into `<world>_far_ring.glb`
 horizon, so a roof never looks over the edge of the city into the sky. The
 list's `"far"` names the ring. `main.open_world()` loads them all
 (`OpenWorld.add_far`, shadows off) and every frame shows a tile's far
-model while the tile is not in, the round's map's while the map is out, the
-ring all the time. From a roof of the centre tile the city goes on in the
+model while the tile is not in, the ring all the time. From a roof of the centre tile the city goes on in the
 haze past the loaded tiles.
 
 **Multiplayer.** The server runs the robots, the people and the traffic, so
 it keeps the tiles in round every player, not only round its own camera
 (`_others()`: the players' positions, the nearest counts); a client loads
-round its own camera, for what it sees and walks on. The round's map stays
-while there are other players. Tested with a host and a client on one
+round its own camera, for what it sees and walks on. Tested with a host and a client on one
 machine: the client went to the south-east tiles 200 m from the host, and
 the host loaded them for it (its own camera 200 m away) and let them go
 when the client came back; `errors` empty on both. Three faults of the game
@@ -246,7 +245,7 @@ drone, burning) were "authority" calls the client refused; and a client put
 back after a fall went to (0, 1, 0), under the ground, because only the
 server works out the start (the player's spawn now carries it). The
 server places the relay antennas anywhere in what it has loaded - the
-round's map and the tiles round every player - and sends their spots
+tiles round every player - and sends their spots
 (`antennas_at`); a player who joins later asks for them (`want_antennas`)
 and gets those brought down or spotted as they are, and the containers
 already out (`want_containers`). A client sees an antenna on a tile it has
@@ -255,27 +254,49 @@ client joining after an antenna went down: the same three spots on both,
 the fallen one gone, the next one brought down falling on both, the HUD's
 state the same, the two containers where the host has them, no errors.
 
-**In a world, the round's map is a tile** (`main.map_is_tile`). A round
-started on a tile of a world builds no city in `main.gd`: the open world
-reads, builds, furnishes, populates and frees that tile like its
-neighbours (`main._load_as_tile`, `open_world.load_now`: it comes in under
-the loading screen, before there is a player to be near it). What stays in
-`main` is the round - where it starts (the tile's `spawn.json`), its bounds
-as the start area, goals, score, exit - with `nav_region` and `props` as
-empty nodes (the default parent of a landmark, the home of the props'
-effects) and a road graph that starts empty and takes each tile's streets.
-`main.home_out` says whether the start tile is in; it leaves at 220 m like
-any tile, also with several players (the server keeps the tiles round all
-of them), and comes back as a tile does: its pickups where they were, what
-was shot out lying down, the war machine and the round's own pickups asleep
-meanwhile. A robot of the round left in a tile that goes is freed and the
-Director sends others; a heavy mech or a collector still keeps its tile.
+**Every map is a tile.** `main.gd` builds no city: the open world reads,
+builds, furnishes, populates and frees the tile a round starts on like any
+other (`main._load_city`, `open_world.load_now`: it comes in under the
+loading screen, before there is a player to be near it). A tile of a world
+has the world's other tiles round it; a map of its own (the Gasômetro) is
+a world of one tile, with its horizon model round it, and never leaves.
+What is in `main` is the round - where it starts (the tile's `spawn.json`),
+its bounds as the start area, goals, score, exit - with `nav_region` and
+`props` as empty nodes (the navigation mesh settings the tiles bake with,
+the home of the props' effects) and a road graph that starts empty and
+takes each tile's streets. Code asks about areas, not about "the map":
+`in_world`, `world_areas`, `area_of`, `area_node`, `props_at`, `all_props`,
+`all_places`, `reach_from`. `main.home_out` says whether the start tile is
+in; in a world it leaves at 220 m like any tile, also with several players
+(the server keeps the tiles round all of them), and comes back as a tile
+does: its pickups where they were, what was shot out lying down, the war
+machine and the round's own pickups asleep meanwhile. A robot of the round
+left in a tile that goes is freed and the Director sends others; a heavy
+mech or a collector still keeps its tile.
+
+*A map of its own, before and after* (the Gasômetro, 750 x 550 m, the
+robots switched off, counted 30 s into the round): the same 79 landmarks,
+17 places, 48 street edges, 4 bus stops, 39 crossings, 4 antennas, 2
+containers and 78 birds; 164-170 pickups (162-164 before, each kind within
+two), 42-43 vehicles of which 30 drive, 105-120 people (officers 5-6, 3
+vendors, 8-10 skaters at the skatepark, two waiting at each stop). The
+round is live 9.2 s after the start (8.3-8.7 s before); the first start
+after a rebuild bakes the navigation mesh, later ones read it back
+(`godot/city/<id>.nav.res`, git-ignored). A phase change (Gasômetro to
+Centro) frees the open world with the map and makes the next one. The
+DevAgent's map tools work on the tiles: `reload` builds the street
+furniture and landmarks of every tile that is in again
+(`open_world.refurnish`), `nav_probe landmark_pickups=true` takes the
+tiles' fixed items, `show_only` hides every tile's city or furniture. The
+map editor placed a model in the map's tile and removed a lamp, and both
+were there after a restart (released-game mode).
 
 *Density by distance.* What moves follows the players: the round's crowd is
 born anywhere in the loaded world (`_spawn_civilians`, `in_world`), a tile a
-player stands in has a map's traffic (16, with buses) and the others 6
-(`_share`). What stands is brought full - a map's pickups, parked cars,
-officers, pigeon flocks and quero-queros - by the tile a player is in when
+player stands in has the full traffic (16, with buses; more on a larger
+tile, `main.density`) and the others 6 (`_share`). What stands is brought
+full - pickups, parked cars, officers, two people waiting at each stop,
+pigeon flocks and quero-queros - by the tile a player is in when
 it comes in (the start tile; without the tile's own 14 people and 4 robots
 on top of the round's), and light by the others; a light tile is topped up
 once when a player walks into it (`_fill`: parked cars only where no player
@@ -288,8 +309,8 @@ containers (one in a neighbouring tile), and a lamp shot out in a tile lay
 down for the client who joined later.
 
 *Loading.* The start tile takes 4.6 s of the loading screen (read 2.0 s,
-then built, furnished, its mesh read back) - what `_load_city` took for the
-same map. The antennas and the first containers wait until the tiles round
+then built, furnished, its mesh read back) - what building the same map in
+`main.gd` took before. The antennas and the first containers wait until the tiles round
 the start have been looked at once with a player in the scene
 (`open_world.settled`, `_looked`): asked before, "nothing is on its way in"
 was true only because nothing had started.
@@ -308,41 +329,6 @@ also read only after the start tile is in, and nothing a tile brings is
 made before they are (`main.models_warm`). To check again after a change
 to the start: start the round 40 times through the DevAgent and see that
 the game still answers 25 s after each.
-
-**A map that is no world's tile leaves too** (`_home_check`, one player;
-`--open-world=` on a map played alone, the prototype's first form). Everything
-the round's map built hangs under its navigation region: the city and its
-collision, the street furniture, the landmarks, the occluders. When the
-player is 220 m from its bounds and stands on a tile:
-
-- the city's meshes and collision are freed - that is the memory;
-- the rest sleeps where it is: the region hidden, out of the physics, its
-  navigation mesh off, and the people, vehicles, pickups, containers and
-  antennas inside hidden and stopped (meta `asleep`);
-- its streets close like a tile's (traffic entries recomputed, the map's
-  share of the traffic no longer wanted), and the links between its mesh
-  and the tiles' go off;
-- the round's robots left in it go, and the Director sends others where the
-  player is. A heavy mech (a goal of the round) or a collector (people
-  aboard) keeps the map in;
-- `main.home_out` is true and `main.in_world()` no longer counts the map.
-
-The round's state is not the map's: goals, score, the exit, the Director
-stay in `main`. At 120 m the city is read and built on threads like a tile
-and all of it wakes up as it was - the navigation mesh is not baked again,
-a lamp shot out stays out, a parked car is where it was - and links are
-made to the tiles that came in meanwhile. `report()` lists it as `@home`.
-
-Measured on the centre tile of the test world, two games open on the
-machine: leaving takes 4-6 ms on the main thread and puts 160-190 nodes
-to sleep; draw calls 2,260 -> 1,330, nodes 18,000 -> 9,300, static memory
-377 -> 326 MB, texture memory 2,940 -> 2,280 MB. Coming back: 130-290 ms
-reading and 320-730 ms building on threads, 13-15 ms entering the tree,
-22-44 ms for 35 links. Two rounds out and back, with and without the
-Director's robots: the map the same as before in the screenshots.
-
-Not done: with more than one player the map stays; the landmarks and the
-street furniture sleep in memory instead of leaving.
 
 **Ships, containers, collectors and swarms in the tiles.** What the round
 sends picks its place in the loaded world, not in the map's bounds
@@ -381,8 +367,8 @@ alive in a world, Godot's path search reported "It's not expect to not find
 the most reachable polygons" now and then: a path asked for across a link
 to such a patch (probed with 784 path queries from one point of the centre
 tile: the same 6 targets in the tile to the east raised it in two runs out
-of three; the engine's source calls it a geometry problem). So every mesh,
-a tile's and the round's map's, drops its islands after the bake
+of three; the engine's source calls it a geometry problem). So every
+tile's mesh drops its islands after the bake
 (`OpenWorld.drop_islands`): every group of joined polygons but the largest
 (the streets) that does not reach the edge of the tile, where a
 neighbouring tile may carry it on. Up to November 2026 only groups under
@@ -503,8 +489,8 @@ models and people are still imported lossless and hold 4-6 GB
    back the next time (see Navigation above), saving 7-10 ms of the main
    thread and 60-100 ms of baking; the first entry after a rebuild still
    bakes. Measured before (PERFORMANCE.md, loading time step by step): the
-   round's map reads its colliders in 40-55 ms on the main thread and bakes
-   for 0.7-0.8 s on a thread; the round's map does not keep its mesh yet.
+   round's map read its colliders in 40-55 ms on the main thread and baked
+   for 0.7-0.8 s on a thread at every start; as a tile it keeps its mesh too.
 4. **Bus lines across tiles, breakable props, big landmarks**: done (see
    above). Left: robots shooting a tile's props, its pickups.
 5. **The far view, the rest**: windows and roofs are in (see The far view).
@@ -512,34 +498,29 @@ models and people are still imported lossless and hold 4-6 GB
    rather than a hip to its middle.
 6. **Multiplayer, the rest**: done - the server places the antennas in the
    whole loaded world and tells the others (see Multiplayer).
-7. **The round's own tile, the rest**: it leaves and comes back now (one
-   player), but as itself: its landmarks, street furniture and navigation
-   mesh sleep in memory. Every tile equal means the round's map built
-   through the tile path from the start. In stages:
-   1. *Done* - a tile has what the map has (see above): crossings and
-      street names, bus stops by one rule, police, vendors, leisure and
-      waiting people, parked cars, pigeons, quero-queros, birdsong,
-      occluders, pickups, places, the map editor's edits.
-   2. *Done* - what went through the map's `Props` node or its start
-      point: the props' network calls are the scene's (`main.prop_down`,
-      `props_up`; no `Props` node sends or receives any), which also keeps
-      what went down this round for a tile that is out and for a player who
-      joins (`props_down`, `want_props_down`); the counters inside shops are
-      the scene's list; "can it be walked to?" is asked from
-      `main.reach_from()`. Left for stage 3, with the map's streets going
-      through the tile path: the traffic's counts that assume the map's
-      edges come first (`_map_edges`, `_map_vehicles`).
-   3. *Done* - the round's map of a world comes through the tile path
-      (see "In a world, the round's map is a tile"); its navigation mesh is
-      kept on disk like any tile's; density by distance from the players.
-      With several players the start tile leaves and comes back like the
-      others.
-   4. The map's own leave-and-return code (`_home_*`) is only reached now
-      by a map that is no world's tile with tiles added to it
-      (`--open-world=`); it goes with stage 5.
-   5. A map that is no world's tile (the Gasômetro) as a world of one tile:
-      one way to build everything, and `_load_city`'s own city building
-      goes.
+7. **Every map a tile**: done, in stages.
+   1. A tile has what the map had (see above): crossings and street names,
+      bus stops by one rule, police, vendors, leisure and waiting people,
+      parked cars, pigeons, quero-queros, birdsong, occluders, pickups,
+      places, the map editor's edits.
+   2. What went through the map's `Props` node or its start point: the
+      props' network calls are the scene's (`main.prop_down`, `props_up`),
+      which also keeps what went down this round for a tile that is out and
+      for a player who joins; the counters inside shops are the scene's
+      list; "can it be walked to?" is asked from `main.reach_from()`.
+   3. The round's map of a world comes through the tile path; its
+      navigation mesh is kept on disk like any tile's; density by distance
+      from the players.
+   4. The map's own leave-and-return code (`_home_*`: its city freed and
+      the rest put to sleep under its navigation region) is gone.
+   5. A map that is no world's tile is a world of one tile, and
+      `main.gd`'s own city building is gone with everything only it used:
+      the map's own streets, bus stops, traffic, parked cars, vendors,
+      officers, people at play, pickups, places, birds, occluders, edge
+      walls and landmarks (about 600 lines).
+   Left: a tile that comes back with a player already near gets its birds
+   in two lots (the light ones, then the top-up), so their number differs
+   a little from the first time.
 8. **A tile's files smaller**: 40-90 MB of glb each; the release packages
    know nothing of worlds yet (the menu and the map editor do).
 

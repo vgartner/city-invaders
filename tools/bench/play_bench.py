@@ -115,7 +115,7 @@ def theatro():
     call("tap", "action=use")
     time.sleep(3)
     hold(["forward"], 7)
-    print(f"{'':24}check: inside the Theatro {ev('main.get_node(\"Navigation/theatro_sao_pedro\").inside(main._local_player().global_position)')}", flush=True)
+    print(f"{'':24}check: inside the Theatro {ev('main.find_child(\"theatro_sao_pedro\", true, false).inside(main._local_player().global_position)')}", flush=True)
     at(-134.5, 226, look=(-134.6, 260))
     hold(["forward"], 5)
 

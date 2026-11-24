@@ -100,7 +100,7 @@ full resolution (55 fps at half resolution before).
 - **Occlusion culling** is on (`rendering/occlusion_culling`): the map
   pipeline writes `<city>.occluders.json` - every generated building at
   least 6 m tall, its footprint set 0.6 m inside - and the game makes one
-  `ArrayOccluder3D` of wall quads per 80 m cell (`_occluders` in main.gd).
+  `ArrayOccluder3D` of wall quads per 80 m cell (`occluders_of` in main.gd).
   On a street of the Centro it halved the draw calls (3,559 to 1,914) and
   cut the triangles by 40%; on open squares it changes little.
 - **Splitting the city's meshes into cells** (`CITY_CELL_M`) is still off,
@@ -424,6 +424,17 @@ Gasômetro takes 13.4 s the first time and 11.5 s after (19.2 s before),
 the Centro 13.5 s, the Mercado 11.0 s, Porto Alegre 12.2 s, the test
 world's centre tile 10.4 s. One run each, not on a quiet machine. The
 sharing test passes in the project; its PCK variant was not run again.
+
+Since 2026-11-24 every map loads as a tile of the open world
+([OPEN_WORLD.md](OPEN_WORLD.md)) and `load_times` has one step for the
+city: "the start tile: read, built, furnished, navigation mesh", 7.6-7.9 s
+on the Gasômetro, where reading (3.5 s), scene and collision (0.5 s),
+street furniture (0.4 s), landmarks (1.0 s) and the bake (0.8 s) took
+6.2 s. The tile's files are read without the loader's sub-threads and its
+landmarks come one a frame; the navigation mesh is read back, not baked.
+Placing people and traffic takes 0.6 s (1.4-1.6 s): what the tile brings
+comes a few a frame after the round is live. From `start_solo` to the round
+live: 9.2 s (8.3-8.7 s before), the test game alone on the machine.
 
 A subsequent two-minute autoplay (seed 7, scale 1, 2545x1080 viewport,
 6260x2656 window, VSync on) averaged 60.0 FPS, p99 22.4 ms and maximum

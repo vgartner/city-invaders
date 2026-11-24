@@ -184,7 +184,7 @@ trust a run on a machine that is swapping.
 | [docs/ONLINE.md](docs/ONLINE.md), `server/README.md` | the online services (API, the Bah assistant, Git LFS server) |
 | [docs/AGENTS.md](docs/AGENTS.md) | agent setup per tool, roles, recipes, cost habits |
 | [docs/BUILDING.md](docs/BUILDING.md), [docs/LICENSING.md](docs/LICENSING.md), [docs/ROADMAP.md](docs/ROADMAP.md), [docs/MODDING.md](docs/MODDING.md) | releases, licences, plans, mods |
-| `godot/scripts/` | game code; `main.gd` (rounds, the city, spawners), `player.gd`, `enemy.gd`, `car.gd`, `civilian.gd`, `dev_agent.gd` (the DevAgent), `autoplay.gd` (the bot) |
+| `godot/scripts/` | game code; `main.gd` (rounds, spawners), `open_world.gd` (the city: every map is a tile), `player.gd`, `enemy.gd`, `car.gd`, `civilian.gd`, `dev_agent.gd` (the DevAgent), `autoplay.gd` (the bot) |
 | `godot/assets/` | models, textures, sounds, entity definitions |
 | `godot/city/` | generated maps (`<map>.glb` + json), rebuilt by the pipeline - don't edit by hand |
 | `maps/<map>/` | each map's sources: `build.json`, OSM data, photos, `user/` edits |

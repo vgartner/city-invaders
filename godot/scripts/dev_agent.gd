@@ -547,7 +547,7 @@ func _m_nav_probe(p: Dictionary):
 		return _err("no round; call start_solo first")
 	var pts: Array = []
 	if p.get("landmark_pickups", false):
-		for lp in main.landmark_pickups:
+		for lp in main.open_world_node.call("fixed_pickups"):     # of the tiles that are in
 			pts.append({"what": lp[0], "at": lp[1]})
 	for q in p.get("points", []):
 		pts.append({"what": "", "at": Vector3(float(q[0]), float(q[1]), float(q[2]))})
@@ -664,9 +664,10 @@ func _m_audit_ground(p: Dictionary):
 	for root in [m.traffic_root, m.civilians_root, m.enemies_root]:       # pickups hover on purpose
 		for n in root.get_children():
 			items.append([String(root.name), n])
-	for n in m.props.get_children():
-		if n is Node3D and n.find_child("*", false, false) and String((n as Node3D).get_child(0).name).begins_with("car"):
-			items.append(["parked", n])
+	for pr in m.all_props():
+		for n in pr.get_children():
+			if n is Node3D and n.find_child("*", false, false) and String((n as Node3D).get_child(0).name).begins_with("car"):
+				items.append(["parked", n])
 	var out := []
 	for it in items:
 		var n: Node3D = it[1]
@@ -874,11 +875,15 @@ func _m_show_only(p: Dictionary):
 						lm.visible = on
 						n += 1
 		"props":
-			m.props.visible = on
-			n = m.props.get_child_count()
+			for pr in m.all_props():
+				pr.visible = on
+				n += pr.get_child_count()
 		"city":
-			m.get_node("Navigation/City").visible = on
-			n = 1
+			for id in m.open_world_node.tiles:      # every tile that is in
+				var tile: Node = m.open_world_node.call("tile_node", id)
+				if tile:
+					tile.get_node("City").visible = on
+					n += 1
 		"civilians":
 			m.civilians_root.visible = on
 			n = m.civilians_root.get_child_count()
@@ -897,7 +902,7 @@ func _m_show_only(p: Dictionary):
 
 func _m_lights(p: Dictionary):
 	## Performance: the omni and spot lights by where they hang (the node
-	## under Main / Navigation they belong to), with how many cast shadows.
+	## under Main / OpenWorld / its tile they belong to), with how many cast shadows.
 	var m := _main()
 	var by := {}
 	for l in m.find_children("*", "Light3D", true, false):
@@ -908,9 +913,10 @@ func _m_lights(p: Dictionary):
 		while n and n != m:
 			trail.push_front(String(n.name))
 			n = n.get_parent()
-		var key := "/".join(trail.slice(0, 2 if trail.size() > 1 and trail[0] == "Navigation" else 1))
-		if trail.size() > 2 and trail[0] == "Navigation":
-			key += "/" + String(trail[2]).get_slice("@", 0).left(24)
+		var in_tile: bool = trail.size() > 2 and trail[0] == "OpenWorld"
+		var key := "/".join(trail.slice(1, 3) if in_tile else trail.slice(0, 1))
+		if in_tile and trail.size() > 3:
+			key += "/" + String(trail[3]).get_slice("@", 0).left(24)
 		var e: Array = by.get(key, [0, 0, 0])
 		e[0] += 1
 		e[1] += 1 if (l as Light3D).shadow_enabled else 0
