@@ -35,6 +35,24 @@ func _ready() -> void:
 	_read_streets()
 
 
+## The part of the segment a-b inside the circle (centre c, radius r), as
+## [from, to], or [] if none of it is.
+func _in_circle(a: Vector2, b: Vector2, c: Vector2, r: float) -> Array:
+	var d := b - a
+	var f := a - c
+	var qa := d.length_squared()
+	if qa < 0.0001:
+		return [a, b] if f.length() <= r else []
+	var qb := 2.0 * f.dot(d)
+	var disc := qb * qb - 4.0 * qa * (f.length_squared() - r * r)
+	if disc <= 0.0:
+		return []
+	var root := sqrt(disc)
+	var t0 := maxf((-qb - root) / (2.0 * qa), 0.0)
+	var t1 := minf((-qb + root) / (2.0 * qa), 1.0)
+	return [a + d * t0, a + d * t1] if t0 < t1 else []
+
+
 ## The streets and their names from the road graph; again when an open
 ## world's tile has added its own ("rev").
 var _rev := -1
@@ -106,14 +124,21 @@ func _draw() -> void:
 		for p in line:
 			pts.append(to_panel.call(p))
 			near = near or p.distance_to(here) < RANGE_M * 1.6
-		if near and pts.size() >= 2:
-			draw_polyline(pts, Color(0.75, 0.8, 0.85, 0.85) if panel == Vector2.ZERO else ROAD_TABLET,
-					3.0 if panel == Vector2.ZERO else 5.0, true)
+		if near and pts.size() >= 2 and panel == Vector2.ZERO:
+			# the round map: each piece of street cut at the rim (a street was
+			# drawn whole when any point of it was near, far outside the circle)
+			for i in pts.size() - 1:
+				var cut := _in_circle(pts[i], pts[i + 1], c, SIZE / 2.0 - 2.0)
+				if not cut.is_empty():
+					draw_line(cut[0], cut[1], Color(0.75, 0.8, 0.85, 0.85), 3.0, true)
+		elif near and pts.size() >= 2:
+			draw_polyline(pts, ROAD_TABLET, 5.0, true)
 	var main := get_tree().current_scene
 	# the map's places (pharmacies, markets, fuel...) and the repair shops
 	# (placed by hand too) by their pictograms; smaller on the round one
-	var reach := RANGE_M * (1.0 if panel == Vector2.ZERO else panel.x / panel.y)
 	var pic := 26.0 if panel != Vector2.ZERO else 18.0
+	# (on the round map a pictogram stays whole inside the rim)
+	var reach := RANGE_M - pic * 0.62 / k if panel == Vector2.ZERO else RANGE_M * panel.x / panel.y
 	for pl in main.all_places() if main.has_method("all_places") else []:     # the map's and the tiles'
 		if pl["kind"] == "repair_shop":
 			continue                  # drawn from the counters below: only those trade
@@ -154,7 +179,13 @@ func _draw() -> void:
 		var line := PackedVector2Array()
 		for p3 in route:
 			line.append(to_panel.call(Vector2(p3.x, p3.z)))
-		draw_polyline(line, Color(1.0, 0.85, 0.15), 4.0 if panel != Vector2.ZERO else 3.0, true)
+		if panel != Vector2.ZERO:
+			draw_polyline(line, Color(1.0, 0.85, 0.15), 4.0, true)
+		else:
+			for i in line.size() - 1:               # the round map: cut at the rim, like the streets
+				var cut := _in_circle(line[i], line[i + 1], c, SIZE / 2.0 - 2.0)
+				if not cut.is_empty():
+					draw_line(cut[0], cut[1], Color(1.0, 0.85, 0.15), 3.0, true)
 		var end: Vector2 = pin.call(line[line.size() - 1])
 		draw_circle(end, 7.0, Color(1.0, 0.85, 0.15))
 		draw_circle(end, 3.0, Color(0.1, 0.1, 0.1))
