@@ -199,6 +199,14 @@ it to know which OSM building is where (map editor, DevAgent `selection`).
   tarp instead of one you can drive. Street furniture with a front (bus stops, benches, newsstands:
   `faces` in their definition) turns it to its street or walk and keeps off
   the asphalt; nothing generated stands in a model placed by hand
+- **road markings**: a two-way street has a double yellow line down its
+  middle; a one-way street a white dashed line between its lanes - where
+  OSM gives two or more (`lanes`). A one-way street of one lane, which is
+  also what a one-way street without `lanes` is taken for, has no line.
+  One-way is `oneway=yes` (`true`, `1`), a roundabout or a motorway;
+  `oneway=-1` is the way turned round. The road graph's edges of a one-way
+  street run the way the traffic does, also where the map's or a tile's
+  edge cuts the street in pieces.
 - zebra crossings where OSM has them (`highway=crossing` nodes on a car
   road, unless `crossing=unmarked`); only a map without that data gets one
   near every junction

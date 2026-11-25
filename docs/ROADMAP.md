@@ -132,21 +132,19 @@ Asked for by the owner (November 2026), to do later, with the paving above.
 
 ## One-way streets
 
-Asked for by the owner (November 2026), to look at with the paving.
+Done in the pipeline (November 2026, [MAP_PIPELINE.md](MAP_PIPELINE.md),
+road markings); a map shows it once it is rebuilt - the open-world test
+tiles are, the four maps in the repository are not yet.
 
-- **Markings.** A one-way street gets a white dashed line down its middle
-  today (`osm2gltf.py`, the road markings: "one-way: white dashed lane line
-  on the centre"), a two-way one a double yellow line. A one-way street of
-  one lane has no line to draw: the dashed line should stay only where OSM
-  gives two or more lanes (`lanes`), and go elsewhere. In the Centro's data
-  252 of 549 `highway` ways are `oneway=yes` and 123 of the 231 streets for
-  cars carry `lanes`.
-- **Direction.** The road graph keeps `oneway` per street and traffic only
-  enters a one-way street at its start (`main._load_roads`: the way back is
-  opened only when `oneway` is false), in the order OSM draws the way. To
-  check in the game, street by street against OSM's arrows, that the cars do
-  drive the mapped way - and `oneway=-1` (against the way's drawing order)
-  is not read (the Centro has none).
+- **Markings.** The white dashed line is drawn only between the lanes of a
+  one-way street with two or more (`lanes`); a one-way street of one lane
+  has none (112 of the Centro's one-way streets).
+- **Direction.** `oneway=-1` is read, and a piece of a street cut at the
+  map's or a tile's edge keeps the street's direction (none of the test
+  world's pieces came back turned). In a round on the test world, 469
+  readings of cars moving on one-way streets were all with the street; a
+  car whose street ends at the edge of what is loaded does not turn back,
+  it comes in again elsewhere.
 
 ## Other ideas
 

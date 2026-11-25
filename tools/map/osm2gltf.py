@@ -442,6 +442,19 @@ def _road_lines(osm_path, lat, lon, cars_only=False, ranked=False):
     return out
 
 
+def one_way(tags):
+    """1: traffic runs the way the OSM way is drawn; -1: against it; 0: both
+    ways. A roundabout and a motorway are one-way without saying so."""
+    v = str(tags.get("oneway", "")).lower()
+    if v in ("-1", "reverse"):
+        return -1
+    if v in ("yes", "true", "1"):
+        return 1
+    if v in ("no", "false", "0"):
+        return 0
+    return 1 if tags.get("junction") in ("roundabout", "circular") or tags.get("highway") == "motorway" else 0
+
+
 CARRIAGEWAY_M = {"motorway": 14.0, "trunk": 14.0, "primary": 14.0, "secondary": 12.0, "tertiary": 9.0,
                  "primary_link": 7.0, "secondary_link": 7.0, "tertiary_link": 7.0,
                  "unclassified": 7.0, "residential": 7.0, "living_street": 6.0, "service": 4.5}
@@ -617,7 +630,7 @@ def _carriageway(osm, proj, corridor=False):
                 lanes = int(t.get("lanes", "0"))
             except ValueError:
                 lanes = 0
-            lanes = lanes or (1 if t.get("oneway") == "yes" else 2)
+            lanes = lanes or (1 if one_way(t) else 2)
             bare = lanes * LANE_M.get(kind, 3.0)
             # an avenue is two one-way streets side by side in OSM, the gap between
             # its facades holds both: it is its lanes, and the strip between the
@@ -628,7 +641,7 @@ def _carriageway(osm, proj, corridor=False):
             if gap is not None:
                 measured += 1
                 w = min(max(gap - 2 * WALK_MIN_M, bare), bare + 2 * PARKING_M)
-            old = 3.2 * int(t["lanes"]) if str(t.get("lanes", "")).isdigit() else CARRIAGEWAY_M[kind] * (0.6 if t.get("oneway") == "yes" else 1.0)
+            old = 3.2 * int(t["lanes"]) if str(t.get("lanes", "")).isdigit() else CARRIAGEWAY_M[kind] * (0.6 if one_way(t) else 1.0)
             wider += w > old + 0.3
         if not w:
             try:
@@ -636,7 +649,7 @@ def _carriageway(osm, proj, corridor=False):
             except ValueError:
                 w = 0.0
         if not w:
-            w = CARRIAGEWAY_M[kind] * (0.6 if t.get("oneway") == "yes" else 1.0)
+            w = CARRIAGEWAY_M[kind] * (0.6 if one_way(t) else 1.0)
         # round ends: where two ways of a street meet at an angle no wedge of grass is left
         parts.append(line.buffer(max(w, 3.0) / 2))
     if corridor:
@@ -1329,17 +1342,21 @@ def main():
         kiosks.append((c.x, c.y))
     if kiosks:
         print(f"newsstands mapped as buildings, now the banca model: {len(kiosks)}")
-    roads = []          # (kind, oneway, LineString)
+    roads = []          # (kind, oneway, LineString); a one-way street's line runs the way the traffic does
+    road_lanes = {}     # id(LineString) -> OSM's `lanes`, 0 where it gives none
     named = []          # (name, LineString) of streets that get corner name signs
     for el in osm:
         t = el.get("tags", {})
         if el["type"] == "way" and "highway" in t and len(el.get("geometry", [])) >= 2:
             from shapely.geometry import LineString
-            ln = LineString([proj(p["lat"], p["lon"]) for p in el["geometry"]])
+            one = one_way(t)
+            # oneway=-1: against the order the way is drawn in
+            ln = LineString([proj(p["lat"], p["lon"]) for p in (el["geometry"][::-1] if one < 0 else el["geometry"])])
             # calçadões are often mapped as ordinary streets closed to motor
             # traffic: render and treat them as pedestrian promenades
             kind = "pedestrian" if car_free(t) and t["highway"] in VEHICLE_ROADS else t["highway"]
-            roads.append((kind, t.get("oneway") == "yes", ln))
+            roads.append((kind, one != 0, ln))
+            road_lanes[id(ln)] = int(t["lanes"]) if str(t.get("lanes", "")).isdigit() else 0
             if t.get("name") and t["highway"] in VEHICLE_ROADS | PEDESTRIAN_ROADS:
                 named.append((t["name"], ln))
     # with --ring the traffic keeps to the outer road loop and what is inside it
@@ -1785,11 +1802,27 @@ def main():
     from shapely.ops import substring
     n_marks = 0
     vehicle = [(one, ln) for k, one, ln in roads if k in VEHICLE_ROADS]
+    lane_m = {id(ln): LANE_M.get(k, 3.0) for k, _, ln in roads}
+    n_plain = 0
     for one, ln in vehicle:
-        if one:      # one-way: white dashed lane line on the centre
-            for d0 in np.arange(2.0, ln.length - 3.0, 8.0):
-                seg = substring(ln, d0, min(d0 + 3.0, ln.length))
-                n_marks += _paint_poly(batch, white, seg.buffer(0.07, cap_style=2).intersection(paint_ok))
+        if one:
+            # one-way: a white dashed line between its lanes. A street of one
+            # lane - what a one-way street is where OSM gives no `lanes` - has
+            # none to draw.
+            lanes = road_lanes.get(id(ln), 0) or 1
+            n_plain += lanes < 2
+            for i in range(1, lanes):
+                off = (i - lanes / 2.0) * lane_m[id(ln)]
+                try:
+                    line = ln.parallel_offset(abs(off), "left" if off > 0 else "right") if abs(off) > 0.01 else ln
+                except Exception:
+                    continue
+                for part in getattr(line, "geoms", [line]):
+                    if part.geom_type != "LineString":
+                        continue
+                    for d0 in np.arange(2.0, part.length - 3.0, 8.0):
+                        seg = substring(part, d0, min(d0 + 3.0, part.length))
+                        n_marks += _paint_poly(batch, white, seg.buffer(0.07, cap_style=2).intersection(paint_ok))
         else:        # two-way: double solid yellow centre line
             for off in (-0.12, 0.12):
                 try:
@@ -1853,7 +1886,7 @@ def main():
                     continue
                 d_j = ln.project(j)
                 _zebra_at(ln, d_j + 7.0 if d_j < ln.length / 2 else d_j - 7.0)
-    print(f"road markings: {n_marks} pieces, {n_cross} crossings")
+    print(f"road markings: {n_marks} pieces, {n_cross} crossings, {n_plain} one-way streets of one lane without a line")
 
     # ---- horizon: ground out to 600 m and a ring of distant towers -------------
     sky = Batch()
@@ -2315,11 +2348,18 @@ def _road_graph(vehicle, area, inset=4.0):
     neighbouring tile's streets start at the same points."""
     inner = area.buffer(-inset) if inset else area
     lines = []
+    turned = 0
     for one, ln in vehicle:
         clipped = ln.intersection(inner)
         for part in getattr(clipped, "geoms", [clipped]):
             if part.geom_type == "LineString" and part.length > 3:
-                lines.append((one, list(part.coords)))
+                cs = list(part.coords)
+                # the cut may hand a piece back turned round: a one-way
+                # street's piece runs the way the street does
+                if ln.project(Point(cs[0])) > ln.project(Point(cs[-1])):
+                    cs.reverse()
+                    turned += 1
+                lines.append((one, cs))
     key = lambda c: (round(c[0] * 2) / 2, round(c[1] * 2) / 2)
     count = defaultdict(int)
     for _, cs in lines:
@@ -2345,7 +2385,8 @@ def _road_graph(vehicle, area, inset=4.0):
     node_xz = [None] * len(nodes)
     for (x, y), i in nodes.items():
         node_xz[i] = [x, -y]
-    print(f"road graph: {len(node_xz)} nodes, {len(edges)} edges")
+    print(f"road graph: {len(node_xz)} nodes, {len(edges)} edges"
+          + (f", {turned} pieces turned back to their street's direction" if turned else ""))
     return {"nodes": node_xz, "edges": edges}
 
 
