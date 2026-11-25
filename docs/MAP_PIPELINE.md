@@ -184,8 +184,16 @@ it to know which OSM building is where (map editor, DevAgent `selection`).
 - **ground surfaces**: asphalt only on the carriageway - each car street as
   wide as OSM says (`width`, else `lanes` x 3.2 m, else a width by its
   kind, `CARRIAGEWAY_M`, narrower one-way) - and on surface car parks;
-  paving on pedestrian ways, squares and pedestrian areas; a raised
-  sidewalk only where a building faces a street; everything else (gaps
+  paving on pedestrian ways, squares and pedestrian areas - small setts
+  (`PavingStones138`), and large light concrete slabs (`PavingStones126A`)
+  on a pedestrian street OSM tags `surface=paving_stones` (the Rua dos
+  Andradas): that street is one flat surface from facade to facade, its
+  12 m and every gap up to 10 m between that and a building within 16 m
+  of its line, with no sidewalk or kerb along it (through a park, where no
+  building is near, the 12 m strip alone); a raised sidewalk, of dark stone
+  slabs in staggered rows (`PavingStones127`, Porto Alegre's basalt
+  sidewalks), only where a building faces a street; the asphalt is the
+  light, worn `Asphalt005`; everything else (gaps
   between buildings, backs of lots, verges, medians) is grass at the
   ground's own level. Generated buildings reaching into the carriageway are
   cut back to the kerb; OSM street furniture standing on it moves to the

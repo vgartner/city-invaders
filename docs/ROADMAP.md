@@ -76,65 +76,27 @@ travel cost and the zebra crossings a low one; paths then naturally go
 along pavements and over crossings, while a pedestrian fleeing a robot still
 runs straight across.
 
-## The paving of the Rua dos Andradas and the Esquina Democrática
+## The paving of the Centro
 
-Asked for by the owner (November 2026), to do later. Seen on site, the
-pedestrian stretch of the Rua dos Andradas and the Esquina Democrática
-(Centro Histórico, Porto Alegre) is paved with large light-grey concrete
-slabs, roughly 0.6-1 m, with bands of red-brown paving across it, yellow
-tactile strips and round manhole covers - and it is one flat surface from
-facade to facade: no raised sidewalk, no kerb. The game paves every
-pedestrian street with the small setts of `PavingStones138` and lays a
-sidewalk along it.
+Done in the pipeline and the four maps (November 2026,
+[MAP_PIPELINE.md](MAP_PIPELINE.md), ground surfaces): the pedestrian
+streets OSM tags `surface=paving_stones` (Rua dos Andradas, Esquina
+Democrática) are large light slabs from facade to facade, without sidewalk
+or kerb; the sidewalks are dark stone slabs in staggered rows; the asphalt
+is lighter. All three from ambientCG (CC0). Still open:
 
-- **A slab material.** The project has none (`godot/assets/materials`:
-  `PavingStones138` and `Concrete034` are the nearest). CC0 candidates to
-  try, none downloaded yet: Poly Haven's `concrete_tiles`,
-  `square_concrete_pavers` and `patterned_concrete_pavers`, and ambientCG's
-  larger `PavingStones`/`Tiles` sets (the source of the materials in
-  `osm2gltf.py`'s `PBR` table). Credit it in `godot/assets/CREDITS.md`.
-- **Which streets get it.** OSM tags these ways `surface=paving_stones`
-  (Rua dos Andradas, Esquina Democrática, as `highway=pedestrian`) against
-  `surface=sett` on the streets around: the `surface` tag can pick the
-  material - `paving_stones` the slabs, `sett` the small stones.
-- **No sidewalk there.** A `highway=pedestrian` way paved wall to wall
-  takes no sidewalk and no kerb (the pavement between a pedestrian street
-  and its facades, MAP_PIPELINE.md, already fills the gap in paving).
-- The red bands, the tactile strips and the manhole covers as details
-  after that (the map already places manholes).
-- Reference photos: Mapillary or Wikimedia Commons only, as for every
-  other image (LICENSING.md). Mapillary's photos of these streets are from
-  January 2021, before the Quadrilátero Central works (finished in March
-  2026): they show the old small pavers with red borders, not today's slabs.
-
-## Sidewalks and asphalt of the Centro's streets
-
-Asked for by the owner (November 2026), to do later, with the paving above.
-
-- **Sidewalks.** On the Rua Riachuelo, as on most of the Centro, the
-  sidewalk is of dark grey stone slabs (the basalt slabs usual in Porto
-  Alegre): rectangles of uneven sizes, roughly 0.4-0.6 m by 0.6-1 m, laid
-  in rows with staggered joints, worn and patched, behind a kerb of long
-  stone blocks. The game lays every sidewalk in the same small setts as the
-  streets (`sidewalk` and `paving` both use `PavingStones138`). The
-  sidewalks need a slab material of their own; whether it is the one for
-  the Rua dos Andradas is open: both are rectangular slabs far larger than
-  the setts, but the Andradas' are lighter, larger and regular (new
-  concrete) and the sidewalks' darker and uneven (old stone). Two materials,
-  or one with two tints, to be decided when trying them.
-- **Asphalt.** The streets' asphalt is a light, worn grey with the stones
-  of the mix showing, patches and manhole covers - lighter and less even
-  than `Asphalt031` as the game shows it. To try: a lighter tint, or
-  another CC0 asphalt (worn, patched).
-- Mapillary has only 2019 photos of the Riachuelo (through a wet
-  windscreen): no use for the texture, and none of these can be a texture
-  source anyway - the materials come from CC0 libraries.
+- the red-brown bands across the Andradas, the yellow tactile strips (the
+  map already places manholes);
+- the sidewalks' kerb of long stone blocks (it is the concrete of before);
+- whether the three materials look right on site is the owner's call: they
+  were picked from the roadmap's description, not from photos (Mapillary's
+  are from before the 2026 works, and no photo may be a texture source).
 
 ## One-way streets
 
 Done in the pipeline (November 2026, [MAP_PIPELINE.md](MAP_PIPELINE.md),
 road markings); a map shows it once it is rebuilt - the open-world test
-tiles are, the four maps in the repository are not yet.
+tiles and the four maps in the repository are.
 
 - **Markings.** The white dashed line is drawn only between the lanes of a
   one-way street with two or more (`lanes`); a one-way street of one lane

@@ -463,6 +463,9 @@ CARRIAGEWAY_M = {"motorway": 14.0, "trunk": 14.0, "primary": 14.0, "secondary": 
 # the corridor rule (--corridor): a street is as wide as its lanes and the cars
 # parked along it, and as the buildings on both sides let it be
 LANE_M = {"motorway": 3.6, "trunk": 3.5, "primary": 3.4, "secondary": 3.3, "tertiary": 3.2}     # others 3.0
+SLAB_SURFACES = {"paving_stones", "concrete:plates"}     # OSM `surface` of a pedestrian street paved in slabs
+SLAB_REACH_M = 16.0          # that street's paving reaches at most this far from its line
+SLAB_FILL_M = 5.0            # a gap up to twice this between the street's strip and a facade is paved too
 PARKING_M = 2.2              # a row of parked cars along a kerb
 WALK_MIN_M = 2.5             # the pavement a street leaves on each side, where the buildings stand close
 WALK_FILL_M = 4.5            # a gap up to twice this between kerb and facade is all pavement
@@ -849,9 +852,14 @@ def wall(batch, key, p0, p1, h, u1, v_top, v_bot, z0=0.0, top_abs=False, bot_abs
 # ---- realistic materials (ambientCG, CC0) ------------------------------------
 # key -> (folder under godot/assets/materials, tile width m, tile height m)
 PBR = {
-    "asphalt": ("Asphalt031", 5.0, 5.0),
-    "paving": ("PavingStones138", 2.2, 2.2),
-    "sidewalk": ("PavingStones138", 2.2, 2.2),     # same look, separate node: visual only (see collision glb)
+    "asphalt": ("Asphalt005", 5.0, 5.0),           # light, worn, the stones of the mix showing
+    "paving": ("PavingStones138", 2.2, 2.2),       # small setts: pedestrian ways, squares
+    # large light concrete slabs: a pedestrian street OSM tags surface=paving_stones
+    # (the Rua dos Andradas), paved from facade to facade
+    "paving_slabs": ("PavingStones126A", 3.5, 3.5),
+    # dark stone slabs in staggered rows (Porto Alegre's basalt sidewalks); a
+    # node of its own: visual only (see collision glb)
+    "sidewalk": ("PavingStones127", 3.5, 3.5),
     "curb": ("Concrete034", 2.0, 2.0),
     "concrete_roof": ("Concrete034", 4.0, 4.0),
     "tile_roof": ("RoofingTiles013A", 3.0, 3.0),
@@ -1344,6 +1352,7 @@ def main():
         print(f"newsstands mapped as buildings, now the banca model: {len(kiosks)}")
     roads = []          # (kind, oneway, LineString); a one-way street's line runs the way the traffic does
     road_lanes = {}     # id(LineString) -> OSM's `lanes`, 0 where it gives none
+    slab_streets = []   # pedestrian streets paved in slabs from facade to facade
     named = []          # (name, LineString) of streets that get corner name signs
     for el in osm:
         t = el.get("tags", {})
@@ -1357,6 +1366,8 @@ def main():
             kind = "pedestrian" if car_free(t) and t["highway"] in VEHICLE_ROADS else t["highway"]
             roads.append((kind, one != 0, ln))
             road_lanes[id(ln)] = int(t["lanes"]) if str(t.get("lanes", "")).isdigit() else 0
+            if kind in PEDESTRIAN_ROADS and t.get("surface") in SLAB_SURFACES:
+                slab_streets.append(ln)
             if t.get("name") and t["highway"] in VEHICLE_ROADS | PEDESTRIAN_ROADS:
                 named.append((t["name"], ln))
     # with --ring the traffic keeps to the outer road loop and what is inside it
@@ -1690,6 +1701,21 @@ def main():
         fill = solid.buffer(WALK_FILL_M, join_style=2).buffer(-WALK_FILL_M, join_style=2).difference(solid) \
             .intersection(ways.buffer(2 * WALK_FILL_M + 1.0)).intersection(street_surface).difference(pedestrian)
         blocks = unary_union([blocks, fill])
+    # a pedestrian street in slabs is one flat surface from facade to facade:
+    # its own 12 m, and every gap up to 2 x SLAB_FILL_M between that and a
+    # building within SLAB_REACH_M of its line - no raised sidewalk along it,
+    # no kerb, no strip of lawn. Through a park or a square, where no
+    # building is near, it is the 12 m strip alone.
+    slabs = Point(9e9, 9e9).buffer(0.1)
+    if slab_streets:
+        strip = unary_union([ln.buffer(6.0, cap_style=2) for ln in slab_streets])
+        reach = unary_union([ln.buffer(SLAB_REACH_M, cap_style=2) for ln in slab_streets])
+        solid = unary_union([strip, footprint.intersection(reach.buffer(SLAB_FILL_M))])
+        closed_up = solid.buffer(SLAB_FILL_M, join_style=2).buffer(-SLAB_FILL_M, join_style=2)
+        slabs = unary_union([strip, closed_up.difference(solid).intersection(reach)]) \
+            .intersection(street_surface).difference(asphalt_area)
+        blocks = blocks.difference(slabs)
+        pedestrian = unary_union([pedestrian, slabs])
     sidewalks0 = blocks.difference(footprint.buffer(0.05))
     lawn = street_surface.difference(asphalt_area).difference(pedestrian).difference(sidewalks0)
     slivers = [g for g in parts_of(lawn) if g.area < 4.0 or g.buffer(-0.6).is_empty]
@@ -1699,12 +1725,15 @@ def main():
     asphalt_area = unary_union([g for g in parts_of(asphalt_area) if g.geom_type == "Polygon"])   # no stray lines
     for piece in parts_of(asphalt_area):
         batch.polygon(pbr("asphalt"), piece, 0.0, tile("asphalt")[0])
-    for piece in parts_of(pedestrian):
+    for piece in parts_of(pedestrian.difference(slabs)):
         batch.polygon(pbr("paving"), piece, 0.0, tile("paving")[0])
+    for piece in parts_of(pedestrian.intersection(slabs)):
+        batch.polygon(pbr("paving_slabs"), piece, 0.0, tile("paving_slabs")[0])
     for piece in parts_of(lawn):
         if piece.area > 0.5:
             batch.polygon(pbr("grass"), piece, 0.0, tile("grass")[0])
-    print("ground: asphalt %.0f m2, paving %.0f m2, grass %.0f m2" % (asphalt_area.area, pedestrian.area, lawn.area))
+    print("ground: asphalt %.0f m2, paving %.0f m2 (%.0f m2 of it slabs along %d pedestrian streets), grass %.0f m2"
+          % (asphalt_area.area, pedestrian.area, pedestrian.intersection(slabs).area, len(slab_streets), lawn.area))
 
     sidewalks = blocks.difference(footprint.buffer(0.05))
     sw_key, curb_key = pbr("sidewalk"), pbr("curb")
@@ -1720,7 +1749,7 @@ def main():
     for part in parts_of(sidewalks):
         if part.area < 1:
             continue
-        batch.polygon(sw_key, part, CURB_M, tile("paving")[0])
+        batch.polygon(sw_key, part, CURB_M, tile("sidewalk")[0])
         ring = orient(part, 1.0).exterior
         if TERRAIN:
             ring = ring.segmentize(TESSELLATE_M)
