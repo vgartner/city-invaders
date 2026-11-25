@@ -465,6 +465,10 @@ CARRIAGEWAY_M = {"motorway": 14.0, "trunk": 14.0, "primary": 14.0, "secondary": 
 LANE_M = {"motorway": 3.6, "trunk": 3.5, "primary": 3.4, "secondary": 3.3, "tertiary": 3.2}     # others 3.0
 SLAB_SURFACES = {"paving_stones", "concrete:plates"}     # OSM `surface` of a pedestrian street paved in slabs
 SLAB_REACH_M = 16.0          # that street's paving reaches at most this far from its line
+SLAB_BAND_EVERY_M = 14.0     # a band of red-brown paving across that street this often
+SLAB_BAND_M = 0.9            # the band's width
+SLAB_TACTILE_OFF_M = 3.2     # its yellow tactile strips run this far each side of its line
+SLAB_TACTILE_M = 0.4         # a tactile strip's width
 SLAB_FILL_M = 5.0            # a gap up to twice this between the street's strip and a facade is paved too
 PARKING_M = 2.2              # a row of parked cars along a kerb
 WALK_MIN_M = 2.5             # the pavement a street leaves on each side, where the buildings stand close
@@ -880,7 +884,7 @@ PBR = {
 #   rough:     no pixel smoother than this (1 = fully matte)
 #   relief:    the normal map's strength, times this
 LOOK = {
-    "asphalt": {"grey": 96, "rough": 0.97},                                       # tar: dark, matte, the stones still showing
+    "asphalt": {"grey": 60, "contrast": 1.15, "rough": 0.91},                     # tar: near black, the stones of the mix showing
     "sidewalk": {"grey": 104, "contrast": 0.75, "rough": 0.98, "relief": 0.5},    # worn stone, dusty, no shine
     "paving_slabs": {"rough": 0.95},
 }
@@ -1434,7 +1438,7 @@ def main():
             mask = np.asarray(base.getchannel("A"), float)[..., None] / 255.0 if base.mode == "RGBA" else None
             base = base.convert("RGB")
             normal, rough = Image.open(paths[1]).convert("RGB"), Image.open(paths[2]).convert("L")
-            base, normal, rough = _look(key, base, normal, rough)
+            base, normal, rough = _look(key.split("@")[0], base, normal, rough)
             if tint is not None and mask is not None:
                 # a kit tile: its wall (the mask) painted in the colour, the rest as baked
                 arr = np.asarray(base, float)
@@ -1895,6 +1899,52 @@ def main():
                 except Exception:
                     continue
                 n_marks += _paint_poly(batch, yellow, side.buffer(0.06, cap_style=2).intersection(paint_ok))
+    # a slab-paved pedestrian street (the Rua dos Andradas): bands of red-brown
+    # paving across it every SLAB_BAND_EVERY_M, and a yellow tactile strip
+    # along each side of its line - the slab material in those colours, laid
+    # a little above the slabs
+    n_bands = 0
+    if slab_streets:
+        band_key = pbr("paving_slabs@band", tint=(150, 78, 60), tint_strength=0.9)
+        tactile_key = pbr("paving_slabs@tactile", tint=(214, 176, 52), tint_strength=0.92)
+        street_slabs = slabs.buffer(-0.15, join_style=2)
+        strips = []
+        # OSM draws a street as several ways end to end: joined, so a strip
+        # runs through and stops only where another street crosses
+        from shapely.ops import linemerge
+        joined = linemerge(unary_union(slab_streets))
+        joined = [g for g in getattr(joined, "geoms", [joined]) if g.geom_type == "LineString"]
+        for ln in joined:
+            if ln.length < 2 * SLAB_BAND_EVERY_M:
+                continue                    # a short link between two streets: plain
+            own = ln.buffer(SLAB_REACH_M, cap_style=2)
+            others = [o.buffer(SLAB_TACTILE_OFF_M + SLAB_TACTILE_M, cap_style=2) for o in joined if o is not ln]
+            crossing = unary_union(others) if others else None
+            for side in ("left", "right"):
+                try:
+                    line = ln.parallel_offset(SLAB_TACTILE_OFF_M, side)
+                except Exception:
+                    continue
+                strip = line.buffer(SLAB_TACTILE_M / 2, cap_style=2)
+                strips.append(strip.difference(crossing) if crossing is not None else strip)
+            for d in np.arange(SLAB_BAND_EVERY_M / 2, ln.length, SLAB_BAND_EVERY_M):
+                a, b = ln.interpolate(max(0.0, d - 0.5)), ln.interpolate(min(ln.length, d + 0.5))
+                tx, ty = b.x - a.x, b.y - a.y
+                tl = math.hypot(tx, ty) or 1.0
+                c = ln.interpolate(d)
+                across = LineString([(c.x + ty / tl * SLAB_REACH_M, c.y - tx / tl * SLAB_REACH_M),
+                                     (c.x - ty / tl * SLAB_REACH_M, c.y + tx / tl * SLAB_REACH_M)])
+                band = across.buffer(SLAB_BAND_M / 2, cap_style=2).intersection(street_slabs).intersection(own)
+                # only the piece the street's line runs through: not a band's far
+                # end showing up in the next street
+                for piece in parts_of(band):
+                    if piece.distance(c) < 0.5:
+                        n_bands += _paint_poly(batch, band_key, piece)
+        tactile = unary_union(strips).intersection(street_slabs) if strips else None
+        if tactile is not None and not tactile.is_empty:
+            for piece in parts_of(tactile):
+                if piece.area > 0.05:
+                    batch.polygon(tactile_key, piece, 0.016, 1.0)
     # zebra crossings where OpenStreetMap has them (highway=crossing nodes on
     # a road, unless "unmarked"); a map without that data gets one near every
     # junction of vehicle roads instead
@@ -1951,7 +2001,8 @@ def main():
                     continue
                 d_j = ln.project(j)
                 _zebra_at(ln, d_j + 7.0 if d_j < ln.length / 2 else d_j - 7.0)
-    print(f"road markings: {n_marks} pieces, {n_cross} crossings, {n_plain} one-way streets of one lane without a line")
+    print(f"road markings: {n_marks} pieces, {n_cross} crossings, {n_plain} one-way streets of one lane without a line, "
+          f"{n_bands} bands across the slab streets")
 
     # ---- horizon: ground out to 600 m and a ring of distant towers -------------
     sky = Batch()

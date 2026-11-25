@@ -83,10 +83,10 @@ Done in the pipeline and the four maps (November 2026,
 streets OSM tags `surface=paving_stones` (Rua dos Andradas, Esquina
 Democrática) are large light slabs from facade to facade, without sidewalk
 or kerb; the sidewalks are worn stone slabs in staggered rows, matte; the
-asphalt is a dark tar grey with the stones of the mix showing, matte. All three from ambientCG (CC0). Still open:
+asphalt is a tar near black with the stones of the mix showing. All three from ambientCG (CC0). Still open:
 
-- the red-brown bands across the Andradas, the yellow tactile strips (the
-  map already places manholes);
+- the red-brown bands and the yellow tactile strips are in, at regular
+  distances - not where they are on site;
 - the sidewalks' kerb of long stone blocks (it is the concrete of before);
 - whether the three materials look right on site is the owner's call: they
   were picked from the roadmap's description, not from photos (Mapillary's
