@@ -4094,6 +4094,7 @@ func bird_sounds(props_file: String, parent: Node) -> Array:
 ## first, and works out its bus stops and where traffic drives in.
 func _load_roads() -> void:
 	road_graph = {"nodes": [], "edges": [], "out": {}, "len": [], "crossings": [], "streets": [], "entries": [], "stops": []}
+	stop_shelters.clear()
 
 
 func _start_world() -> void:
@@ -4124,7 +4125,10 @@ func area_stops(edits: Dictionary, props_file: String, e0: int, e1: int, area: R
 			if st[0] < 0:
 				continue
 			# a stop belongs to a bus line (the map editor's "Bus line"); 1 if unset
-			lines.get_or_add(int(p.get("line", 1)), []).append(st)
+			var line: Array = lines.get_or_add(int(p.get("line", 1)), [])
+			if not line.has(st):
+				line.append(st)
+			_shelter_of(st, Vector3(p["x"], p.get("y", 0.0), p["z"]))
 	if not lines.is_empty():
 		return {"designed": true, "lines": lines}
 	var found := []
@@ -4133,8 +4137,13 @@ func area_stops(edits: Dictionary, props_file: String, e0: int, e1: int, area: R
 		if p.get("type", "") != "bus_stop":
 			continue
 		var st: Array = _nearest_street(Vector2(p["pos"][0], p["pos"][2]), e0, e1)
-		if st[0] >= 0:                    # a shelter further than 25 m from any street serves none
+		# a shelter further than 25 m from any street serves none; shelters
+		# in a row (OSM maps a platform of each line) that come to the same
+		# street point are one stop
+		if st[0] >= 0 and not found.has(st):
 			found.append(st)
+		if st[0] >= 0:
+			_shelter_of(st, Vector3(p["pos"][0], p["pos"][1], p["pos"][2]))
 	return {"designed": false, "lines": {1: found} if not found.is_empty() else {}}
 
 
@@ -4216,21 +4225,40 @@ func _nearest_street(at: Vector2, e0 := 0, e1 := -1) -> Array:
 	return best
 
 
-## Server: people waiting at a stop (beside the street point, on the walkable
-## side): this many at each stop of a tile a player is in.
+## The shelters of a stop (a street point, as area_stops gives it): where its
+## people wait. The street point alone does not say which side of the street
+## the stop is on, and may be 15 m from the shelter on a wide avenue.
+var stop_shelters: Dictionary = {}
+func _stop_key(x: float, z: float) -> String:
+	return "%.2f,%.2f" % [x, z]
+func _shelter_of(stop: Array, shelter: Vector3) -> void:
+	var at: Array = stop_shelters.get_or_add(_stop_key(stop[1], stop[2]), [])
+	if not at.has(shelter):
+		at.append(shelter)
+
+
+## Server: people waiting at a stop, by one of its shelters (a stop without
+## one: beside the street point), on pavement: this many at each stop of a
+## tile a player is in.
 const WAITING_PER_STOP := 2
 func _spawn_waiting(street: Vector3, map: RID) -> void:
 	var models := Civilian.models_where("type", "Pedestrian")
 	if models.is_empty():
 		return
+	var centre := street
+	var radii := [4.5, 6.0]
+	var shelters: Array = stop_shelters.get(_stop_key(street.x, street.z), [])
+	if not shelters.is_empty():
+		centre = shelters.pick_random()
+		radii = [1.6, 2.6]
 	# a spot off the carriageway: the first direction whose ground is pavement
 	var space := get_world_3d().direct_space_state
 	var at := Vector3.INF
 	var a0 := randf() * TAU
 	for k in 12:
-		for r in [4.5, 6.0]:
+		for r: float in radii:
 			var a := a0 + k * TAU / 12.0
-			var p: Vector3 = NavigationServer3D.map_get_closest_point(map, street + Vector3(cos(a), 0, sin(a)) * r)
+			var p: Vector3 = NavigationServer3D.map_get_closest_point(map, centre + Vector3(cos(a), 0, sin(a)) * r)
 			var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(p + Vector3(0, 3, 0), p - Vector3(0, 3, 0), 1))
 			var ground := String(hit.collider.get_parent().name) if hit and hit.collider.get_parent() else ""
 			if hit and not (ground.begins_with("asphalt") or ground.begins_with("markings") or ground.begins_with("zebra")):
@@ -4251,7 +4279,7 @@ func bus_at_stop(bus: Node3D, s: Array) -> void:
 		return
 	var street := Vector3(s[1], bus.global_position.y, s[2])
 	for c in civilians_root.get_children():
-		if c.is_alive() and c.get("waiting_at") != Vector3.INF and c.global_position.distance_to(street) < 12.0:
+		if c.is_alive() and c.get("waiting_at") != Vector3.INF and c.global_position.distance_to(street) < 20.0:   # (a shelter may be 15 m from its street point)
 			c.board(bus)
 	var map := get_world_3d().navigation_map
 	for k in randi_range(0, 2):

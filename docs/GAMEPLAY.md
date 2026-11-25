@@ -289,6 +289,11 @@ A repair shop builds a Porongo for a core and a circuit.
   route: the buses then serve those, in the order they were placed. Get on by a rear door
   (E) to ride as a passenger - you can look round and shoot out - and E again
   to get off; the front door is the driver's seat
+  A stop is the street point nearest a shelter; shelters in a row that
+  come to the same point (OSM maps a platform for each line) are one stop,
+  where the bus calls once. The people waiting (two at a stop of the tile a
+  player is in) stand on the pavement by one of the stop's shelters, not
+  beside the street point, which on a wide avenue may be across the street.
 - Traffic with drivers: cars, buses, Charrua fuel tankers (explode when shot
   to pieces), Fruki delivery trucks (the big tractor-trailer on avenues), motorcycle couriers, cyclists, horsemen; shoot a vehicle and its
   driver bails out

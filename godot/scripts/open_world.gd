@@ -1053,10 +1053,14 @@ func _populate(id: String, root: Node3D, region: NavigationRegion3D, again := fa
 				main.spawn_civilian({"pos": at + Vector3(0, 0.1, 0), "model": officers.pick_random()}))
 	for data in main.vendor_spawns("res://city/%s.props.json" % id) + main.leisure_spawns(root):
 		_later(id, root, func(): main.spawn_civilian(data))
+	# (a stop two lines call at: the people wait there once)
+	var waited := {}
+	for n in (t.get("stops", {}).get("lines", {}) as Dictionary):
+		for stop in t["stops"]["lines"][n]:
+			waited[Vector2(stop[1], stop[2])] = true
 	for k in (main.WAITING_PER_STOP if full else 1):
-		for n in (t.get("stops", {}).get("lines", {}) as Dictionary):
-			for stop in t["stops"]["lines"][n]:
-				_later(id, root, func(): main._spawn_waiting(Vector3(stop[1], 0, stop[2]), main.get_world_3d().navigation_map))
+		for at: Vector2 in waited:
+			_later(id, root, func(): main._spawn_waiting(Vector3(at.x, 0, at.y), main.get_world_3d().navigation_map))
 	var away := []                              # a car a player drove off is not made again
 	for v in main.traffic_root.get_children():
 		if v.get_meta("tile_parked", "") == id and not v.is_queued_for_deletion():
@@ -1367,6 +1371,7 @@ func _streets_in(id: String, t: Dictionary) -> void:
 
 ## Map editor: a bus shelter was placed or moved - every tile's stops again.
 func refresh_stops() -> void:
+	main.stop_shelters.clear()
 	for id in tiles:
 		var t: Dictionary = tiles[id]
 		if t.has("e1"):
