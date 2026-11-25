@@ -301,12 +301,16 @@ func _part_physics(root: Node3D, key: String) -> void:
 			body.add_child(cs)
 		for mi in root.find_children("*floor*", "MeshInstance3D", true, false):
 			if String(mi.name).contains("bridge") or String(mi.name).contains("tier_"):
+				MeshLock.take()
 				(mi as MeshInstance3D).create_trimesh_collision()
+				MeshLock.give()
 	for glass in root.find_children("*_glass", "MeshInstance3D", true, false):
 		var gb := StaticBody3D.new()
 		glass.add_child(gb)
 		var gs := CollisionShape3D.new()
+		MeshLock.take()
 		var shape: ConcavePolygonShape3D = (glass as MeshInstance3D).mesh.create_trimesh_shape()
+		MeshLock.give()
 		shape.backface_collision = true
 		gs.shape = shape
 		gb.add_child(gs)

@@ -1813,7 +1813,10 @@ func _merge_collision(m: Node3D, meshes: Array) -> void:
 		if not is_instance_valid(mi) or (mi as MeshInstance3D).mesh == null:
 			continue
 		var xf: Transform3D = to_m * (mi as MeshInstance3D).global_transform
-		for v in (mi as MeshInstance3D).mesh.get_faces():
+		MeshLock.take()
+		var own: PackedVector3Array = (mi as MeshInstance3D).mesh.get_faces()
+		MeshLock.give()
+		for v in own:
 			faces.append(xf * v)
 	var shape := ConcavePolygonShape3D.new()
 	shape.set_faces(faces)
@@ -4717,7 +4720,9 @@ func _shell(sh: Dictionary) -> void:
 		fm.cull_mode = BaseMaterial3D.CULL_DISABLED
 		mi.material_override = fm
 		root.add_child(mi)
+		MeshLock.take()
 		mi.create_trimesh_collision()
+		MeshLock.give()
 		# the ring's winding decides which side a one-sided trimesh faces: the
 		# floor must hold whichever way the building was mapped
 		for cs in mi.find_children("*", "CollisionShape3D", true, false):
@@ -5186,7 +5191,9 @@ func _landmark(l: Dictionary) -> void:
 			if trimesh_defer:
 				trimesh_later.append(mi as MeshInstance3D)
 				continue
+			MeshLock.take()
 			(mi as MeshInstance3D).create_trimesh_collision()
+			MeshLock.give()
 			# both sides, like the city's: a shop floor only stopped things from below
 			for cs in mi.find_children("*", "CollisionShape3D", true, false):
 				((cs as CollisionShape3D).shape as ConcavePolygonShape3D).backface_collision = true
@@ -5248,7 +5255,10 @@ func _conform_pad(mi: MeshInstance3D, owner_node: Node3D) -> void:
 		ex.append((b as CollisionObject3D).get_rid())
 	var xf := mi.global_transform
 	var inv := xf.affine_inverse()
-	if mi.mesh.get_faces().size() > 600:
+	MeshLock.take()
+	var face_points := mi.mesh.get_faces().size()
+	MeshLock.give()
+	if face_points > 600:
 		# already subdivided (a delivered model): drop its own vertices onto the
 		# ground and keep its UVs and materials
 		var am := ArrayMesh.new()

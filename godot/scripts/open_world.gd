@@ -393,7 +393,9 @@ func _build(id: String) -> void:
 		var kind: String = main.city_mesh_kind(mi)
 		if (custom and kind in main.VISUAL_ONLY) or kind in main.NO_COLLISION:
 			continue
+		MeshLock.lock()
 		(mi as MeshInstance3D).create_trimesh_collision()
+		MeshLock.unlock()
 		if kind in main.ROOFS:
 			for body in mi.find_children("*", "StaticBody3D", false, false):
 				(body as StaticBody3D).collision_layer = main.ROOF_LAYER
@@ -402,7 +404,9 @@ func _build(id: String) -> void:
 		col.name = "SidewalkCollision"
 		root.add_child(col)
 		for mi in col.find_children("*", "MeshInstance3D", true, false):
+			MeshLock.lock()
 			(mi as MeshInstance3D).create_trimesh_collision()
+			MeshLock.unlock()
 			(mi as MeshInstance3D).visible = false
 	for cs in root.find_children("*", "CollisionShape3D", true, false):
 		var shape: Shape3D = (cs as CollisionShape3D).shape
@@ -658,11 +662,13 @@ func _make_shapes(meshes: Array, shapes: Array, done: Array) -> void:
 	for i in meshes.size():
 		if _leaving:
 			return
+		MeshLock.lock()
 		var shape: Shape3D = (meshes[i] as Mesh).create_trimesh_shape()
+		done[1] += (meshes[i] as Mesh).get_faces().size() / 3
+		MeshLock.unlock()
 		if shape is ConcavePolygonShape3D:
 			(shape as ConcavePolygonShape3D).backface_collision = true     # both sides, like the city's
 		shapes[i] = shape
-		done[1] += (meshes[i] as Mesh).get_faces().size() / 3
 	done[0] = true
 
 

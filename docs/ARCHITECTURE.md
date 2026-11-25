@@ -47,6 +47,7 @@ There are no hand-made scenes: `main.tscn` only holds `main.gd`.
 | `road_path.gd` | Horizontal road projection, arc-length pursuit targets, curve speed limits and normal-key steering feedback for autoplay |
 | `dev_agent.gd` | Autoload: JSON-RPC test interface and opt-in frame/pipeline/scene diagnostics (see [DEVAGENT.md](DEVAGENT.md)) |
 | `batcher.gd` | Draw-call batching: copies of a mesh become one MultiMesh per 64 m cell (see [PERFORMANCE.md](PERFORMANCE.md)) |
+| `mesh_lock.gd` | `MeshLock`: one thread at a time reads a mesh's triangles (`create_trimesh_shape`, `create_trimesh_collision`, `get_faces`). A Mesh caches them and is shared by every copy of a model, so two threads on the same one crash the engine. Worker threads `lock()`/`unlock()`; the main thread `take()`/`give()`, which keeps serving the rendering server while it waits (the worker holding the lock waits for that) |
 | `texture_sharing.gd` | Loading-time sharing of byte-identical imported texture payloads in retained scenes and live meshes; the files hashed on worker threads and remembered in `user://texture_hashes.json`; weak caches, no pixel or import changes |
 | `model_library.gd` | Lists the `.glb` models of a folder |
 

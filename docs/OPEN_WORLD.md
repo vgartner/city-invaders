@@ -90,7 +90,12 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   a tile reads meshes through the rendering server and sleeps until the main
   thread answers, so a main thread that only waited hung the game on quit
   (5 of 5 quits while a tile was being built; 0 of 12 now), and a tile still
-  being built is told to stop (`_leaving`). Two meshes baked apart
+  being built is told to stop (`_leaving`). Reading a mesh's triangles is
+  not safe from two threads at once either: a landmark's shape job and the
+  main thread placing the next landmark, on the same shared Mesh, crashed
+  the game at the start of the Centro (9 of 20 starts; 0 of 36 on the five
+  maps since every such read goes through `MeshLock`,
+  [ARCHITECTURE.md](ARCHITECTURE.md)). Two meshes baked apart
   stop an agent's radius short of the shared edge, so along the tile's edge,
   every 2.5 m where both sides can be walked, a `NavigationLink3D` joins
   them (26 on the test edge). The neighbours' buildings that reach into a

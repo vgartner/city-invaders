@@ -482,7 +482,9 @@ func _static_model(path: String, pos: Vector3, yaw: float) -> void:
 		# the kiosk is open in front with a side door: collide with its real walls
 		for mi in model.find_children("*", "MeshInstance3D", true, false):
 			if not String(mi.name).begins_with("covers"):
+				MeshLock.take()
 				(mi as MeshInstance3D).create_trimesh_collision()
+				MeshLock.give()
 		return
 	var box := _aabb(model)
 	var body := StaticBody3D.new()
