@@ -83,7 +83,8 @@ Done in the pipeline and the four maps (November 2026,
 streets OSM tags `surface=paving_stones` (Rua dos Andradas, Esquina
 Democrática) are large light slabs from facade to facade, without sidewalk
 or kerb; the sidewalks are worn stone slabs in staggered rows, matte; the
-asphalt is a tar near black with the stones of the mix showing. All three from ambientCG (CC0). Still open:
+asphalt is a tar near black with the stones of the mix showing, with
+mended patches and trenches. All three from ambientCG (CC0). Still open:
 
 - the red-brown bands and the yellow tactile strips are in, at regular
   distances - not where they are on site;

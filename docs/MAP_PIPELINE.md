@@ -196,7 +196,11 @@ it to know which OSM building is where (map editor, DevAgent `selection`).
   `Asphalt005`. The libraries' scans are of clean surfaces and, at their
   own roughness (about 0.5), shine in the sun: `LOOK` in `osm2gltf.py`
   says how a ground material is shown - the asphalt darkened to a tar
-  near black with the stones of the mix showing, the sidewalks' stone
+  near black with the stones of the mix showing (and about every 26 m
+  along a street a piece of the carriageway in another tone of it: a
+  mended patch, or a trench of pipe works along or across the street,
+  blacker where new, paler where worn - cut out of the asphalt and laid at
+  its level, placed by a fixed seed), the sidewalks' stone
   lighter, flatter and matte, the slabs matte. A slab street of 28 m or
   more has a band of red-brown paving across it every 14 m and a yellow
   tactile strip 3.2 m to each side of its line (the slab material in those

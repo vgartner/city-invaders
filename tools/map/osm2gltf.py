@@ -465,6 +465,7 @@ CARRIAGEWAY_M = {"motorway": 14.0, "trunk": 14.0, "primary": 14.0, "secondary": 
 LANE_M = {"motorway": 3.6, "trunk": 3.5, "primary": 3.4, "secondary": 3.3, "tertiary": 3.2}     # others 3.0
 SLAB_SURFACES = {"paving_stones", "concrete:plates"}     # OSM `surface` of a pedestrian street paved in slabs
 SLAB_REACH_M = 16.0          # that street's paving reaches at most this far from its line
+PATCH_EVERY_M = 26.0         # a patch or a trench in the asphalt about this often along a street
 SLAB_BAND_EVERY_M = 14.0     # a band of red-brown paving across that street this often
 SLAB_BAND_M = 0.9            # the band's width
 SLAB_TACTILE_OFF_M = 3.2     # its yellow tactile strips run this far each side of its line
@@ -1763,8 +1764,64 @@ def main():
         asphalt_area = asphalt_area.union(unary_union(slivers).intersection(near_street))
         lawn = lawn.difference(asphalt_area)
     asphalt_area = unary_union([g for g in parts_of(asphalt_area) if g.geom_type == "Polygon"])   # no stray lines
-    for piece in parts_of(asphalt_area):
+    # the asphalt is not one even sheet: patches where it was mended (newer,
+    # blacker) or has worn pale, and the long narrow trenches of pipe works,
+    # along a street or across it. Pieces of the carriageway in another tone
+    # of the same material, cut out of it and laid at its level.
+    patch_rng = np.random.default_rng(11)
+    patch_keys = [pbr("asphalt@new", tint=(28, 28, 30), tint_strength=0.9),
+                  pbr("asphalt@worn", tint=(104, 102, 97), tint_strength=0.9)]
+    patches = [[], []]
+    inside = asphalt_area.buffer(-0.25, join_style=2)
+    for k, _, ln in roads:
+        if k not in VEHICLE_ROADS or ln.length < 12.0:
+            continue
+        d = float(patch_rng.uniform(4.0, PATCH_EVERY_M))
+        while d < ln.length - 2.0:
+            a, b = ln.interpolate(max(0.0, d - 0.5)), ln.interpolate(min(ln.length, d + 0.5))
+            tx, ty = b.x - a.x, b.y - a.y
+            tl = math.hypot(tx, ty) or 1.0
+            tx, ty = tx / tl, ty / tl
+            c = ln.interpolate(d)
+            off = float(patch_rng.uniform(-2.2, 2.2))
+            cx, cy = c.x - ty * off, c.y + tx * off
+            kind = patch_rng.random()
+            if kind < 0.2:            # a trench across the street
+                along, across = float(patch_rng.uniform(0.6, 0.9)), 30.0
+                cx, cy = c.x, c.y
+            elif kind < 0.4:          # a trench along it
+                along, across = float(patch_rng.uniform(9.0, 26.0)), float(patch_rng.uniform(0.6, 0.9))
+            else:                     # a mended patch
+                along, across = float(patch_rng.uniform(1.8, 8.0)), float(patch_rng.uniform(1.0, 2.6))
+            hx, hy = tx * along / 2, ty * along / 2
+            wx, wy = -ty * across / 2, tx * across / 2
+            rect = Polygon([(cx - hx - wx, cy - hy - wy), (cx + hx - wx, cy + hy - wy),
+                            (cx + hx + wx, cy + hy + wy), (cx - hx + wx, cy - hy + wy)])
+            # a trench across: only the carriageway this street's line is on
+            piece = rect.intersection(inside)
+            if kind < 0.2:
+                piece = next((g for g in parts_of(piece) if g.distance(c) < 0.5), None)
+            if piece is not None and not piece.is_empty:
+                patches[0 if patch_rng.random() < 0.6 else 1].append(piece)
+            d += float(patch_rng.uniform(0.5, 1.5)) * PATCH_EVERY_M
+    # where two overlap the first laid shows: each tone is one flat union
+    new_tone = unary_union(patches[0]) if patches[0] else None
+    worn_tone = unary_union(patches[1]) if patches[1] else None
+    if new_tone is not None and worn_tone is not None:
+        worn_tone = worn_tone.difference(new_tone)
+    plain = asphalt_area
+    n_patches = 0
+    for key, tone in zip(patch_keys, (new_tone, worn_tone)):
+        if tone is None or tone.is_empty:
+            continue
+        plain = plain.difference(tone)
+        for piece in parts_of(tone):
+            if piece.area > 0.2:
+                batch.polygon(key, piece, 0.0, tile("asphalt")[0])
+                n_patches += 1
+    for piece in parts_of(plain):
         batch.polygon(pbr("asphalt"), piece, 0.0, tile("asphalt")[0])
+    print(f"asphalt: {n_patches} patches and trenches")
     for piece in parts_of(pedestrian.difference(slabs)):
         batch.polygon(pbr("paving"), piece, 0.0, tile("paving")[0])
     for piece in parts_of(pedestrian.intersection(slabs)):
