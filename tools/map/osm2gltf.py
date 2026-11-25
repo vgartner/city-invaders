@@ -872,6 +872,41 @@ PBR = {
     "facade_bands": ("Facade006", 20.0, 26.0),
     "facade_fins": ("Facade017", 20.0, 26.0),
 }
+# How a ground material is shown, by its key: the libraries' scans are of
+# clean, new surfaces, and at their own roughness (about 0.5) the sun puts a
+# sheen on them - the asphalt looked like cement, the sidewalks polished.
+#   grey:      the colour's mean brightness (0-255) is brought to this
+#   contrast:  the colour's variation round its mean, times this
+#   rough:     no pixel smoother than this (1 = fully matte)
+#   relief:    the normal map's strength, times this
+LOOK = {
+    "asphalt": {"grey": 96, "rough": 0.97},                                       # tar: dark, matte, the stones still showing
+    "sidewalk": {"grey": 104, "contrast": 0.75, "rough": 0.98, "relief": 0.5},    # worn stone, dusty, no shine
+    "paving_slabs": {"rough": 0.95},
+}
+
+
+def _look(key, base, normal, rough):
+    """The material's images as LOOK says to show them."""
+    look = LOOK.get(key)
+    if not look:
+        return base, normal, rough
+    arr = np.asarray(base, float)
+    mean = arr.mean()
+    arr = mean + (arr - mean) * look.get("contrast", 1.0)
+    if "grey" in look:
+        arr *= look["grey"] / max(mean, 1.0)
+    base = Image.fromarray(arr.clip(0, 255).astype(np.uint8))
+    if "rough" in look:
+        rough = Image.fromarray(np.maximum(np.asarray(rough, float), 255.0 * look["rough"]).astype(np.uint8))
+    if "relief" in look:
+        n = np.asarray(normal, float) / 127.5 - 1.0
+        n[..., :2] *= look["relief"]
+        n /= np.linalg.norm(n, axis=-1, keepdims=True)
+        normal = Image.fromarray(((n + 1.0) * 127.5).clip(0, 255).astype(np.uint8))
+    return base, normal, rough
+
+
 # painted plaster variants of the low-rise brick facade (tools/map/facade_variants.py)
 PAINTED = {"cream": (226, 212, 178), "ochre": (214, 172, 96), "salmon": (214, 150, 128),
            "mint": (168, 196, 170), "white": (236, 234, 226), "sky": (160, 186, 206),
@@ -1399,6 +1434,7 @@ def main():
             mask = np.asarray(base.getchannel("A"), float)[..., None] / 255.0 if base.mode == "RGBA" else None
             base = base.convert("RGB")
             normal, rough = Image.open(paths[1]).convert("RGB"), Image.open(paths[2]).convert("L")
+            base, normal, rough = _look(key, base, normal, rough)
             if tint is not None and mask is not None:
                 # a kit tile: its wall (the mask) painted in the colour, the rest as baked
                 arr = np.asarray(base, float)

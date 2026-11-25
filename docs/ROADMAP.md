@@ -82,8 +82,8 @@ Done in the pipeline and the four maps (November 2026,
 [MAP_PIPELINE.md](MAP_PIPELINE.md), ground surfaces): the pedestrian
 streets OSM tags `surface=paving_stones` (Rua dos Andradas, Esquina
 Democrática) are large light slabs from facade to facade, without sidewalk
-or kerb; the sidewalks are dark stone slabs in staggered rows; the asphalt
-is lighter. All three from ambientCG (CC0). Still open:
+or kerb; the sidewalks are worn stone slabs in staggered rows, matte; the
+asphalt is a dark tar grey with the stones of the mix showing, matte. All three from ambientCG (CC0). Still open:
 
 - the red-brown bands across the Andradas, the yellow tactile strips (the
   map already places manholes);
