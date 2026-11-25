@@ -465,6 +465,9 @@ CARRIAGEWAY_M = {"motorway": 14.0, "trunk": 14.0, "primary": 14.0, "secondary": 
 LANE_M = {"motorway": 3.6, "trunk": 3.5, "primary": 3.4, "secondary": 3.3, "tertiary": 3.2}     # others 3.0
 SLAB_SURFACES = {"paving_stones", "concrete:plates"}     # OSM `surface` of a pedestrian street paved in slabs
 SLAB_REACH_M = 16.0          # that street's paving reaches at most this far from its line
+KERB_BLOCK_M = 1.0           # a kerb block's length
+KERB_TOP_M = 0.18            # its width, seen from above
+KERB_PROUD_M = 0.012         # how far it stands above the sidewalk's slabs
 PATCH_EVERY_M = 26.0         # a patch or a trench in the asphalt about this often along a street
 SLAB_BAND_EVERY_M = 14.0     # a band of red-brown paving across that street this often
 SLAB_BAND_M = 0.9            # the band's width
@@ -865,7 +868,7 @@ PBR = {
     # dark stone slabs in staggered rows (Porto Alegre's basalt sidewalks); a
     # node of its own: visual only (see collision glb)
     "sidewalk": ("PavingStones127", 3.5, 3.5),
-    "curb": ("Concrete034", 2.0, 2.0),
+    "curb": ("gen:kerb", 1.0, 1.0),                # a kerb block of stone, made here (_kerb_stone)
     "concrete_roof": ("Concrete034", 4.0, 4.0),
     "tile_roof": ("RoofingTiles013A", 3.0, 3.0),
     "plaster": ("PaintedPlaster017", 3.0, 3.0),
@@ -889,6 +892,31 @@ LOOK = {
     "sidewalk": {"grey": 104, "contrast": 0.75, "rough": 0.98, "relief": 0.5},    # worn stone, dusty, no shine
     "paving_slabs": {"rough": 0.95},
 }
+
+
+def _kerb_stone(w=256, h=64):
+    """One kerb block as colour, normal map and roughness: grey speckled
+    stone, a joint at each end (the image repeats along the kerb, one block
+    each KERB_BLOCK_M), its long edges worn round. Made here, no scan."""
+    rng = np.random.default_rng(5)
+    grain = rng.normal(0.0, 1.0, (h, w))
+    coarse = np.kron(rng.normal(0.0, 1.0, (h // 8, w // 8)), np.ones((8, 8)))
+    shade = 128.0 + 13.0 * grain + 9.0 * coarse
+    height = np.ones((h, w))                     # the surface: 1 flat, lower in the joints and at the edges
+    joint = 4
+    ramp = np.linspace(0.0, 1.0, joint)
+    height[:, :joint] *= ramp
+    height[:, -joint:] *= ramp[::-1]
+    height[:3, :] *= np.linspace(0.5, 1.0, 3)[:, None]
+    height[-3:, :] *= np.linspace(1.0, 0.5, 3)[:, None]
+    shade *= 0.45 + 0.55 * height                # the joints dark with dirt
+    base = Image.fromarray(np.stack([shade, shade * 0.99, shade * 0.96], -1).clip(0, 255).astype(np.uint8))
+    n = np.stack([-np.gradient(height, axis=1) * 2.0, np.gradient(height, axis=0) * 2.0, np.ones((h, w))], -1)
+    n[..., :2] += rng.normal(0.0, 0.04, (h, w, 2))          # the stone's own grain
+    n /= np.linalg.norm(n, axis=-1, keepdims=True)
+    normal = Image.fromarray(((n + 1.0) * 127.5).clip(0, 255).astype(np.uint8))
+    rough = Image.fromarray(np.full((h, w), 250, np.uint8))
+    return base, normal, rough
 
 
 def _look(key, base, normal, rough):
@@ -1429,6 +1457,9 @@ def main():
         """Register an ambientCG material (optionally tinted) and return its key."""
         folder, _, _ = PBR[key.split("@")[0]]
         if key not in images:
+            if folder == "gen:kerb":
+                images[key], normals[key], roughs[key] = _kerb_stone()
+                return key
             if folder.startswith("kit:"):
                 kit = args.materials.parent / "common" / "facades_kit" / folder[4:]
                 paths = (f"{kit}_basecolor.png", f"{kit}_normal.png", f"{kit}_roughness.png")
@@ -1851,8 +1882,24 @@ def main():
         if TERRAIN:
             ring = ring.segmentize(TESSELLATE_M)
         cs = list(ring.coords)
+        run = 0.0                     # metres along the ring: the blocks' joints go on from piece to piece
         for a, b in zip(cs[:-1], cs[1:]):
-            wall(batch, curb_key, a, b, CURB_M, math.dist(a, b) / 2.0, 0.075, 0.0)
+            L = math.dist(a, b)
+            if L > 1e-6:
+                # the kerb: blocks of stone KERB_BLOCK_M long, standing a
+                # little proud of the sidewalk - their face to the street and,
+                # along a carriageway, their top (elsewhere the ring runs
+                # along the fronts, where no kerb shows)
+                u0, u1 = run / KERB_BLOCK_M, (run + L) / KERB_BLOCK_M
+                top = CURB_M + KERB_PROUD_M
+                batch.quad(curb_key, to_godot(*a, 0.0), to_godot(*b, 0.0), to_godot(*b, top), to_godot(*a, top),
+                           (u0, 0.0), (u1, 0.0), (u1, 1.0), (u0, 1.0))
+                if near_kerb.contains(Point((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)):
+                    ix, iy = -(b[1] - a[1]) / L * KERB_TOP_M, (b[0] - a[0]) / L * KERB_TOP_M     # into the sidewalk
+                    a_in, b_in = (a[0] + ix, a[1] + iy), (b[0] + ix, b[1] + iy)
+                    batch.quad(curb_key, to_godot(*a, top), to_godot(*b, top), to_godot(*b_in, top), to_godot(*a_in, top),
+                               (u0, 0.0), (u1, 0.0), (u1, 1.0), (u0, 1.0))
+                run += L
             _ramp(col, col_key, a, b, RAMP_M, CURB_M)
         for inset in parts_of(part.buffer(-RAMP_M + 0.05, join_style=2)):
             col.polygon(col_key, inset, CURB_M, 1.0)

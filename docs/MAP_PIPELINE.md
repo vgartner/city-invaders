@@ -192,7 +192,10 @@ it to know which OSM building is where (map editor, DevAgent `selection`).
   of its line, with no sidewalk or kerb along it (through a park, where no
   building is near, the 12 m strip alone); a raised sidewalk, of dark stone
   slabs in staggered rows (`PavingStones127`, Porto Alegre's basalt
-  sidewalks), only where a building faces a street; the asphalt is
+  sidewalks), only where a building faces a street, behind a kerb of
+  stone blocks 1 m long with a joint between them (a texture made by the
+  pipeline, `_kerb_stone`): the kerb's face, and along a carriageway its
+  top, 18 cm wide and 12 mm proud of the slabs; the asphalt is
   `Asphalt005`. The libraries' scans are of clean surfaces and, at their
   own roughness (about 0.5), shine in the sun: `LOOK` in `osm2gltf.py`
   says how a ground material is shown - the asphalt darkened to a tar
