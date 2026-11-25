@@ -465,6 +465,9 @@ CARRIAGEWAY_M = {"motorway": 14.0, "trunk": 14.0, "primary": 14.0, "secondary": 
 LANE_M = {"motorway": 3.6, "trunk": 3.5, "primary": 3.4, "secondary": 3.3, "tertiary": 3.2}     # others 3.0
 SLAB_SURFACES = {"paving_stones", "concrete:plates"}     # OSM `surface` of a pedestrian street paved in slabs
 SLAB_REACH_M = 16.0          # that street's paving reaches at most this far from its line
+KERB_RADIUS_M = 1.2          # the radius a kerb turns a corner with
+KERB_BIT_MAX_M2 = 8.0        # what rounding a corner takes off is at most this large
+KERB_BIT_MAX_M = 7.0         # ... and this long
 KERB_BLOCK_M = 1.0           # a kerb block's length
 KERB_TOP_M = 0.18            # its width, seen from above
 KERB_PROUD_M = 0.012         # how far it stands above the sidewalk's slabs
@@ -1788,6 +1791,27 @@ def main():
             .intersection(street_surface).difference(asphalt_area)
         blocks = blocks.difference(slabs)
         pedestrian = unary_union([pedestrian, slabs])
+    # a kerb turns a corner in a curve of KERB_RADIUS_M, and where two streets
+    # meet at a sharp angle the sidewalk does not run out into a spike: the
+    # blocks (buildings and their sidewalks) are opened by that radius, and
+    # the corner bits this takes off along a carriageway become asphalt. A
+    # bit that is large or long is no corner (a narrow strip of sidewalk) and
+    # stays; no building is touched.
+    rounded_off = Point(9e9, 9e9).buffer(0.1)
+    if carriageway is not None and not carriageway.is_empty:
+        opened = blocks.buffer(-KERB_RADIUS_M, join_style=1).buffer(KERB_RADIUS_M, join_style=1)
+        bits = []
+        for g in parts_of(blocks.difference(opened).difference(footprint.buffer(0.3))):
+            if g.area < 0.02 or g.area > KERB_BIT_MAX_M2 or g.distance(carriageway) > 0.3:
+                continue
+            x0, y0, x1, y1 = g.bounds
+            if math.hypot(x1 - x0, y1 - y0) < KERB_BIT_MAX_M:
+                bits.append(g)
+        if bits:
+            rounded_off = unary_union(bits).buffer(0.01).intersection(street_surface)
+            blocks = blocks.difference(rounded_off)
+            asphalt_area = asphalt_area.union(rounded_off.difference(pedestrian))
+        print(f"sidewalk corners rounded: {len(bits)}")
     sidewalks0 = blocks.difference(footprint.buffer(0.05))
     lawn = street_surface.difference(asphalt_area).difference(pedestrian).difference(sidewalks0)
     slivers = [g for g in parts_of(lawn) if g.area < 4.0 or g.buffer(-0.6).is_empty]

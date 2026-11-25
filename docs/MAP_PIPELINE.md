@@ -195,8 +195,12 @@ it to know which OSM building is where (map editor, DevAgent `selection`).
   sidewalks), only where a building faces a street, behind a kerb of
   stone blocks 1 m long with a joint between them (a texture made by the
   pipeline, `_kerb_stone`): the kerb's face, and along a carriageway its
-  top, 18 cm wide and 12 mm proud of the slabs, mitred at the corners;
-  the asphalt is
+  top, 18 cm wide and 12 mm proud of the slabs, mitred at the corners. A
+  kerb turns a corner in a curve of 1.2 m radius and a sidewalk between
+  two streets meeting at a sharp angle ends in a round nose, not a spike:
+  the blocks are opened by that radius and the corner bits it takes off
+  along a carriageway (up to 8 m2 and 7 m long - more is a narrow strip of
+  sidewalk, which stays) become asphalt; the asphalt is
   `Asphalt005`. The libraries' scans are of clean surfaces and, at their
   own roughness (about 0.5), shine in the sun: `LOOK` in `osm2gltf.py`
   says how a ground material is shown - the asphalt darkened to a tar
