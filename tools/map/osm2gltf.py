@@ -1883,7 +1883,27 @@ def main():
             ring = ring.segmentize(TESSELLATE_M)
         cs = list(ring.coords)
         run = 0.0                     # metres along the ring: the blocks' joints go on from piece to piece
-        for a, b in zip(cs[:-1], cs[1:]):
+        # the kerb top's inner edge, point by point: at a corner both pieces
+        # meet on the corner's bisector (a mitre) - set in by their own
+        # normals they overlapped on one side of a bend and left a wedge of
+        # sidewalk open on the other
+        ring_pts = cs[:-1]
+        inner = []
+        for i, pt in enumerate(ring_pts):
+            prev, nxt = ring_pts[i - 1], ring_pts[(i + 1) % len(ring_pts)]
+            d0 = (pt[0] - prev[0], pt[1] - prev[1])
+            d1 = (nxt[0] - pt[0], nxt[1] - pt[1])
+            l0, l1 = math.hypot(*d0) or 1.0, math.hypot(*d1) or 1.0
+            n0, n1 = (-d0[1] / l0, d0[0] / l0), (-d1[1] / l1, d1[0] / l1)       # into the sidewalk
+            bx, by = n0[0] + n1[0], n0[1] + n1[1]
+            bl = math.hypot(bx, by)
+            if bl < 1e-6:
+                inner.append((pt[0] + n1[0] * KERB_TOP_M, pt[1] + n1[1] * KERB_TOP_M))
+                continue
+            bx, by = bx / bl, by / bl
+            reach = KERB_TOP_M / max(bx * n1[0] + by * n1[1], 0.4)              # no spike at a sharp corner
+            inner.append((pt[0] + bx * reach, pt[1] + by * reach))
+        for i, (a, b) in enumerate(zip(cs[:-1], cs[1:])):
             L = math.dist(a, b)
             if L > 1e-6:
                 # the kerb: blocks of stone KERB_BLOCK_M long, standing a
@@ -1895,8 +1915,7 @@ def main():
                 batch.quad(curb_key, to_godot(*a, 0.0), to_godot(*b, 0.0), to_godot(*b, top), to_godot(*a, top),
                            (u0, 0.0), (u1, 0.0), (u1, 1.0), (u0, 1.0))
                 if near_kerb.contains(Point((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)):
-                    ix, iy = -(b[1] - a[1]) / L * KERB_TOP_M, (b[0] - a[0]) / L * KERB_TOP_M     # into the sidewalk
-                    a_in, b_in = (a[0] + ix, a[1] + iy), (b[0] + ix, b[1] + iy)
+                    a_in, b_in = inner[i], inner[(i + 1) % len(inner)]
                     batch.quad(curb_key, to_godot(*a, top), to_godot(*b, top), to_godot(*b_in, top), to_godot(*a_in, top),
                                (u0, 0.0), (u1, 0.0), (u1, 1.0), (u0, 1.0))
                 run += L
