@@ -22,6 +22,8 @@ maps/*/sky/
 godot/city/*.png
 !godot/city/bark.png
 !godot/city/leaves.png
+# the images a world's tiles share (tools/map/texture_imports.py --share): sources, not extracted
+!godot/city/*_tx_*.png
 maps/*/facades/commons/*.jpg
 maps/*/facades/commons/raw/
 maps/*/facades/tex_commons_clean/

@@ -53,7 +53,7 @@ def main():
             b = [x0 + c * a.size, y0 + r * a.size, x0 + (c + 1) * a.size, y0 + (r + 1) * a.size]
             cfg = {k: src[k] for k in KEEP if k in src}
             cfg.setdefault("kit_facades", "all")
-            cfg.update(bounds=b, tile=True, out=f"godot/city/{tid}.glb",
+            cfg.update(bounds=b, tile=True, shared_textures=f"{a.name}_tx", out=f"godot/city/{tid}.glb",
                        user=src.get("user", f"maps/{a.source}/user"),
                        start=[round((b[0] + b[2]) / 2), round(-(b[1] + b[3]) / 2)])     # x, z
             d = ROOT / "maps" / tid
@@ -74,6 +74,9 @@ def main():
             print(f"{t['id']}: {'built' if ok else 'left out - ' + why}", flush=True)
             if ok:
                 built.append(t)
+    if not a.no_build:                 # the images no tile draws with any more
+        subprocess.run([sys.executable, str(ROOT / "tools" / "map" / "texture_imports.py"),
+                        "--prune", f"{a.name}_tx"], cwd=ROOT)
     world = ROOT / "godot" / "city" / f"{a.name}.world.json"
     # a rebuild keeps what else the list says (the menu label, the far view, a goal)
     entry = json.loads(world.read_text()) if world.exists() else {}

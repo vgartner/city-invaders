@@ -70,6 +70,22 @@ cuts an area of a map's data into a grid of such tiles and builds them;
 tile's buildings as light blocks with window bays and simple roofs, and a
 ring round the world).
 
+A world's tiles draw mostly with the same images (the street surfaces, the
+kit facades, the photos of a building two tiles share), and each glb used to
+hold its own copy. `rebuild` of a tile (`"shared_textures": "<world>_tx"` in
+its `build.json`, set by `tiles.py`) takes every image out of the glb
+(`texture_imports.py --share <world>_tx`): it becomes
+`godot/city/<world>_tx_<hash>.png`, one file for every tile that uses those
+bytes, with the import settings that compress it for the GPU, and the glb
+refers to it by name. `tiles.py` ends by removing the shared images no tile
+uses any more (`texture_imports.py --prune <world>_tx`). These files are
+sources of the world, not something Godot extracts: a world that goes into
+the repository takes them along (`.gitignore` lets `*_tx_*.png` through).
+Tiles built before this are converted without a rebuild:
+`python3 tools/map/texture_imports.py --share <world>_tx godot/city/<world>_*_*.glb`,
+then the import (twice, if the first reports `Unrecognized UID`: the scenes
+still knew the removed images).
+
 ## 2. Data
 
 ```bash

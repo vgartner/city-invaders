@@ -526,8 +526,15 @@ models and people are still imported lossless and hold 4-6 GB
    Left: a tile that comes back with a player already near gets its birds
    in two lots (the light ones, then the top-up), so their number differs
    a little from the first time.
-8. **A tile's files smaller**: 40-90 MB of glb each; the release packages
-   know nothing of worlds yet (the menu and the map editor do).
+8. **A tile's files smaller**: done for the images, which were 95 % of a
+   tile's glb. The tiles of a world share them as files
+   (`<world>_tx_<hash>.png`, [MAP_PIPELINE.md](MAP_PIPELINE.md)): the test
+   world's nine tiles held 3,776 images of which 392 differ. Its sources
+   went from 1.1 GB to 174 MB (a tile's glb from 36-89 MB to 0.8-2.5 MB),
+   what Godot imports from 975 MB to 214 MB. In the game a texture two tiles
+   use is one resource, loaded once; the texture memory read in a round did
+   not show it (2.8 GB before, 2.5-2.6 GB after, one run each: the game's
+   own models are most of it and it moves by more between runs).
 
 ## Bus distance cache
 

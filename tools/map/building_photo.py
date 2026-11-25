@@ -204,8 +204,12 @@ def rebuild(map_id):
     out = ROOT / c["out"]
     glbs = [g for g in (out, out.with_name(out.stem + "_horizon.glb"), out.with_name(out.stem + "_collision.glb"))
             if g.exists()]
-    subprocess.run([sys.executable, str(ROOT / "tools" / "map" / "texture_imports.py"), "--force", *map(str, glbs)],
-                   check=True, cwd=ROOT)
+    tool = [sys.executable, str(ROOT / "tools" / "map" / "texture_imports.py")]
+    if c.get("shared_textures"):
+        # a world's tile: its images are files the world's tiles share
+        subprocess.run([*tool, "--share", c["shared_textures"], *map(str, glbs)], check=True, cwd=ROOT)
+    else:
+        subprocess.run([*tool, "--force", *map(str, glbs)], check=True, cwd=ROOT)
 
 
 def main():

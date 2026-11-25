@@ -49,21 +49,30 @@ def _write(path, doc, binary):
 
 def share(src, dst, shared, rel_dir):
     """shared: md5 -> file name. Returns how many images now point outside."""
+    def uri(_index, data):
+        name = shared.get(hashlib.md5(data).hexdigest())
+        return f"{rel_dir}/{name}".lstrip("/") if name else None
+    return point_out(src, dst, uri)
+
+
+def point_out(src, dst, uri_of):
+    """Every embedded image for which uri_of(index, bytes) gives a URI leaves
+    the GLB and is referred to by it. Returns how many did."""
     doc, binary = _read(src)
     views = doc.get("bufferViews", [])
     drop = set()
     n = 0
-    for im in doc.get("images", []):
+    for i, im in enumerate(doc.get("images", [])):
         if "bufferView" not in im:
             continue
         v = views[im["bufferView"]]
         data = binary[v.get("byteOffset", 0):v.get("byteOffset", 0) + v["byteLength"]]
-        name = shared.get(hashlib.md5(data).hexdigest())
-        if not name:
+        uri = uri_of(i, data)
+        if not uri:
             continue
         drop.add(im.pop("bufferView"))
         im.pop("mimeType", None)
-        im["uri"] = f"{rel_dir}/{name}".lstrip("/")
+        im["uri"] = uri
         n += 1
     if drop:
         # repack the buffer without the dropped views; renumber the rest
