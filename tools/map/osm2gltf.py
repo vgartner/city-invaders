@@ -2988,6 +2988,10 @@ def _street_props(osm, proj, area, footprint, sidewalks, parks, asphalt_area, pe
         spot = nearest_points(walk_in, pt)[0]
         for k in range(8):
             ox, oy = (0.0, 0.0) if k == 0 else (math.cos(k * 0.8) * 0.9, math.sin(k * 0.8) * 0.9)
+            # (a spot beside the first one, when that is taken, is still on
+            # the sidewalk: 0.9 m from it may be out on the asphalt)
+            if k and not sidewalks.buffer(-0.25).contains(Point(spot.x + ox, spot.y + oy)):
+                continue
             if add("street_sign", spot.x + ox, spot.y + oy, yaw=0.0, r=0.3):
                 props[-1]["plates"] = plates
                 n_signs += 1
