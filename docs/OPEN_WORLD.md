@@ -80,7 +80,12 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   tile, or other bake settings, bake again. The bake's callbacks are bound
   methods, not lambdas, and the world waits for every bake and worker task
   when it leaves the tree (`_exit_tree`): quitting while a tile baked
-  aborted the game (`recursive_mutex lock failed`), every time. Two meshes baked apart
+  aborted the game (`recursive_mutex lock failed`), every time. That wait
+  serves the rendering server while it lasts (`_wait_out`): a worker building
+  a tile reads meshes through the rendering server and sleeps until the main
+  thread answers, so a main thread that only waited hung the game on quit
+  (5 of 5 quits while a tile was being built; 0 of 12 now), and a tile still
+  being built is told to stop (`_leaving`). Two meshes baked apart
   stop an agent's radius short of the shared edge, so along the tile's edge,
   every 2.5 m where both sides can be walked, a `NavigationLink3D` joins
   them (26 on the test edge). The neighbours' buildings that reach into a

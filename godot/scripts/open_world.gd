@@ -49,6 +49,7 @@ var _even := 0.0
 var _walls: StaticBody3D
 var far := {}               # tile id -> its far model (tools/map/far_view.py)
 var _jobs: Array[int] = []  # worker tasks after a bake, waited for when done (_reap) or when the world goes
+var _leaving := false       # the world is going: worker tasks stop at their next step
 var _baking: Array[NavigationMesh] = []    # meshes the navigation server is baking
 
 
@@ -385,6 +386,9 @@ func _build(id: String) -> void:
 	var custom := scenes.size() > 1
 	var top := 0.0
 	for mi in city.find_children("*", "MeshInstance3D", true, false):
+		if _leaving:
+			root.free()
+			return
 		top = maxf(top, (mi as MeshInstance3D).get_aabb().end.y)
 		var kind: String = main.city_mesh_kind(mi)
 		if (custom and kind in main.VISUAL_ONLY) or kind in main.NO_COLLISION:
@@ -652,6 +656,8 @@ func _shape_later(meshes: Array[MeshInstance3D]) -> Dictionary:
 
 func _make_shapes(meshes: Array, shapes: Array, done: Array) -> void:
 	for i in meshes.size():
+		if _leaving:
+			return
 		var shape: Shape3D = (meshes[i] as Mesh).create_trimesh_shape()
 		if shape is ConcavePolygonShape3D:
 			(shape as ConcavePolygonShape3D).backface_collision = true     # both sides, like the city's
@@ -891,7 +897,13 @@ func _reap() -> void:
 ## The game quits or the round ends: nothing of the world may still run on
 ## another thread when the engine shuts down - a tile being built, a mesh
 ## being baked or finished.
+## A worker reading a mesh (its faces, its box) asks the rendering server and
+## sleeps until the main thread serves it; a main thread that only waited for
+## the worker would then wait for ever - the game hung on quit. So the wait
+## keeps serving the rendering server, and a tile still being built is told
+## to stop.
 func _exit_tree() -> void:
+	_leaving = true
 	var t0 := Time.get_ticks_msec()
 	for nm in _baking:
 		while NavigationServer3D.is_baking_navigation_mesh(nm) and Time.get_ticks_msec() - t0 < 10000:
@@ -899,11 +911,25 @@ func _exit_tree() -> void:
 	_baking.clear()
 	for t in tiles.values():
 		if t.get("state", "") == "building" and t.has("task"):
-			WorkerThreadPool.wait_for_task_completion(t["task"])
+			_wait_out(t["task"])
 			t["state"] = "out"
 	for job in _jobs:
-		WorkerThreadPool.wait_for_task_completion(job)
+		_wait_out(job)
 	_jobs.clear()
+	_leaving = false
+
+
+## Waits for a worker task while serving what it asks of the main thread. A
+## task that does not end in 20 s is left to the engine.
+func _wait_out(task: int) -> void:
+	var t0 := Time.get_ticks_msec()
+	while not WorkerThreadPool.is_task_completed(task):
+		if Time.get_ticks_msec() - t0 > 20000:
+			push_warning("open world: a worker task did not end, leaving it")
+			return
+		RenderingServer.force_sync()
+		OS.delay_msec(2)
+	WorkerThreadPool.wait_for_task_completion(task)
 
 
 ## Where a tile's baked navigation mesh is kept: next to the tile while the
