@@ -153,7 +153,8 @@ cd godot && godot --headless --path . --import        # import the new glb
 ./run-godot.sh
 ```
 
-`rebuild` also writes the map's images next to the glb
+`rebuild` removes the navigation mesh the game kept for the old scene
+(`godot/city/<map>.nav.res`, [OPEN_WORLD.md](OPEN_WORLD.md)). It also writes the map's images next to the glb
 (`godot/city/<map>_<n>.png`, the files Godot would extract) with import
 settings that compress them for the GPU (`tools/map/texture_imports.py`):
 Godot's own default for an extracted image is lossless, four bytes a pixel

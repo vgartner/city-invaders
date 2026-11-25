@@ -12,6 +12,10 @@ extends Node
 
 const USER_DIR := "user://map_packs"
 
+## A map package was loaded: what was read from res://city is out of date
+## (main.gd's list of open worlds).
+signal added
+
 ## map packages loaded, by file name
 var loaded: Array[String] = []
 
@@ -59,6 +63,7 @@ func load_map_pack(path: String) -> bool:
 		return false
 	loaded.append(path.get_file())
 	_register_uids("res://city")
+	added.emit()
 	return true
 
 

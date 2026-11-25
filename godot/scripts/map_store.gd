@@ -30,8 +30,10 @@ func catalog_url() -> String:
 	return RELEASES % str(ProjectSettings.get_setting("application/config/version", "0.0.0"))
 
 
+## A map is there by its scene, an open world (one package with all its
+## tiles) by its list.
 static func installed(id: String) -> bool:
-	return ResourceLoader.exists("res://city/%s.glb" % id)
+	return ResourceLoader.exists("res://city/%s.glb" % id) or FileAccess.file_exists("res://city/%s.world.json" % id)
 
 
 ## Fetch the catalog; `changed` fires when it is in (or failed).

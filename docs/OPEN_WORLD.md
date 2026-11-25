@@ -73,8 +73,13 @@ tile (below). Single maps can be registered too: `main.open_world("<id>")`
   (`NavigationServer3D.bake_from_source_geometry_data_async`, 0.1 s for a
   250 m tile) and added as a region of the same map. The baked mesh is
   kept (`res://city/<id>.nav.res` when the game runs from the project,
-  git-ignored with the tiles; `user://tile_nav/` in a released game) with a
-  stamp of the tile's files and the bake settings; the next time the tile
+  git-ignored with the tiles; `user://tile_nav/` when the game runs from a
+  package) with a stamp of the tile's files and the bake settings (from the
+  project the files' dates; a package's files have none, so there the MD5
+  of the tile's data files). A package made on a machine that has the mesh
+  brings it along, and the game reads that one first, asking only that the
+  bake settings agree - it was baked from the files beside it, and `rebuild`
+  removes a rebuilt tile's mesh; the next time the tile
   comes in, the mesh is read back on a loader thread (same polygons, same
   links) and neither the colliders are read nor the mesh baked. A rebuilt
   tile, or other bake settings, bake again. The bake's callbacks are bound
@@ -535,6 +540,15 @@ models and people are still imported lossless and hold 4-6 GB
    use is one resource, loaded once; the texture memory read in a round did
    not show it (2.8 GB before, 2.5-2.6 GB after, one run each: the game's
    own models are most of it and it moves by more between runs).
+   **The release packages know worlds**: a world is one map package,
+   `maps/<world>.pck`, with its list, every tile, the shared images, the far
+   view and the kept navigation meshes (the test world: 223 MB for nine
+   tiles; one standalone map is 206 MB), listed in the catalog under the
+   world's label; the Maps screen takes a world as installed by its list
+   ([BUILDING.md](BUILDING.md)). Played from the exported packages in the
+   editor binary: the world in the menu, tiles in and out round the player,
+   every mesh read back from the package, no errors. Not tried: the
+   download of a world from the Maps screen (the same path as a map's).
 
 ## Bus distance cache
 

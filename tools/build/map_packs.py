@@ -3,7 +3,8 @@
 
 A released game is the game package and one maps/<id>.pck per map
 (res://city/<id>*), so maps can be installed or added on their own
-(docs/BUILDING.md). On Windows the installer fetches the maps; the macOS and
+(docs/BUILDING.md). An open world (godot/city/<world>.world.json) is one
+package with all its tiles, under the world's name. On Windows the installer fetches the maps; the macOS and
 Linux packages carry the first phase inside the game and download the others
 from the game's Maps screen.
 
@@ -25,6 +26,7 @@ from the game's Maps screen.
 
 Only the Python standard library.
 """
+import functools
 import hashlib
 import json
 import os
@@ -45,18 +47,52 @@ SHARED = "city/maps.json, city/bark.png, city/leaves.png"
 GAME_FILES = ["CityInvaders.exe", "CityInvaders.console.exe", "CityInvaders.pck"]
 
 
+@functools.lru_cache(maxsize=None)
+def worlds() -> dict:
+    """The open worlds (docs/OPEN_WORLD.md): name -> its list (<name>.world.json)."""
+    out = {}
+    for p in sorted(CITY.glob("*.world.json")):
+        data = json.loads(p.read_text())
+        if data.get("tiles"):
+            out[p.name.removesuffix(".world.json")] = data
+    return out
+
+
 def map_ids() -> list:
+    """What gets a package of its own: every map, and every world with all
+    its tiles (a tile is no map by itself)."""
+    ws = worlds()
+    tiles = {t["id"] for w in ws.values() for t in w["tiles"]}
     ids = sorted(p.stem for p in CITY.glob("*.glb")
-                 if not p.stem.endswith(("_horizon", "_collision")))
+                 if not p.stem.endswith(("_horizon", "_collision", "_far", "_far_ring"))
+                 and p.stem not in tiles and not any(p.stem.startswith(w + "_") for w in ws))
+    ids = sorted(ids + list(ws))
     for a in ids:
         for b in ids:
-            if a != b and b.startswith(a + "_"):
+            # a map's own files are <a>.*, <a>_<number>.png, <a>_horizon*, <a>_collision*
+            rest = b[len(a) + 1:]
+            if a != b and b.startswith(a + "_") and a not in ws \
+                    and (rest.startswith(("horizon", "collision")) or rest.isdigit()):
                 sys.exit(f"map id {b!r} starts with {a!r}_: their files can't be told apart")
     return ids
 
 
 def globs(mid: str) -> str:
-    return f"city/{mid}.*, city/{mid}_*"
+    """The files of a map or a world in godot/city, as export filters."""
+    if mid in worlds():
+        # the list, the tiles (<world>_<column>_<row>*), the images they share
+        # (<world>_tx_*), the far view
+        return f"city/{mid}.*, city/{mid}_*"
+    # a map: named one by one, so a world called <map>_... keeps its files
+    numbered = ", ".join(f"city/{mid}_{'?' * n}.png*" for n in range(1, 5))
+    return f"city/{mid}.*, {numbered}, city/{mid}_horizon*, city/{mid}_collision*"
+
+
+def json_globs(mid: str) -> str:
+    """Its data files: no resources, so the export has to be told."""
+    if mid in worlds():
+        return f"city/{mid}.*.json, city/{mid}_*.json"
+    return f"city/{mid}.*.json"
 
 
 # The macOS and Linux game presets; their options not listed take Godot's defaults.
@@ -139,7 +175,7 @@ def presets() -> None:
         others = [globs(m) for m in ids if m != mid]
         exclude = ", ".join([BASE_EXCLUDE, NOT_CITY, SHARED] + others)
         out.append(preset(n, f"Map {mid}", "Windows Desktop", f"../build/windows/maps/{mid}.pck",
-                          f"city/{mid}.*.json", exclude, options, "false"))
+                          json_globs(mid), exclude, options, "false"))
         n += 1
     PRESETS.write_text("".join(out))
     print(" ".join(ids))
@@ -156,6 +192,8 @@ def map_names() -> dict:
     if reg.exists():
         for m in json.loads(reg.read_text()):
             names[m[0]] = m[1]
+    for w, data in worlds().items():          # as main.gd world_entry names it
+        names[w] = data.get("label", f"{w.replace('_', ' ').title()} (open world, prototype)")
     return names
 
 

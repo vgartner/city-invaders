@@ -204,6 +204,9 @@ def rebuild(map_id):
     out = ROOT / c["out"]
     glbs = [g for g in (out, out.with_name(out.stem + "_horizon.glb"), out.with_name(out.stem + "_collision.glb"))
             if g.exists()]
+    # the navigation mesh the game baked from the old scene and kept (a tile's
+    # may go into a release package, where nothing checks its age)
+    out.with_name(out.stem + ".nav.res").unlink(missing_ok=True)
     tool = [sys.executable, str(ROOT / "tools" / "map" / "texture_imports.py")]
     if c.get("shared_textures"):
         # a world's tile: its images are files the world's tiles share

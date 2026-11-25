@@ -932,42 +932,60 @@ func _wait_out(task: int) -> void:
 	WorkerThreadPool.wait_for_task_completion(task)
 
 
+## The game runs from the project's folder, not from a package.
+static func from_sources() -> bool:
+	return FileAccess.file_exists("res://project.godot")
+
+
 ## Where a tile's baked navigation mesh is kept: next to the tile while the
 ## game runs from the project (a developer's tiles, git-ignored with them),
-## in the user's folder in a released game, whose files are read-only.
+## in the user's folder when it runs from a package, whose files are
+## read-only.
 func _nav_path(id: String) -> String:
-	if OS.has_feature("editor"):
+	if from_sources():
 		return "res://city/%s.nav.res" % id
 	DirAccess.make_dir_recursive_absolute("user://tile_nav")
 	return "user://tile_nav/%s.nav.res" % id
 
 
 ## What a tile's mesh is baked from: the tile's files (a rebuilt tile bakes
-## again) and the bake's settings.
+## again) and, last, the bake's settings. From the project the files' dates;
+## a package's files have none, so there it is what the tile's data files
+## hold (the scenes can't be read there, and a rebuilt tile's data differ).
 func _nav_stamp(id: String, nm: NavigationMesh) -> String:
 	var parts := []
-	for f in [_glb(id), _col(id), "res://city/%s.props.json" % id, "res://city/%s.landmarks.json" % id,
-			"res://city/%s.spawn.json" % id]:
-		parts.append("%s:%d" % [f.get_file(), FileAccess.get_modified_time(f)])
+	if from_sources():
+		for f in [_glb(id), _col(id), "res://city/%s.props.json" % id, "res://city/%s.landmarks.json" % id,
+				"res://city/%s.spawn.json" % id]:
+			parts.append("%s:%d" % [f.get_file(), FileAccess.get_modified_time(f)])
+	else:
+		for f in ["res://city/%s.props.json" % id, "res://city/%s.landmarks.json" % id, "res://city/%s.spawn.json" % id]:
+			parts.append("%s:%s" % [f.get_file(), FileAccess.get_md5(f)])
 	parts.append("%s %s %s %s %s %s" % [nm.cell_size, nm.cell_height, nm.agent_radius, nm.agent_height,
 			nm.agent_max_climb, nm.agent_max_slope])
 	return ";".join(parts)
 
 
 ## The tile's kept mesh, read on a loader thread, or null if there is none
-## or it was baked from other files.
+## or it was baked from other files. A package may bring the mesh along
+## (res://city/<id>.nav.res, baked by whoever built the map): it was made
+## from the files beside it, so only the bake's settings have to agree.
 func _kept_nav(id: String, stamp: String) -> NavigationMesh:
-	var path := _nav_path(id)
-	if not ResourceLoader.exists(path):
-		return null
-	if ResourceLoader.load_threaded_request(path, "NavigationMesh", false, ResourceLoader.CACHE_MODE_IGNORE) != OK:
-		return null
-	while ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
-		await get_tree().process_frame
-	var nm := ResourceLoader.load_threaded_get(path) as NavigationMesh
-	if nm == null or str(nm.get_meta("stamp", "")) != stamp:
-		return null
-	return nm
+	var shipped := "" if from_sources() else "res://city/%s.nav.res" % id
+	for path in [shipped, _nav_path(id)]:
+		if path == "" or not ResourceLoader.exists(path):
+			continue
+		if ResourceLoader.load_threaded_request(path, "NavigationMesh", false, ResourceLoader.CACHE_MODE_IGNORE) != OK:
+			continue
+		while ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+			await get_tree().process_frame
+		var nm := ResourceLoader.load_threaded_get(path) as NavigationMesh
+		if nm == null:
+			continue
+		var has := str(nm.get_meta("stamp", ""))
+		if has == stamp or (path == shipped and has.get_slice(";", has.get_slice_count(";") - 1) == stamp.get_slice(";", stamp.get_slice_count(";") - 1)):
+			return nm
+	return null
 
 
 func _baked(id: String, root_id: int, nm: NavigationMesh, t1: int, went: Vector2i, fresh: bool) -> void:

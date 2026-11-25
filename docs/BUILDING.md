@@ -9,7 +9,7 @@ Linux builds can all be made on one Linux or macOS machine.
 |---|---|
 | `CityInvaders.exe` | Godot's Windows runtime |
 | `CityInvaders.pck` | the game: scripts, assets, data (kept outside the executable because it is larger than 1 GB) |
-| `CityInvaders-map-<id>.pck` | one package per map: `res://city/<id>*`, its scene, textures and layouts; installed as `maps/<id>.pck` or downloaded into `user://map_packs/` |
+| `CityInvaders-map-<id>.pck` | one package per map: `res://city/<id>*`, its scene, textures and layouts; installed as `maps/<id>.pck` or downloaded into `user://map_packs/`. An open world (`godot/city/<world>.world.json`, [OPEN_WORLD.md](OPEN_WORLD.md)) is one such package under the world's name, with all its tiles |
 | `CityInvaders-<version>-setup.exe` | the Windows installer, which downloads the files above |
 | `CityInvaders-<version>-macos.zip` | the macOS app (universal: Apple Silicon and Intel), with the first phase inside |
 | `CityInvaders-<version>-linux-x86_64.tar.gz` | the Linux game, with the first phase inside |
@@ -22,7 +22,8 @@ every map package from `maps/` next to the executable and from
 `user://map_packs/`. It refuses a package with anything but map files
 (`res://city/`, their imported data): a map can't replace or add game code.
 It also registers the maps' UIDs, which the game package's UID table doesn't
-know. A next phase that isn't installed makes the current map the last one
+know, and says when a package came in (`added`), so the menu looks for open
+worlds again. A next phase that isn't installed makes the current map the last one
 (`main.gd` `_map_spec`).
 
 The game's **Maps** screen (title screen > Maps, `scripts/map_store.gd`)
@@ -63,7 +64,13 @@ The Windows game preset packs every resource plus the `*.json` data files
 (collections, the people roster, `city/maps.json`) except the maps' files,
 and leaves notes and Blender files out; the macOS and Linux presets keep the
 first phase (the first map in the menu); each `Map <id>` preset packs only
-`city/<id>.*` and `city/<id>_*`. All of them use the same desktop texture
+its own files: a map's are `city/<id>.*`, the numbered images
+`city/<id>_<n>.png`, `city/<id>_horizon*` and `city/<id>_collision*`; a
+world's are `city/<world>.*` and `city/<world>_*` (the tiles, the images
+they share, the far view). A map's files are named one by one so that a
+world called `<map>_...` keeps its own. A tile's navigation mesh the game
+kept while it was played from the project (`city/<id>.nav.res`) goes into
+the package, and the packaged game reads it instead of baking. All of them use the same desktop texture
 compression (S3TC/BPTC), so one map package serves every platform. Godot
 exports a universal or arm64 macOS app only with ETC2/ASTC textures imported
 as well, which would double the import and push the game package past 2 GiB;

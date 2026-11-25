@@ -132,6 +132,8 @@ var _load_step: Label
 
 
 func _ready() -> void:
+	if not Packs.added.is_connected(forget_worlds):
+		Packs.added.connect(forget_worlds)
 	# main keeps listening for Esc while paused; its world children still pause
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	# physics interpolation is on in the project but only vehicles use it
@@ -434,6 +436,13 @@ static func all_maps() -> Array:
 	return out
 static var _worlds: Array = []
 static var _worlds_read := false
+
+
+## A map package came in while the game runs (the Maps screen): the open
+## worlds are looked for again.
+static func forget_worlds() -> void:
+	_worlds.clear()
+	_worlds_read = false
 
 
 ## An open world's menu entry: [start tile, label, "", goal], or [] when its
